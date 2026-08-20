@@ -137,3 +137,13 @@
 - 큰 작업은 계획을 먼저 제시하고 승인 후 진행한다
 - 완료 보고는 간결하게: 변경 파일, 핵심 결정, 남은 일
 - 현재 마일스톤의 DoD(`docs/07` §2)를 넘기는 "최소 완주"를 목표로. 개선 욕구는 "거슬림 목록"으로 미룬다(완벽주의 억제, 프리모템 #10)
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
