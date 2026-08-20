@@ -35,6 +35,9 @@
 
   /* shadcn 컴포넌트가 hover 배경으로 쓰는 표면. 사이트 액센트와 무관하다. */
   --surface-hover: #f3ece0;
+  /* 비활성 칸막이 탭의 표면. 03 §2.1 표에는 없지만 프로토타입이 쓰는 값이라
+     하드코딩 대신 토큰으로 둔다(활성 탭은 --card로 올라온다). */
+  --surface-tab: #f3eee1;
 
   /* ── 타이포 역할 (03 §2.2) ──
      Pretendard는 app/fonts/pretendard.css의 @font-face(동적 서브셋)로, 나머지 3종은
@@ -113,6 +116,7 @@
   --postit: #6b6134;
   --crawl: #2b2620;
   --surface-hover: #322c23;
+  --surface-tab: #2f2a21;
 }
 
 @theme inline {
@@ -132,6 +136,7 @@
   --color-postit: var(--postit);
   --color-crawl: var(--crawl);
   --color-chrome: var(--chrome);
+  --color-surface-tab: var(--surface-tab);
 
   /* 서체 역할 (03 §2.2): font-sans / font-serif / font-typewriter / font-code
      원본 스택은 --stack-*으로 둔다 — 여기서 같은 이름(--font-sans)을 쓰면
