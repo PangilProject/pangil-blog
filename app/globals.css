@@ -59,8 +59,8 @@
   --rule-top: 1.5px; /* 카드 상단 괘 두께 */
   --rule-gap: 27px; /* 하늘 괘선 간격 */
   --measure: 42rem; /* 읽기 지면 폭 (660~720px 범위) */
-  --leading-body: 2; /* 본문 행간 */
-  --leading-scripture: 2.15; /* 말씀 행간 */
+  --lh-body: 2; /* 본문 행간 */
+  --lh-scripture: 2.15; /* 말씀 행간 */
 
   /* ── 모션 (03 §4) ── */
   --ease-record: cubic-bezier(0.2, 0.9, 0.3, 1); /* 단일 이징 */
@@ -147,6 +147,11 @@
   --font-code: var(--stack-code);
   --font-heading: var(--stack-serif);
   --font-mono: var(--stack-code);
+
+  /* 조판: leading-body / leading-scripture / max-w-measure */
+  --leading-body: var(--lh-body);
+  --leading-scripture: var(--lh-scripture);
+  --container-measure: var(--measure);
 
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
