@@ -1,8 +1,21 @@
 import { signIn } from "@/lib/actions/auth";
+import { hasSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
 
 // A-00 로그인. 화면 조판은 M1 디자인 시스템에서 입힌다.
 export default async function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
   const { error } = await searchParams;
+
+  if (!hasSupabaseAuthEnv()) {
+    return (
+      <main className="mx-auto flex w-full max-w-sm flex-col gap-4 p-8">
+        <h1 className="text-lg">관리자 로그인</h1>
+        <p role="alert">
+          Supabase 환경변수(NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)가 설정되지
+          않았습니다. .env.example을 참고해 채워 주세요.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-col gap-4 p-8">
