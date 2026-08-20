@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./fonts/pretendard.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -36,14 +37,14 @@
   --surface-hover: #f3ece0;
 
   /* ── 타이포 역할 (03 §2.2) ──
-     실제 서체는 next/font가 --font-* 변수로 주입한다(08 §4). 여기서는
-     역할 → 폴백 스택만 정의하고, 폰트 커밋에서 앞에 실제 패밀리가 붙는다. */
-  --font-sans:
-    var(--font-pretendard, ui-sans-serif), -apple-system, "Apple SD Gothic Neo", "Noto Sans KR",
-    sans-serif;
-  --font-serif: var(--font-gowun-batang, ui-serif), "Noto Serif KR", batang, serif;
-  --font-typewriter: var(--font-nanum-gothic-coding, ui-monospace), "JetBrains Mono", monospace;
-  --font-code: var(--font-jetbrains-mono, ui-monospace), "SF Mono", consolas, monospace;
+     Pretendard는 app/fonts/pretendard.css의 @font-face(동적 서브셋)로, 나머지 3종은
+     next/font/google이 주입하는 --font-* 변수로 연결된다(08 §4).
+     Tailwind theme 키와 이름이 겹치지 않게 원본 스택은 --stack-*으로 둔다. */
+  --stack-sans:
+    "Pretendard Variable", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --stack-serif: var(--font-gowun-batang, ui-serif), "Noto Serif KR", batang, serif;
+  --stack-typewriter: var(--font-nanum-gothic-coding, ui-monospace), "JetBrains Mono", monospace;
+  --stack-code: var(--font-jetbrains-mono, ui-monospace), "SF Mono", consolas, monospace;
 
   /* ── 형태·그림자 (03 §2.3) ── */
   --radius: 0; /* 기본 0. 물리적 은유가 있을 때만 예외 */
@@ -132,13 +133,15 @@
   --color-crawl: var(--crawl);
   --color-chrome: var(--chrome);
 
-  /* 서체 역할 (03 §2.2): font-sans / font-serif / font-typewriter / font-code */
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-typewriter: var(--font-typewriter);
-  --font-code: var(--font-code);
-  --font-heading: var(--font-serif);
-  --font-mono: var(--font-code);
+  /* 서체 역할 (03 §2.2): font-sans / font-serif / font-typewriter / font-code
+     원본 스택은 --stack-*으로 둔다 — 여기서 같은 이름(--font-sans)을 쓰면
+     :root에 --font-sans: var(--font-sans)가 내보내져 순환 참조가 된다. */
+  --font-sans: var(--stack-sans);
+  --font-serif: var(--stack-serif);
+  --font-typewriter: var(--stack-typewriter);
+  --font-code: var(--stack-code);
+  --font-heading: var(--stack-serif);
+  --font-mono: var(--stack-code);
 
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
