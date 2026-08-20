@@ -2,7 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { isAdminRequest } from "@/lib/auth/supabaseMiddleware";
-import { resolveSite, siteHostsFromEnv, siteRewritePath } from "@/lib/site/resolveSite";
+import {
+  isInternalPath,
+  resolveSite,
+  siteHostsFromEnv,
+  siteRewritePath,
+} from "@/lib/site/resolveSite";
 
 /**
  * 3호스트 분기 (04 §1.3):
@@ -16,11 +21,12 @@ import { resolveSite, siteHostsFromEnv, siteRewritePath } from "@/lib/site/resol
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 관리 영역은 루트 도메인 /admin 경로 하나로 고정이라 사이트 리라이트 대상이 아니다(02 §1).
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+  // 3면 리라이트를 타지 않는 내부 경로(/admin, /design)는 먼저 걸러낸다.
+  if (isInternalPath(pathname)) {
     const response = NextResponse.next();
 
-    if (pathname === ADMIN_LOGIN_PATH) return response;
+    // 확인 페이지는 인증 대상이 아니다 — 프로덕션에서는 페이지 자체가 404다.
+    if (pathname === ADMIN_LOGIN_PATH || !pathname.startsWith("/admin")) return response;
 
     const isAdmin = await isAdminRequest(request, response);
     if (isAdmin) return response;

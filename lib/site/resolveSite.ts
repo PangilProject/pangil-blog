@@ -92,6 +92,19 @@ export function siteHostsFromEnv(env: Record<string, string | undefined>): SiteH
   };
 }
 
+/**
+ * 3면 리라이트를 타지 않는 경로.
+ * - /admin: 루트 도메인 경로 하나로 고정된 관리 영역(02 §1)
+ * - /design: M1 확인 페이지. 개발 전용이며 프로덕션에서는 페이지 자체가 404다
+ */
+export const INTERNAL_PATH_PREFIXES = ["/admin", "/design"] as const;
+
+export function isInternalPath(pathname: string): boolean {
+  return INTERNAL_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 /** 호스트 분기 결과를 실제 라우트 경로로 바꾼다. `/` → `/hub`, `/tags/x` → `/faith/tags/x` */
 export function siteRewritePath(site: SiteKey, pathname: string): string {
   const suffix = pathname === "/" ? "" : pathname;
