@@ -35,7 +35,7 @@
 - **이중 URL (첫날 함정)**: Prisma는 런타임 pooled URL과 마이그레이션 direct URL **둘 다** 필요.
   - `DATABASE_URL` = pooled(pgbouncer, 포트 **6543**) — 런타임 쿼리
   - `DIRECT_URL` = direct(포트 **5432**) — `prisma migrate`
-  - `schema.prisma`의 `datasource`에 `url = env("DATABASE_URL")` + `directUrl = env("DIRECT_URL")`
+  - 지정 위치는 **`prisma.config.ts`** — Prisma 7부터 `schema.prisma`의 `datasource`에서 `url`/`directUrl`이 제거됐다(구현 착수 시 확인, 2026-08-20). `datasource.url`에 `DIRECT_URL`(migrate/introspect)을 넣고, 런타임 `PrismaClient`는 driver adapter에 `DATABASE_URL`(pooled)을 넘긴다. 이중 URL의 목적(런타임 pooled / 마이그레이션 direct)은 그대로다
 - **각 프로젝트에 따로**: Storage 버킷 `post-images`, 관리자 계정(+MFA), `pg_trgm` 확장(`create extension if not exists pg_trgm`).
 - **dev 7일 비활성 정지 주의**: prod는 크롤러 매일 쓰기로 자연 방어, **dev는 아님**. 개발 공백이 길면 대시보드에서 재개(치명적 아님).
 - **크롤러(Actions)는 prod ingest만** 겨냥. dev 크롤 테스트가 필요하면 dev ingest URL을 별도 지정.
