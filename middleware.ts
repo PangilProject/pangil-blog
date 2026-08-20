@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
+import { isAdminRequest } from "@/lib/auth/supabaseMiddleware";
 import { resolveSite, siteHostsFromEnv, siteRewritePath } from "@/lib/site/resolveSite";
 
 /**
@@ -7,16 +9,26 @@ import { resolveSite, siteHostsFromEnv, siteRewritePath } from "@/lib/site/resol
  *   root      → /hub/*
  *   dev.*     → /dev/*
  *   faith.*   → /faith/*
- *   /admin/*  → 호스트 무관 (인증은 별도 가드가 담당)
+ *   /admin/*  → 호스트 무관, 인증 체크 (미인증 → A-00 리다이렉트)
  *
  * 개발 중에는 Vercel 기본 주소·로컬호스트에서 ?site= 쿼리로 3면을 전환한다(08 §3).
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 관리 영역은 루트 도메인 /admin 경로 하나로 고정이라 사이트 리라이트 대상이 아니다(02 §1).
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+
+    if (pathname === ADMIN_LOGIN_PATH) return response;
+
+    const isAdmin = await isAdminRequest(request, response);
+    if (isAdmin) return response;
+
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = ADMIN_LOGIN_PATH;
+    loginUrl.search = "";
+    return NextResponse.redirect(loginUrl);
   }
 
   const site = resolveSite({
