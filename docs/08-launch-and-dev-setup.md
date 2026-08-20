@@ -12,7 +12,7 @@
 | # | 항목 | 결정 | 소스 반영 |
 |---|------|------|----------|
 | 1 | Supabase 환경 | 원격 **dev + prod 2개 프로젝트**(Docker 없이). 전용 구글 계정으로 가입 | §2 |
-| 2 | 한글 폰트 | **전부 self-host + 서브셋** — next/font/google 3종 + Pretendard local 동적 서브셋 | §4 / AGENTS |
+| 2 | 한글 폰트 | **전부 self-host + 서브셋** — next/font/google 3종 + Pretendard 동적 서브셋(@font-face 직접 선언, M1 정정) | §4 / AGENTS |
 | 3 | 린트·포맷 | **Biome** 단독 (+ npm, Node LTS, Vitest) | AGENTS |
 | 4 | faith 저작권 | **(가) 유지** — 3중 레이어(성경 번역·365qt·가사) 인지하고 전량 즉시 공개 | 05 미결 #1 (추적 유지) |
 | 5 | 도메인·브랜드 | **배포 직전 결정.** 코드엔 `NEXT_PUBLIC_SITE_URL` 등 env 주입, 하드코딩 금지. 후보 pangil.me / pangil.dev | §3 / 07 §4 |
@@ -54,9 +54,9 @@
 ## 4. 한글 폰트 로딩 (결정 #2)
 
 - **`next/font/google`**(빌드 시 self-host + unicode-range 자동 서브셋 + 폴백 메트릭): Gowun Batang · Nanum Gothic Coding · JetBrains Mono
-- **`next/font/local`**: Pretendard — 블로그 본문은 임의 한글이 오므로 "쓴 글자만 서브셋"이 불가 → Pretendard **동적 서브셋(unicode-range 분할 woff2)** 사용, 페이지별 필요 범위만 로드
+- **Pretendard 동적 서브셋(unicode-range 분할 woff2)**: 블로그 본문은 임의 한글이 오므로 "쓴 글자만 서브셋"이 불가 → 페이지별 필요 범위만 로드. **`next/font/local`로는 구현 불가**(파일별 `unicode-range`를 지정할 수 없음, M1에서 확인) → 배포본 woff2 92개를 레포(`public/fonts/pretendard`)에 두고 `@font-face`를 직접 선언한다. OFL 라이선스 원문을 폰트와 같은 자리에 둔다
 - 네 폰트를 CSS 변수로 노출 → Tailwind 테마 + 03 역할 토큰(본문 Pretendard / 세리프 Gowun Batang / 타자기 Nanum Gothic Coding / 코드 JetBrains Mono)에 매핑. `display: swap`
-- 임계 폰트(본문 Pretendard·세리프 Gowun)만 preload, 코드·메타 폰트는 필요 시 로드
+- **preload는 쓰지 않는다**(M1에서 정정). 한글 웹폰트는 unicode-range로 수십 개 청크로 쪼개져 있어 preload가 "어느 범위가 필요한지" 모른 채 전부 받아버린다 — Gowun Batang을 preload하니 47개·2.1MB를 통째로 수신(측정). 서브셋의 이득을 preload가 상쇄하므로 `display: swap` + 온디맨드 로딩에 맡긴다
 - 외부 런타임 의존 0 (next/font는 Google 폰트도 빌드 시 self-host)
 
 ---
