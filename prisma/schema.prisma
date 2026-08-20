@@ -1,0 +1,154 @@
+// 데이터 모델 정본 = docs/05-backend-and-data.md §1.4
+// - posts 단일 테이블 + content JSONB (ADR-002). 타입별 테이블 분리는 기각됨
+// - site = type === 'TECH' ? DEV : FAITH 는 type의 함수이므로 컬럼으로 두지 않는다
+// - 마이그레이션 파일 수동 편집 금지 (prisma migrate 사용, AGENTS.md)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../prisma/generated"
+}
+
+// 연결 URL은 Prisma 7에서 prisma.config.ts로 이전됐다(schema의 url/directUrl은 제거됨).
+// 이중 URL(08 §2): 런타임 = DATABASE_URL(pooled 6543) / migrate = DIRECT_URL(direct 5432)
+datasource db {
+  provider = "postgresql"
+}
+
+enum PostType {
+  QT
+  SERMON
+  PRAISE
+  TECH
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  PRIVATE
+}
+
+enum Site {
+  HUB
+  DEV
+  FAITH
+}
+
+enum CrawlStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum StatEventType {
+  PAGEVIEW
+  LEAVE
+}
+
+enum Device {
+  MOBILE
+  DESKTOP
+}
+
+model Post {
+  id                   String     @id @default(cuid())
+  legacyId             Int?       @unique // 티스토리 원본 글 ID (마이그레이션 추적·멱등)
+  type                 PostType
+  status               PostStatus @default(DRAFT)
+  title                String
+  slug                 String?    @unique // 발행 시 확정, DRAFT는 null
+  content              Json // Zod discriminated union (05 §2)
+  contentSchemaVersion Int        @default(1)
+  excerpt              String? // TECH 목록 카드 · OG description
+  thumbnailUrl         String? // TECH 목록 카드
+  searchText           String? // 발행 시 title+본문 평문 추출 (검색용, 05 §4A)
+  categoryId           String? // TECH만 사용
+  category             Category?  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  callNumber           Int? // 발행 시 부여, 이후 불변
+  publishedAt          DateTime? // 최초 발행 시각 / 마이그레이션 원본 작성일
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  tags                 PostTag[]
+  crawlRun             CrawlRun?
+  assets               Asset[]
+  // + searchText에 pg_trgm GIN 인덱스는 Prisma 스키마로 표현 불가 →
+  //   raw migration으로 추가한다 (05 §4A):
+  //   create extension if not exists pg_trgm;
+  //   create index post_search_text_trgm_idx on "Post" using gin ("searchText" gin_trgm_ops);
+
+  @@unique([type, callNumber])
+  @@index([type, status, publishedAt(sort: Desc)]) // 전 목록·피드 커버
+  @@index([status, updatedAt]) // A-02 초안함
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  posts     Post[]
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  site  Site // dev/faith 동명 태그 공존 허용
+  name  String
+  posts PostTag[]
+
+  @@unique([site, name])
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model CallNumberCounter {
+  type       PostType @id
+  lastNumber Int      @default(0)
+}
+
+model CrawlRun {
+  id              String      @id @default(cuid())
+  runDate         DateTime    @unique @db.Date // KST 기준 date — 중복 실행 방지 멱등 키
+  status          CrawlStatus
+  postId          String?     @unique // 생성한 DRAFT (1:1)
+  post            Post?       @relation(fields: [postId], references: [id], onDelete: SetNull)
+  questionCount   Int? // 파싱 검증 결과 (6·4 아니면 FAILED)
+  annotationCount Int? // 0 허용
+  errorMessage    String? // Slack 알림 본문과 동일 소스
+  startedAt       DateTime    @default(now())
+  finishedAt      DateTime?
+}
+
+model StatEvent {
+  id          BigInt        @id @default(autoincrement())
+  site        Site
+  eventType   StatEventType
+  path        String
+  postId      String? // FK 아님(로그성) — 글 삭제가 과거 통계를 지우면 안 됨
+  referrer    String?
+  utmSource   String?
+  visitorHash String // 무상태 일일 로테이션 해시 (05 §4.2)
+  device      Device
+  durationMs  Int? // LEAVE 이벤트의 체류 시간
+  occurredAt  DateTime      @default(now())
+
+  @@index([site, occurredAt])
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  postId      String? // 업로드 시점 초안 미저장 가능 → nullable
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  storagePath String // post-images/{postId|orphan}/{nanoid}.{ext}
+  width       Int? // next/image 요구 (04 §3.3)
+  height      Int?
+  mimeType    String
+  bytes       Int?
+  createdAt   DateTime @default(now())
+}
