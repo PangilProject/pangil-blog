@@ -1,6 +1,10 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.9/schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "includes": ["**", "!.next", "!node_modules", "!prisma/generated", "!next-env.d.ts"]
   },
@@ -11,17 +15,32 @@
     "lineWidth": 100
   },
   "javascript": {
-    "formatter": { "quoteStyle": "double", "semicolons": "always", "trailingCommas": "all" }
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
   },
   "linter": {
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" },
-      "style": { "useConst": "error", "noNonNullAssertion": "error" },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "noNonNullAssertion": "error"
+      },
       "suspicious": {
         "noExplicitAny": "error",
-        "noConsole": { "level": "warn", "options": { "allow": ["error", "warn"] } }
+        "noConsole": {
+          "level": "warn",
+          "options": {
+            "allow": ["error", "warn"]
+          }
+        }
       }
     }
   },
@@ -42,6 +61,11 @@
           }
         }
       }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }
