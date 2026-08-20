@@ -1,0 +1,46 @@
+name: ci
+
+# PR 게이트 (08 §6): 초록이 아니면 머지하지 않는다.
+# 크롤러·백업·리마인드 워크플로우와는 별개다.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # 빌드·타입체크는 실제 DB에 붙지 않는다. Prisma가 요구하는 형식만 맞춘 더미 값이며
+      # 시크릿이 아니다. 실제 값은 Vercel 환경변수 / Actions Secrets에만 둔다.
+      DATABASE_URL: postgresql://user:password@localhost:6543/postgres?pgbouncer=true
+      DIRECT_URL: postgresql://user:password@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: prisma generate
+        run: npm run db:generate
+
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: lint
+        run: npx biome ci .
+
+      - name: test
+        run: npm run test
+
+      - name: build
+        run: npm run build
