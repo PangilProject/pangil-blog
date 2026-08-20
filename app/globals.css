@@ -4,133 +4,197 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* 디자인 토큰(03 §2)·폰트 로딩(08 §4)은 M1 디자인 시스템 마일스톤에서 채운다.
-   M0에서는 Tailwind 진입점만 둔다. */
+/* ============================================================
+   디자인 토큰 — docs/03-design-system.md §2 "기록 카드"
+   금지 문법(03 §1.1): 필 버튼, 라운드 뱃지 칩, 그라디언트 배경/버튼,
+   회색 배경 위에 떠 있는 카드 그리드, 과도한 border-radius(기본 0),
+   glassmorphism, 한자 표기. 여기에 그런 값을 추가하지 않는다.
+   ============================================================ */
 
-html {
-  -webkit-text-size-adjust: 100%;
+:root {
+  /* ── 컬러 (03 §2.1) ── */
+  --paper: #faf7f0; /* 지면(페이지 배경) */
+  --card: #fefdf8; /* 카드·에디터 시트 */
+  --ink: #2b2823; /* 본문 먹색 */
+  --ink-soft: #6e6759; /* 보조 텍스트 */
+  --faint: #9c9486; /* 메타·비활성 */
+  --accent-faith: #c4553b; /* 인주 빨강 */
+  --accent-dev: #2f5a8f; /* 잉크 블루 */
+  --ok: #3e7050; /* 저장됨·크롤러 정상 */
+  --warn: #d8a24a; /* 저장 중·동기화 대기 */
+  --line: #d9e3ec; /* 카드 하늘 괘선 */
+  --edge: #e7e0d2; /* 보더 */
+  --postit: #fbf0b8; /* 메모지 */
+  --crawl: #fbf6e9; /* 크롤링 영역 띠 */
+  --chrome: #2b2823; /* 관리 헤더(먹) */
+
+  /* 사이트별 오버라이드는 이 한 축뿐이다(03 §2.1, 프리모템 #12).
+     허브는 faith 액센트를 공유하고, 카드 2장에서만 각자의 값을 쓴다. */
+  --accent: var(--accent-faith);
+
+  /* shadcn 컴포넌트가 hover 배경으로 쓰는 표면. 사이트 액센트와 무관하다. */
+  --surface-hover: #f3ece0;
+
+  /* ── 타이포 역할 (03 §2.2) ──
+     실제 서체는 next/font가 --font-* 변수로 주입한다(08 §4). 여기서는
+     역할 → 폴백 스택만 정의하고, 폰트 커밋에서 앞에 실제 패밀리가 붙는다. */
+  --font-sans:
+    var(--font-pretendard, ui-sans-serif), -apple-system, "Apple SD Gothic Neo", "Noto Sans KR",
+    sans-serif;
+  --font-serif: var(--font-gowun-batang, ui-serif), "Noto Serif KR", batang, serif;
+  --font-typewriter: var(--font-nanum-gothic-coding, ui-monospace), "JetBrains Mono", monospace;
+  --font-code: var(--font-jetbrains-mono, ui-monospace), "SF Mono", consolas, monospace;
+
+  /* ── 형태·그림자 (03 §2.3) ── */
+  --radius: 0; /* 기본 0. 물리적 은유가 있을 때만 예외 */
+  --radius-divider-tab: 5px 5px 0 0; /* 서랍 칸막이 탭 상단 */
+  --shadow-card: 0 1px 0 #e3ddcd, 0 8px 18px rgb(60 50 35 / 10%);
+  --shadow-card-hover: 0 1px 0 #e3ddcd, 0 16px 30px rgb(60 50 35 / 18%);
+
+  /* ── 괘선·조판 (03 §2.2·§3) ── */
+  --rule-top: 1.5px; /* 카드 상단 괘 두께 */
+  --rule-gap: 27px; /* 하늘 괘선 간격 */
+  --measure: 42rem; /* 읽기 지면 폭 (660~720px 범위) */
+  --leading-body: 2; /* 본문 행간 */
+  --leading-scripture: 2.15; /* 말씀 행간 */
+
+  /* ── 모션 (03 §4) ── */
+  --ease-record: cubic-bezier(0.2, 0.9, 0.3, 1); /* 단일 이징 */
+  --ease-stamp: cubic-bezier(0.34, 1.56, 0.64, 1); /* 도장·매듭 등 물리 은유만 */
+  --stagger-step: 85ms; /* 순차 등장 간격 (80~90ms) */
+
+  /* ── shadcn 시맨틱 매핑 ──
+     shadcn/ui 컴포넌트가 기록 카드 톤을 그대로 물려받게 한다(03 §6.1
+     "스타일 오버라이드만"). oklch 기본값을 03 팔레트로 갈아끼운 것이다. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--card);
+  --secondary: var(--crawl);
+  --secondary-foreground: var(--ink);
+  --muted: var(--crawl);
+  --muted-foreground: var(--ink-soft);
+  --destructive: var(--accent-faith);
+  --border: var(--edge);
+  --input: var(--edge);
+  --ring: var(--accent);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--card);
+  --sidebar-accent: var(--surface-hover);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--edge);
+  --sidebar-ring: var(--accent);
+}
+
+/* 3면 무드 오버라이드 — 액센트 1축만 바꾼다(03 §2.1). 여기에 변수를 늘리면
+   프리모템 #12(3면이 제각각 어긋남)이 되살아난다. */
+[data-site="dev"] {
+  --accent: var(--accent-dev);
+}
+
+/* 다크 초안 (03 §2.1 "밤의 서고") — 실값 튜닝은 M6.
+   토글은 M3(next-themes)에서 붙이고, 여기서는 팔레트만 준비한다. */
+.dark {
+  --paper: #201d18;
+  --card: #262219;
+  --ink: #e8e2d4;
+  --ink-soft: #b0a894;
+  --faint: #8b8272;
+  --accent-faith: #d96b50;
+  --accent-dev: #5b85bf;
+  --line: #3a4550;
+  --edge: #3a352b;
+  --postit: #6b6134;
+  --crawl: #2b2620;
+  --surface-hover: #322c23;
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
+  /* 03 팔레트를 유틸리티로 노출: bg-paper / text-ink / border-edge … */
+  --color-paper: var(--paper);
   --color-card: var(--card);
-  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-faint: var(--faint);
+  --color-site-accent: var(--accent);
+  --color-accent-faith: var(--accent-faith);
+  --color-accent-dev: var(--accent-dev);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-line: var(--line);
+  --color-edge: var(--edge);
+  --color-postit: var(--postit);
+  --color-crawl: var(--crawl);
+  --color-chrome: var(--chrome);
+
+  /* 서체 역할 (03 §2.2): font-sans / font-serif / font-typewriter / font-code */
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-typewriter: var(--font-typewriter);
+  --font-code: var(--font-code);
+  --font-heading: var(--font-serif);
+  --font-mono: var(--font-code);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --ease-record: var(--ease-record);
+  --ease-stamp: var(--ease-stamp);
+
+  /* shadcn 시맨틱 (팔레트 위에 얹힌 층) */
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-foreground: var(--foreground);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  /* shadcn의 accent는 "hover 표면"이다. 사이트 액센트(--accent)와 의미가 다르므로
+     별도 토큰으로 갈라둔다 — 그래서 버튼 hover가 인주 빨강으로 물들지 않는다. */
+  --color-accent: var(--surface-hover);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* radius는 전부 0에서 파생된다(03 §2.3) */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
+    -webkit-text-size-adjust: 100%;
     @apply font-sans;
+  }
+
+  body {
+    @apply bg-paper text-ink;
   }
 }
