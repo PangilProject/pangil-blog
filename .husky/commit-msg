@@ -1,0 +1,7 @@
+npx --no -- commitlint --edit "$1"
+
+# Claude 서명/어트리뷰션 푸터 금지 (AGENTS.md "절대 하지 말 것")
+if grep -qiE '^(co-authored-by|generated with)' "$1"; then
+  echo "커밋 메시지에 서명/어트리뷰션 푸터를 넣지 않는다 (AGENTS.md 커밋 규칙)." >&2
+  exit 1
+fi
