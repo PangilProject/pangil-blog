@@ -9,6 +9,11 @@ export type SupabaseAuthEnv = {
   anonKey: string;
 };
 
+/** Supabase 접속값이 갖춰졌는지. 미설정 상태에서도 500 대신 로그인 화면으로 떨어지게 한다. */
+export function hasSupabaseAuthEnv(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
 export function readSupabaseAuthEnv(): SupabaseAuthEnv {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

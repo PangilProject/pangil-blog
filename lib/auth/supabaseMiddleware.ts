@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
 
-import { isAdminEmail, readSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
+import { hasSupabaseAuthEnv, isAdminEmail, readSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
 
 /**
  * middleware에서 세션을 확인하고, 갱신된 인증 쿠키를 응답에 실어 보낸다.
@@ -11,6 +11,12 @@ export async function isAdminRequest(
   request: NextRequest,
   response: NextResponse,
 ): Promise<boolean> {
+  // env 미설정(예: Supabase 프로젝트 생성 전)에는 관리 영역을 열지 않는다 — fail closed.
+  if (!hasSupabaseAuthEnv()) {
+    console.error("Supabase Auth 환경변수가 없어 /admin 접근을 차단했습니다 (.env.example 참조).");
+    return false;
+  }
+
   const { url, anonKey } = readSupabaseAuthEnv();
 
   const supabase = createServerClient(url, anonKey, {
