@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveSite, siteRewritePath } from "@/lib/site/resolveSite";
+import { isInternalPath, resolveSite, siteRewritePath } from "@/lib/site/resolveSite";
 
 const HOSTS = {
   root: "pangil.example",
@@ -76,5 +76,26 @@ describe("siteRewritePath", () => {
   it("하위 경로는 사이트 아래로 붙인다", () => {
     expect(siteRewritePath("faith", "/tags/감사")).toBe("/faith/tags/감사");
     expect(siteRewritePath("dev", "/posts/hello")).toBe("/dev/posts/hello");
+  });
+});
+
+describe("isInternalPath — 3면 리라이트 예외", () => {
+  it("관리 영역은 호스트 무관 경로라 리라이트하지 않는다", () => {
+    expect(isInternalPath("/admin")).toBe(true);
+    expect(isInternalPath("/admin/login")).toBe(true);
+  });
+
+  it("확인 페이지도 3면에 속하지 않는다", () => {
+    expect(isInternalPath("/design")).toBe(true);
+  });
+
+  it("공개 경로는 리라이트 대상이다", () => {
+    expect(isInternalPath("/")).toBe(false);
+    expect(isInternalPath("/tags/감사")).toBe(false);
+  });
+
+  it("접두사만 같은 경로를 내부로 오인하지 않는다", () => {
+    expect(isInternalPath("/administrator")).toBe(false);
+    expect(isInternalPath("/designs")).toBe(false);
   });
 });
