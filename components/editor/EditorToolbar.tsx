@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,6 +18,10 @@ import { cn } from "@/lib/utils";
  *
  * variant는 03 §5.3의 툴바 구성 차등이다: 기술·큐티는 full, 설교·찬양은 slim.
  * 관리 화면 전용이므로 공개 페이지의 클라이언트 아일랜드 한도(04 §3.6)와 무관하다.
+ *
+ * 문단 스타일 목록은 브라우저 기본 select을 쓰지 않는다. OS 기본 드롭다운이 라운드
+ * 모서리와 파란 하이라이트를 강제해 금지 문법(03 §1.1)과 충돌한다. 툴바에 고정된
+ * 목록이므로 "떠다니는 UI 금지"(ADR-001 §5)에도 어긋나지 않는다.
  */
 
 export type BlockStyle = "p" | "h2" | "h3" | "blockquote" | "pre";
@@ -25,7 +36,7 @@ export type ToolbarCommand =
 
 export type EditorToolbarVariant = "full" | "slim";
 
-const BLOCK_STYLE_LABELS: Record<BlockStyle, string> = {
+export const BLOCK_STYLE_LABELS: Record<BlockStyle, string> = {
   p: "본문",
   h2: "제목 1",
   h3: "제목 2",
@@ -34,17 +45,17 @@ const BLOCK_STYLE_LABELS: Record<BlockStyle, string> = {
 };
 
 /** slim은 설교·찬양용 — 라이브 속기와 가사 타이핑을 방해하지 않을 만큼만 남긴다 */
-const BLOCK_STYLES_BY_VARIANT: Record<EditorToolbarVariant, BlockStyle[]> = {
+export const BLOCK_STYLES_BY_VARIANT: Record<EditorToolbarVariant, BlockStyle[]> = {
   full: ["p", "h2", "h3", "blockquote", "pre"],
   slim: ["p", "h3", "blockquote"],
 };
 
-const MARK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
+export const MARK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
   full: ["bold", "italic", "underline"],
   slim: ["bold"],
 };
 
-const BLOCK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
+export const BLOCK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
   full: ["bulletList", "blockquote", "horizontalRule"],
   slim: ["bulletList", "blockquote"],
 };
@@ -100,21 +111,24 @@ export function EditorToolbar({
         className,
       )}
     >
-      <label className="sr-only" htmlFor="editor-block-style">
-        문단 스타일
-      </label>
-      <select
-        id="editor-block-style"
+      <Select
         value={blockStyle}
-        onChange={(event) => onBlockStyleChange?.(event.target.value as BlockStyle)}
-        className="min-w-[92px] border border-edge bg-card px-2 py-[7px] text-[13px] text-ink"
+        onValueChange={(value) => onBlockStyleChange?.(value as BlockStyle)}
       >
-        {BLOCK_STYLES_BY_VARIANT[variant].map((style) => (
-          <option key={style} value={style}>
-            {BLOCK_STYLE_LABELS[style]}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          aria-label="문단 스타일"
+          className="min-w-[92px] rounded-none text-[13px] text-ink"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {BLOCK_STYLES_BY_VARIANT[variant].map((style) => (
+            <SelectItem key={style} value={style} className="text-[13px]">
+              {BLOCK_STYLE_LABELS[style]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <Separator />
 

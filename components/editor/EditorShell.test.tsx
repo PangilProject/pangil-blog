@@ -19,7 +19,6 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
     for (const label of ["굵게", "기울임", "밑줄", "목록", "인용", "구분선"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
-    expect(screen.getByRole("option", { name: "코드 블록" })).toBeInTheDocument();
   });
 
   it("slim은 설교·찬양용으로 줄인다 — 라이브 속기를 방해하지 않는다", () => {
@@ -28,12 +27,21 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
     expect(screen.getByRole("button", { name: "굵게" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "기울임" })).toBeNull();
     expect(screen.queryByRole("button", { name: "구분선" })).toBeNull();
-    expect(screen.queryByRole("option", { name: "코드 블록" })).toBeNull();
   });
 
   it("현재 블록 스타일을 표시한다 — 커서를 옮기면 툴바가 따라온다", () => {
     render(<EditorToolbar blockStyle="h2" />);
-    expect(screen.getByLabelText("문단 스타일")).toHaveValue("h2");
+    expect(screen.getByRole("combobox", { name: "문단 스타일" })).toHaveTextContent("제목 1");
+  });
+
+  it("문단 스타일 목록은 브라우저 기본 select이 아니다 — OS 드롭다운은 금지 문법을 강제한다", () => {
+    render(<EditorToolbar />);
+
+    // 보이는 트리거가 button이면 목록도 우리가 그린다. select였다면 OS가 라운드 모서리와
+    // 파란 하이라이트를 강제한다(03 §1.1). Radix가 폼 호환용으로 두는 숨김 select은 별개다.
+    const trigger = screen.getByRole("combobox", { name: "문단 스타일" });
+    expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger).not.toHaveAttribute("aria-hidden");
   });
 
   it("활성 서식은 눌린 상태로 표시한다", () => {
