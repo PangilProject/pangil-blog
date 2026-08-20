@@ -6,6 +6,9 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // prisma/seed.mts가 생성 클라이언트를 "./generated/client.ts"로 import한다
+    // (Node 24 타입 스트리핑 실행 요건)
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
