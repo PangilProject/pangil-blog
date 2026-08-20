@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* 디자인 토큰(03 §2)·폰트 로딩(08 §4)은 M1 디자인 시스템 마일스톤에서 채운다.
+   M0에서는 Tailwind 진입점만 둔다. */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
