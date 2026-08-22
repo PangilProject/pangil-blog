@@ -16,11 +16,13 @@ import { z } from "zod";
 
 /**
  * Tiptap 문서. 노드 내부는 검증하지 않는다 — 어떤 스키마로도 정규화 불가하고(ADR-002 근거 6),
- * 렌더러가 모르는 노드는 건너뛴다. 05 §2는 z.any()로 적었으나 unknown이 더 안전하다.
+ * 렌더러가 모르는 노드는 건너뛴다. 05 §2는 z.any()로 적었으나 z.json()이 더 안전하다.
  */
 const TiptapDocSchema = z.object({
   type: z.literal("doc"),
-  content: z.array(z.unknown()),
+  // z.json()은 "JSON으로 표현 가능한 값"이다. unknown으로 두면 Prisma의 Json 입력 타입과
+  // 구조적으로 맞지 않아 경계마다 캐스팅이 필요해진다 — 캐스팅은 경계를 무력화한다.
+  content: z.array(z.json()),
 });
 
 export type TiptapDoc = z.infer<typeof TiptapDocSchema>;
