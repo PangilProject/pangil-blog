@@ -46,6 +46,13 @@ export function startOfKstDay(now: Date): Date {
   return new Date(Math.floor(shifted / DAY_MS) * DAY_MS - KST_OFFSET_MS);
 }
 
+/** KST 이번 달 1일 0시의 실제 시각(UTC). "이번 달 N장"의 경계다(03 §5.1) */
+export function startOfKstMonth(now: Date): Date {
+  const { year, month } = toKstDate(now);
+  const label = `${year}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`;
+  return new Date(new Date(label).getTime() - KST_OFFSET_MS);
+}
+
 /** CrawlRun.runDate 비교용 — KST 날짜의 자정을 UTC 자정으로 적은 값(@db.Date 관례) */
 export function kstDateAsUtcMidnight(now: Date): Date {
   return new Date(`${kstDateKey(now)}T00:00:00.000Z`);

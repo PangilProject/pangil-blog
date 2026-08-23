@@ -6,6 +6,7 @@ import {
   kstDateAsUtcMidnight,
   kstDateKey,
   startOfKstDay,
+  startOfKstMonth,
   toKstDate,
 } from "@/lib/record/kst";
 
@@ -75,5 +76,22 @@ describe("formatKstDay · isSunday", () => {
     // UTC 토요일 밤 = KST 일요일 아침
     expect(isSunday(new Date("2026-08-22T16:00:00Z"))).toBe(true);
     expect(isSunday(new Date("2026-08-22T14:00:00Z"))).toBe(false);
+  });
+});
+
+describe("startOfKstMonth", () => {
+  it("KST 이번 달 1일 0시를 UTC 시각으로 준다", () => {
+    expect(startOfKstMonth(new Date("2026-08-23T05:00:00Z")).toISOString()).toBe(
+      "2026-07-31T15:00:00.000Z",
+    );
+  });
+
+  it("KST로 달이 바뀌는 경계를 지킨다 — UTC 말일 15시가 다음 달 1일 0시다", () => {
+    expect(startOfKstMonth(new Date("2026-08-31T15:00:00Z")).toISOString()).toBe(
+      "2026-08-31T15:00:00.000Z",
+    );
+    expect(startOfKstMonth(new Date("2026-08-31T14:00:00Z")).toISOString()).toBe(
+      "2026-07-31T15:00:00.000Z",
+    );
   });
 });
