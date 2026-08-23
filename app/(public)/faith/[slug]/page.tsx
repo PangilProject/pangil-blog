@@ -51,5 +51,14 @@ export async function generateMetadata({ params }: PageProps<"/faith/[slug]">) {
   return {
     title: post.title,
     description: post.excerpt ?? undefined,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      type: "article",
+      publishedTime: post.publishedAt?.toISOString(),
+      // 기록 카드를 그대로 1200×630으로 재조판한다(04 §3.5) — 썸네일 미지정 글의 폴백을 겸한다
+      images: [{ url: `/api/og/${post.id}`, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: { card: "summary_large_image" },
   };
 }

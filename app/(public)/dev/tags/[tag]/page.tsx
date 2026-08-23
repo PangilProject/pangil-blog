@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
@@ -11,6 +13,9 @@ import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
 export const instant = false;
 
 export default async function TagListPage({ params, searchParams }: PageProps<"/dev/tags/[tag]">) {
+  // 시계를 읽기 전에 요청을 확보한다(ADR-003 — 프리렌더는 재현 가능한 출력만 허용한다)
+  await connection();
+
   const [{ tag }, query] = await Promise.all([params, searchParams]);
   const name = decodeURIComponent(tag);
   const page = Number(typeof query.page === "string" ? query.page : 1) || 1;

@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts, findUsedCategories } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
@@ -14,6 +16,10 @@ import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
 export const instant = false;
 
 export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
+  // 시계를 읽기 전에 요청을 확보한다. `new Date()`는 프리렌더에서 거부된다 —
+  // 재현 가능한 출력만 허용하기 때문이다(ADR-003). 실제로 이 페이지가 그렇게 깨졌다
+  await connection();
+
   const params = await searchParams;
   const categorySlug = typeof params.category === "string" ? params.category : null;
   const query = typeof params.q === "string" ? params.q : undefined;

@@ -92,3 +92,71 @@ export async function findPublishedPostBySlug(
     content: parsePublishContent(row.content),
   };
 }
+
+export type OgCard = {
+  type: RecordType;
+  title: string;
+  /** 말씀 범위(faith) 또는 요약 한 줄(dev) */
+  subtitle: string | null;
+  callNumber: number | null;
+  categoryName: string | null;
+  /** "2026년 8월 23일" */
+  publishedAt: string | null;
+  siteLabel: string;
+  typeLabel: string;
+};
+
+const OG_TYPE_LABELS: Record<RecordType, string> = {
+  QT: "큐티",
+  SERMON: "설교",
+  PRAISE: "찬양",
+  TECH: "기술",
+};
+
+/**
+ * OG 카드에 필요한 것만 (04 §3.5).
+ *
+ * 상세 조회를 재사용하지 않는 이유는 content 전체를 스키마로 통과시킬 필요가 없기 때문이다 —
+ * 카드에 들어가는 건 제목·부제 한 줄·청구기호뿐이다. 이미지 생성은 자주 불리므로 가볍게 둔다.
+ */
+export async function findOgCard(id: string): Promise<OgCard | null> {
+  "use cache";
+
+  const row = await prisma.post.findFirst({
+    where: { id, status: PostStatus.PUBLISHED },
+    select: {
+      type: true,
+      title: true,
+      callNumber: true,
+      excerpt: true,
+      publishedAt: true,
+      content: true,
+      category: { select: { name: true } },
+    },
+  });
+
+  if (!row) return null;
+
+  cacheTag(postTag(id));
+
+  const type = row.type as RecordType;
+  const scriptureRef = (row.content as { scriptureRef?: unknown } | null)?.scriptureRef;
+
+  return {
+    type,
+    title: row.title,
+    subtitle:
+      typeof scriptureRef === "string" && scriptureRef.trim() !== ""
+        ? scriptureRef
+        : (row.excerpt ?? null),
+    callNumber: row.callNumber,
+    categoryName: row.category?.name ?? null,
+    publishedAt: row.publishedAt
+      ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "long", timeZone: "Asia/Seoul" }).format(
+          row.publishedAt,
+        )
+      : null,
+    siteLabel: type === "TECH" ? "개발의 기록" : "믿음의 기록",
+    typeLabel: OG_TYPE_LABELS[type],
+  };
+}
