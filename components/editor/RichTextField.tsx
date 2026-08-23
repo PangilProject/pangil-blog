@@ -6,8 +6,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
-import type { TiptapDoc } from "@/lib/content/schema";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
+import type { RichTextValue } from "@/lib/editor/sermonForm";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,8 +21,8 @@ import { cn } from "@/lib/utils";
  */
 
 export type RichTextFieldProps = {
-  value: TiptapDoc | undefined;
-  onChange: (value: TiptapDoc) => void;
+  value: RichTextValue | undefined;
+  onChange: (value: RichTextValue) => void;
   /** 슬림 구성은 설교·찬양용 — 제목1과 코드 블록을 뺀다(03 §5.3) */
   variant?: "full" | "slim";
   placeholder?: string;
@@ -66,7 +66,7 @@ export function RichTextField({
       },
     },
     onUpdate: ({ editor: instance }) => {
-      onChange(instance.getJSON() as TiptapDoc);
+      onChange(instance.getJSON() as RichTextValue);
     },
     onFocus: ({ editor: instance }) => setEditor(instance),
     onSelectionUpdate: () => notifyChange(),

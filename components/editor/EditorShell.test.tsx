@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { CrawlBand } from "@/components/editor/CrawlBand";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
-import { SaveIndicator } from "@/components/editor/SaveIndicator";
+import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { StateStamp } from "@/components/record/StateStamp";
 
@@ -148,5 +148,18 @@ describe("SectionBlock — 찬양 섹션", () => {
     render(<SectionBlock label="Verse" lyrics="가사" />);
     expect(screen.getByText("가사").className).toContain("font-serif");
     expect(screen.getByText("가사").tagName).toBe("P");
+  });
+});
+
+describe("toSaveState — 기계 상태 → 화면 상태", () => {
+  it("retrying은 화면에서 동기화 대기다 — 내부 사정이 아니라 사실을 보여준다", () => {
+    expect(toSaveState("retrying")).toBe("offline-pending");
+  });
+
+  it("나머지 상태는 그대로 쓴다", () => {
+    expect(toSaveState("idle")).toBe("idle");
+    expect(toSaveState("typing")).toBe("typing");
+    expect(toSaveState("saving")).toBe("saving");
+    expect(toSaveState("saved")).toBe("saved");
   });
 });
