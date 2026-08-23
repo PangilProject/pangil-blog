@@ -22,8 +22,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env — 실제 값은 절대 커밋하지 않는다 (AGENTS "절대 하지 말 것")
-.env
-.env*.local
+.env*
 !.env.example
 
 # vercel
@@ -37,3 +36,6 @@ yarn-error.log*
 
 # prisma
 /prisma/generated
+
+# vercel — 프로젝트 링크(projectId·orgId)와 CLI가 내려주는 토큰
+.vercel
