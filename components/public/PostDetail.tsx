@@ -71,7 +71,7 @@ function PostBody({ post }: { post: PublicPost }) {
     case "SERMON":
       return <SermonView content={content} />;
     case "PRAISE":
-      return <PraiseView content={content} />;
+      return <PraiseView content={content} title={post.title} />;
     case "TECH":
       return <TechView content={content} />;
   }

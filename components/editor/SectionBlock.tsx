@@ -32,10 +32,22 @@ export type SectionBlockProps = {
   lyrics?: string;
   /** 정렬·삭제 등 블록 조작 (M2) */
   controls?: ReactNode;
+  /**
+   * 가사가 빈 섹션에 적을 안내. **공개 지면에서는 null**이다 — 빈 섹션은 연주 구간이고,
+   * "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다(실제로 공개 지면에 새어 나갔다).
+   */
+  emptyLabel?: string | null;
   className?: string;
 };
 
-export function SectionBlock({ label, ordinal, lyrics, controls, className }: SectionBlockProps) {
+export function SectionBlock({
+  label,
+  ordinal,
+  lyrics,
+  controls,
+  emptyLabel = "가사를 적어보세요",
+  className,
+}: SectionBlockProps) {
   return (
     <section className={cn("group border border-edge bg-[#fffefa]", className)}>
       <header className="flex items-center gap-2 border-b border-dashed border-[#ede5d3] px-3 py-[9px]">
@@ -57,7 +69,7 @@ export function SectionBlock({ label, ordinal, lyrics, controls, className }: Se
           lyrics ? "text-ink" : "text-[#c4bcaa]",
         )}
       >
-        {lyrics || "가사를 적어보세요"}
+        {lyrics || emptyLabel}
       </p>
     </section>
   );
