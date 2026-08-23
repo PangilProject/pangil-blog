@@ -41,14 +41,7 @@ function filled(): PraiseFormValues {
 }
 
 function renderEditor(overrides: Partial<Parameters<typeof PraiseEditor>[0]> = {}) {
-  return render(
-    <PraiseEditor
-      postId="post-1"
-      initialValues={filled()}
-      afterPublishHref="/admin/posts"
-      {...overrides}
-    />,
-  );
+  return render(<PraiseEditor postId="post-1" initialValues={filled()} {...overrides} />);
 }
 
 beforeEach(() => {
@@ -226,7 +219,7 @@ describe("PraiseEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/admin/posts");
+    expect(push).toHaveBeenCalledWith("/faith/pr-1");
   });
 
   it("묵상과 기도가 비면 막는다", async () => {

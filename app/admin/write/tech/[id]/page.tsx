@@ -25,7 +25,6 @@ export default async function EditTechPage({ params }: PageProps<"/admin/write/t
         tags,
       })}
       categories={categories}
-      afterPublishHref="/admin/posts"
     />
   );
 }

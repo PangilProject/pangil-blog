@@ -24,6 +24,7 @@ import {
   toDraftContent,
 } from "@/lib/editor/qtForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { publicPostPath } from "@/lib/record/paths";
 
 /**
  * A-04 QT 에디터 (02 §5.2).
@@ -46,10 +47,9 @@ export type QtEditorProps = {
    * "가져오지 못했어요"를 띄우면 거짓말이다. 실패 띠는 크롤러가 실제로 실패했을 때만 띄운다
    */
   crawl?: { status: "ok" | "failed"; fetchedAt?: string } | null;
-  afterPublishHref: string;
 };
 
-export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtEditorProps) {
+export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -131,7 +131,9 @@ export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtE
       }
 
       autosave.clearMirror();
-      router.push(afterPublishHref);
+      // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라
+      // 발행 결과의 slug에서 나온다 — 방금 만들어진 주소라 여기서만 알 수 있다
+      router.push(publicPostPath("QT", result.slug));
     } finally {
       setIsPublishing(false);
     }

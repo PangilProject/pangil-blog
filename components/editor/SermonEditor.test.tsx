@@ -27,11 +27,7 @@ vi.mock("next/navigation", () => ({
  */
 function renderEditor() {
   return render(
-    <SermonEditor
-      postId="post-1"
-      initialValues={{ ...EMPTY_SERMON_FORM, title: "" }}
-      afterPublishHref="/admin/posts"
-    />,
+    <SermonEditor postId="post-1" initialValues={{ ...EMPTY_SERMON_FORM, title: "" }} />,
   );
 }
 
@@ -161,11 +157,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
   it("effect가 두 번 실행돼도 저장이 나간다", async () => {
     render(
       <StrictMode>
-        <SermonEditor
-          postId="post-1"
-          initialValues={{ ...EMPTY_SERMON_FORM }}
-          afterPublishHref="/admin/posts"
-        />
+        <SermonEditor postId="post-1" initialValues={{ ...EMPTY_SERMON_FORM }} />
       </StrictMode>,
     );
 
@@ -185,11 +177,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
 
     render(
       <StrictMode>
-        <SermonEditor
-          postId={null}
-          initialValues={{ ...EMPTY_SERMON_FORM }}
-          afterPublishHref="/admin/posts"
-        />
+        <SermonEditor postId={null} initialValues={{ ...EMPTY_SERMON_FORM }} />
       </StrictMode>,
     );
 
@@ -218,7 +206,7 @@ describe("SermonEditor — 발행", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("설교 제목을 적어주세요");
   });
 
-  it("갖춰지면 발행하고 글 관리로 이동한다 (공개 상세는 M3)", async () => {
+  it("갖춰지면 발행하고 그 글의 공개 지면으로 간다 (02 §3.2)", async () => {
     render(
       <SermonEditor
         postId="post-1"
@@ -229,7 +217,6 @@ describe("SermonEditor — 발행", () => {
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
           summary: { type: "doc", content: [] },
         }}
-        afterPublishHref="/admin/posts"
       />,
     );
 
@@ -238,7 +225,7 @@ describe("SermonEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/admin/posts");
+    expect(push).toHaveBeenCalledWith("/faith/sr-1");
   });
 
   it("발행이 실패하면 이동하지 않고 사유를 남긴다", async () => {
@@ -254,7 +241,6 @@ describe("SermonEditor — 발행", () => {
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
           summary: { type: "doc", content: [] },
         }}
-        afterPublishHref="/admin/posts"
       />,
     );
 

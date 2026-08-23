@@ -20,7 +20,6 @@ export default async function EditQtPage({ params }: PageProps<"/admin/write/qt/
     <QtEditor
       postId={post.id}
       initialValues={fromDraftContent(post.content.ok ? post.content.content : null, post.title)}
-      afterPublishHref="/admin/posts"
     />
   );
 }
