@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PRAISE_SECTION_LABELS } from "@/lib/content/schema";
+import { isComposing } from "@/lib/editor/ime";
 import type { PraiseSectionFormValue } from "@/lib/editor/praiseForm";
 import { sectionOrdinals } from "@/lib/editor/praiseForm";
 import { cn } from "@/lib/utils";
@@ -178,6 +179,9 @@ function SortableSection({
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     const target = event.currentTarget;
+
+    // 가사를 한글로 치는 중의 Enter는 조합 확정이다. 여기서 받으면 섹션이 멋대로 갈린다
+    if (isComposing(event)) return;
 
     if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
       const to = event.key === "ArrowUp" ? index - 1 : index + 1;

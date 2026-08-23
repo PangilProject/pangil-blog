@@ -154,6 +154,18 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
     expect(screen.getByLabelText("Verse 1 가사")).toHaveValue("주님의 시간에");
   });
 
+  it("한글 조합 중인 엔터로는 섹션이 갈리지 않는다 (IME)", async () => {
+    renderEditor();
+
+    const lyrics = screen.getByLabelText("Verse 가사");
+    await act(async () => {
+      fireEvent.change(lyrics, { target: { value: "주님의 시간에\n" } });
+      fireEvent.keyDown(lyrics, { key: "Enter", isComposing: true });
+    });
+
+    expect(screen.queryByLabelText("Verse 2 가사")).toBeNull();
+  });
+
   it("빈 섹션에서 Backspace로 지운다", async () => {
     renderEditor({
       initialValues: {
