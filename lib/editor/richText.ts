@@ -14,9 +14,22 @@ export type RichTextValue = { type: "doc"; content: unknown[] };
 
 export const EMPTY_RICH_TEXT: RichTextValue = { type: "doc", content: [] };
 
-/** 폼 값 → 저장 계약. 같은 JSON을 다르게 좁힌 타입이라 여기서만 맞춘다 */
+/**
+ * 폼 값 → 저장 계약 (ADR-002 Json 경계).
+ *
+ * **JSON 왕복이 꼭 필요하다.** ProseMirror는 노드의 attrs를 `Object.create(null)`로 만든다
+ * (프로토타입 없는 객체). React의 Server Action 직렬화는 그걸 평범한 객체로 보내지 못해
+ * 서버에서는 함수(임시 참조)로 도착하고, z.json()이 거부해 저장이 통째로 실패한다.
+ *
+ * attrs를 갖는 노드는 **제목과 코드 블록**이고 문단·목록·인용은 attrs가 없다 — 그래서
+ * 제목이나 코드 블록을 하나 넣는 순간 그 글의 모든 저장이 조용히 실패했다. 실제로 그랬다.
+ *
+ * 왕복 비용은 글 하나 크기(수십 KB)이고 저장은 1초 이상 간격이다. 무엇보다 이 경계의 계약이
+ * "content 컬럼에 들어갈 수 있는 값만 남긴다"이므로, JSON으로 표현 못 하는 값은 여기서
+ * 떨어지는 것이 맞다.
+ */
 export function toTiptapDoc(value: RichTextValue): TiptapDoc {
-  return value as unknown as TiptapDoc;
+  return JSON.parse(JSON.stringify(value)) as TiptapDoc;
 }
 
 /**
