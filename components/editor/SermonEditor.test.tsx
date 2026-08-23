@@ -66,6 +66,11 @@ describe("SermonEditor — 방해 요소 제로 (02 §5.3)", () => {
     expect(screen.getByText("예배 후 요약 (선택)")).toBeInTheDocument();
   });
 
+  it("본문에 기록 조판이 붙는다 — 없으면 서식이 적용돼도 본문과 똑같이 보인다", () => {
+    renderEditor();
+    expect(screen.getByLabelText("설교 본문").className).toContain("record-prose");
+  });
+
   it("툴바는 슬림 구성이다 — 라이브 속기를 방해하지 않는다", () => {
     renderEditor();
 

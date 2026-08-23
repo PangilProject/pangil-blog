@@ -233,3 +233,107 @@
     @apply bg-paper text-ink;
   }
 }
+
+/* ============================================================
+   기록 조판 (.record-prose) — 03 §5.2
+   에디터 안(Tiptap)과 공개 지면(M3 renderRichText)이 같은 조판을 쓴다.
+   Tailwind preflight가 h2/h3/ul/blockquote 기본 스타일을 지우므로, 서식이 실제로
+   달라 보이게 하는 규칙은 여기가 유일한 출처다 — 두 곳에 적으면 반드시 어긋난다.
+   ============================================================ */
+.record-prose {
+  font-size: 15px;
+  line-height: var(--lh-body);
+  color: var(--ink);
+}
+
+.record-prose > * + * {
+  margin-top: 0.9em;
+}
+
+/* 제목은 세리프 — "성별된" 자리의 목소리(03 §2.2) */
+.record-prose h2,
+.record-prose h3 {
+  font-family: var(--stack-serif);
+  font-weight: 700;
+  line-height: 1.5;
+  margin-top: 1.6em;
+}
+
+.record-prose h2 {
+  font-size: 19px;
+}
+
+.record-prose h3 {
+  font-size: 16.5px;
+}
+
+.record-prose ul,
+.record-prose ol {
+  padding-left: 1.35em;
+}
+
+.record-prose ul {
+  list-style: disc;
+}
+
+.record-prose ol {
+  list-style: decimal;
+}
+
+.record-prose li::marker {
+  color: var(--faint);
+}
+
+.record-prose li + li {
+  margin-top: 0.35em;
+}
+
+/* 인용은 액센트 세로 괘 + 세리프. 말씀 인용과 같은 문법이다(03 §5.2) */
+.record-prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 0.1em 0 0.1em 1.1em;
+  font-family: var(--stack-serif);
+  line-height: var(--lh-scripture);
+  color: var(--ink-soft);
+}
+
+.record-prose hr {
+  border: 0;
+  border-top: 1px solid var(--edge);
+  margin: 1.8em 0;
+}
+
+.record-prose strong {
+  font-weight: 700;
+}
+
+.record-prose code {
+  font-family: var(--stack-code);
+  font-size: 0.92em;
+  background: var(--crawl);
+  border: 1px solid var(--edge);
+  padding: 0.1em 0.3em;
+}
+
+/* 코드 블록은 먹 배경 위의 코드(03 §3.2). Shiki 하이라이팅은 M3에서 얹는다 */
+.record-prose pre {
+  background: var(--ink);
+  color: var(--card);
+  font-family: var(--stack-code);
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 1em 1.1em;
+  overflow-x: auto;
+}
+
+.record-prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+/* 빈 문단의 자리를 지켜 커서가 튀지 않게 한다 */
+.record-prose p:empty::after {
+  content: "\00a0";
+}
