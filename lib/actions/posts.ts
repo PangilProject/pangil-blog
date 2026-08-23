@@ -13,6 +13,7 @@ import {
   publishPostRecord,
   saveDraft,
 } from "@/lib/db/posts";
+import { setPostTags } from "@/lib/db/tags";
 import type { RecordType } from "@/lib/record/callNumber";
 import { extractSearchText } from "@/lib/render/searchText";
 import { postRevalidationTags } from "@/lib/revalidate/tags";
@@ -38,6 +39,8 @@ export type UpsertDraftInput = {
   categoryId?: string | null;
   excerpt?: string | null;
   thumbnailUrl?: string | null;
+  /** TECH 전용. 넘기지 않으면 기존 태그를 건드리지 않는다 */
+  tags?: string[];
 };
 
 export type UpsertDraftResult =
@@ -65,6 +68,9 @@ export const upsertDraft = withAdmin(
         title: input.title,
         content: parsed.data,
       });
+
+      if (input.tags) await setPostTags(created.id, input.type, input.tags);
+
       return { ok: true, id: created.id, savedAt: created.updatedAt };
     }
 
@@ -76,6 +82,9 @@ export const upsertDraft = withAdmin(
       excerpt: input.excerpt,
       thumbnailUrl: input.thumbnailUrl,
     });
+
+    // 태그를 안 넘긴 에디터(QT·설교·찬양)의 저장이 기존 태그를 지우지 않는다
+    if (input.tags) await setPostTags(input.id, input.type, input.tags);
 
     // 발행된 글의 수정 저장은 즉시 공개 반영이다(04 §1.2 "별도 반영 버튼 없음")
     if (saved.status === "PUBLISHED") {

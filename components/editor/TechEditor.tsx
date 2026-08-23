@@ -1,0 +1,265 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+
+import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
+import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
+import { EditorShell } from "@/components/editor/EditorShell";
+import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
+import { RichTextField } from "@/components/editor/RichTextField";
+import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { TagInput } from "@/components/editor/TagInput";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { publishPost, upsertDraft } from "@/lib/actions/posts";
+import type { CategoryOption } from "@/lib/db/categories";
+import {
+  deriveExcerpt,
+  EMPTY_TECH_FORM,
+  type TechFormValues,
+  TechPublishFormSchema,
+  toDraftContent,
+  toDraftMeta,
+} from "@/lib/editor/techForm";
+import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+
+/**
+ * A-07 기술 에디터 (02 §5.5).
+ *
+ * 최우선 인터랙션은 마크다운 붙여넣기다(lib/editor/markdownPaste) — AI와 정리한 글을
+ * 붙여넣으면 그 자리에서 서식이 된다. 좌우 분할·소스/미리보기 분리는 금지다(ADR-001).
+ *
+ * content에는 body만 들어가고 카테고리·요약·썸네일·태그는 posts 컬럼과 태그 테이블로
+ * 간다(05 §2). 갈라지는 지점은 techForm의 조립 함수 두 개뿐이다.
+ */
+
+export type TechEditorProps = {
+  postId: string | null;
+  initialValues: TechFormValues;
+  categories: CategoryOption[];
+  afterPublishHref: string;
+};
+
+export function TechEditor({
+  postId,
+  initialValues,
+  categories,
+  afterPublishHref,
+}: TechEditorProps) {
+  const router = useRouter();
+  const [id, setId] = useState(postId);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const form = useForm<TechFormValues>({ defaultValues: initialValues ?? EMPTY_TECH_FORM });
+  const { control, register, setValue, watch, handleSubmit } = form;
+
+  const save = useCallback(
+    async (values: TechFormValues) => {
+      const result = await upsertDraft({
+        id: id ?? undefined,
+        type: "TECH",
+        title: values.title,
+        content: toDraftContent(values),
+        ...toDraftMeta(values),
+      });
+
+      if (!result.ok) {
+        throw new Error(`초안 저장 실패: ${result.reason}`);
+      }
+
+      if (!id) {
+        setId(result.id);
+        router.replace(`/admin/write/tech/${result.id}`);
+      }
+    },
+    [id, router],
+  );
+
+  const autosave = useEditorAutosave<TechFormValues>({ type: "TECH", id: id ?? "new", save });
+
+  useEffect(() => {
+    const subscription = watch((values) => {
+      autosave.onChange(values as TechFormValues);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, autosave]);
+
+  const onPublish = handleSubmit(async (values) => {
+    const validated = TechPublishFormSchema.safeParse(values);
+    if (!validated.success) {
+      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없습니다");
+      return;
+    }
+
+    setPublishError(null);
+    setIsPublishing(true);
+
+    try {
+      await autosave.flush();
+
+      const target = id;
+      if (!target) {
+        setPublishError("아직 저장되지 않았어요. 잠시 후 다시 시도해 주세요");
+        return;
+      }
+
+      const result = await publishPost(target);
+      if (!result.ok) {
+        setPublishError(`발행하지 못했어요 (${result.reason})`);
+        return;
+      }
+
+      autosave.clearMirror();
+      router.push(afterPublishHref);
+    } finally {
+      setIsPublishing(false);
+    }
+  });
+
+  return (
+    <EditorFocusProvider>
+      <EditorShell
+        breadcrumb={
+          <>
+            관리 · <b className="text-ink">기술 글</b>
+          </>
+        }
+        indicator={
+          <SaveIndicator
+            state={toSaveState(autosave.state)}
+            savedAgo={autosave.savedAt ? "방금" : undefined}
+          />
+        }
+        actions={
+          <>
+            <Button size="sm" type="button" onClick={() => void autosave.flush()}>
+              임시저장
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              type="button"
+              disabled={isPublishing}
+              onClick={() => void onPublish()}
+            >
+              발행
+            </Button>
+          </>
+        }
+        toolbar={<ConnectedEditorToolbar hint="마크다운을 붙여넣으면 그 자리에서 서식이 됩니다" />}
+        banner={
+          autosave.recovery ? (
+            <RecoveryBanner
+              savedAt={new Date(autosave.recovery.updatedAt).toLocaleString("ko-KR")}
+              onRestore={() => {
+                const recovered = autosave.recovery?.value;
+                if (recovered) {
+                  for (const [key, value] of Object.entries(recovered)) {
+                    setValue(key as keyof TechFormValues, value as never);
+                  }
+                }
+                autosave.dismissRecovery();
+              }}
+              onDismiss={autosave.dismissRecovery}
+            />
+          ) : null
+        }
+      >
+        <div className="flex flex-col gap-5 px-[6%] pt-8">
+          <input
+            {...register("title")}
+            placeholder="제목"
+            aria-label="제목"
+            className="border-edge border-b bg-transparent pb-2 font-serif text-xl outline-none placeholder:text-faint"
+          />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger
+                    aria-label="카테고리"
+                    className="min-w-[140px] rounded-none text-[13px]"
+                  >
+                    <SelectValue placeholder="카테고리" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id} className="text-[13px]">
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+
+            <div className="min-w-[220px] flex-1">
+              <Controller
+                control={control}
+                name="tags"
+                render={({ field }) => <TagInput value={field.value} onChange={field.onChange} />}
+              />
+            </div>
+          </div>
+
+          <Controller
+            control={control}
+            name="body"
+            render={({ field }) => (
+              <div className="border border-edge">
+                <RichTextField
+                  ariaLabel="본문"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="마크다운을 붙여넣거나 바로 적어보세요"
+                  contentClassName="min-h-[420px] px-4 py-3"
+                />
+              </div>
+            )}
+          />
+
+          <details className="border-edge border-t pt-4">
+            <summary className="cursor-pointer font-typewriter text-[11px] text-faint">
+              목록 카드 (요약 · 썸네일)
+            </summary>
+            <div className="mt-3 flex flex-col gap-3">
+              {/* 비워두면 본문 앞부분을 쓴다(02 §5.5) — 그래서 placeholder가 그 파생값이다 */}
+              <textarea
+                {...register("excerpt")}
+                rows={2}
+                placeholder={deriveExcerpt(watch("body")) || "비워두면 본문 앞부분을 씁니다"}
+                aria-label="요약"
+                className="resize-y border border-edge bg-card px-3 py-2 text-[13px] outline-none placeholder:text-faint"
+              />
+              <input
+                {...register("thumbnailUrl")}
+                placeholder="썸네일 주소 (업로드는 M3)"
+                aria-label="썸네일 주소"
+                inputMode="url"
+                className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[11.5px] outline-none placeholder:text-faint"
+              />
+            </div>
+          </details>
+
+          {publishError && (
+            <p role="alert" className="font-typewriter text-[11.5px] text-(--accent)">
+              {publishError}
+            </p>
+          )}
+        </div>
+      </EditorShell>
+    </EditorFocusProvider>
+  );
+}
