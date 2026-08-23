@@ -37,6 +37,9 @@
   - `DIRECT_URL` = direct(포트 **5432**) — `prisma migrate`
   - 지정 위치는 **`prisma.config.ts`** — Prisma 7부터 `schema.prisma`의 `datasource`에서 `url`/`directUrl`이 제거됐다(구현 착수 시 확인, 2026-08-20). `datasource.url`에 `DIRECT_URL`(migrate/introspect)을 넣고, 런타임 `PrismaClient`는 driver adapter에 `DATABASE_URL`(pooled)을 넘긴다. 이중 URL의 목적(런타임 pooled / 마이그레이션 direct)은 그대로다
 - **각 프로젝트에 따로**: Storage 버킷 `post-images`, 관리자 계정(+MFA), `pg_trgm` 확장(`create extension if not exists pg_trgm`).
+- **`migrate deploy` 실행 위치 = Vercel 빌드 안**(구현 시 확정, 2026-08-23 · `scripts/deploy.mts`). 스키마와 코드가 한 커밋에 있으므로, 마이그레이션이 실패하면 그 코드도 배포되지 않아야 한다. 단서 둘:
+  - **production에서만 돈다.** 프리뷰 배포가 prod 스키마를 바꾸면 그게 사고다. 로컬 빌드에서도 건너뛴다(dev는 `migrate dev` 담당)
+  - **카테고리 시드는 비어 있을 때만** 넣는다(부트스트랩). 배포마다 upsert하면 나중에 A-08 설정 화면에서 바꾼 이름이 되돌아간다
 - **dev 7일 비활성 정지 주의**: prod는 크롤러 매일 쓰기로 자연 방어, **dev는 아님**. 개발 공백이 길면 대시보드에서 재개(치명적 아님).
 - **크롤러(Actions)는 prod ingest만** 겨냥. dev 크롤 테스트가 필요하면 dev ingest URL을 별도 지정.
 
