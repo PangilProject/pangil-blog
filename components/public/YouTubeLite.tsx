@@ -41,7 +41,7 @@ export function YouTubeLite({ videoId, title }: { videoId: string; title: string
         event.preventDefault();
         setPlaying(true);
       }}
-      aria-label={`${title} 재생`}
+      aria-label={`${title} 듣기`}
       className="group relative block border border-edge"
     >
       {/* biome-ignore lint/performance/noImgElement: 외부 썸네일 — next/image 전환은 이미지 업로드와 함께 */}
@@ -51,9 +51,20 @@ export function YouTubeLite({ videoId, title }: { videoId: string; title: string
         loading="lazy"
         className="aspect-video w-full object-cover"
       />
+      {/* 썸네일 위에 얇은 먹 막을 깐다 — 종이 명판이 어떤 이미지 위에서도 읽힌다 */}
+      <span aria-hidden className="absolute inset-0 bg-ink/20" />
+
+      {/*
+        재생 버튼은 대시보드의 명판(plate)과 같은 물성이다: 종이색 바탕 · 각진 모서리 ·
+        타자기체 · 인주 빨강 글자. hover는 "집어 든다"(들어올림) — 확대가 아니다(03 §2.3).
+        유튜브의 둥근 빨간 버튼을 그대로 두면 지면에서 그것만 다른 세계가 된다.
+      */}
       <span className="absolute inset-0 flex items-center justify-center">
-        <span className="border border-card/40 bg-ink/70 px-3.5 py-2 font-typewriter text-[12px] text-card transition-transform duration-200 ease-record group-hover:scale-105">
-          ▶ 재생
+        <span className="flex items-center gap-2 border border-edge bg-card px-[18px] py-2.5 font-typewriter text-[11.5px] text-(--accent) shadow-card transition-transform duration-200 ease-record group-hover:-translate-y-[2px]">
+          <span aria-hidden className="text-[9px] leading-none">
+            ▶
+          </span>
+          듣기
         </span>
       </span>
     </a>
