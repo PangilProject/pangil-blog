@@ -14,6 +14,10 @@ vi.mock("@/lib/actions/posts", () => ({
   publishPost: (id: string) => publishPost(id),
 }));
 
+vi.mock("@/lib/actions/images", () => ({
+  uploadPostImage: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, push }),
 }));
