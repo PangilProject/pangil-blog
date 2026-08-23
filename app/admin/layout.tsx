@@ -1,23 +1,15 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 
 /**
  * 관리 영역 레이아웃.
  *
- * Cache Components(ADR-003)에서는 `dynamic = "force-dynamic"`을 쓸 수 없다. 대신 이 영역은
- * **프리렌더하지 않는다**는 사실을 두 줄로 명시한다.
+ * **껍데기는 즉시, 내용은 흘려보낸다.** 관리 화면은 모두 쿠키로 인증을 확인하므로(getAdminUser가
+ * 첫 줄에서 `connection()`을 부른다) 내용은 요청이 있어야 나온다. 그 접근을 Suspense로 감싸지
+ * 않으면 Next가 "이 이동은 즉시 반응하지 못한다"고 경고한다 — 실제로 개발 로그가 매 이동마다
+ * 그 경고를 냈다.
  *
- * - `connection()`: 이 서브트리는 요청이 있어야 렌더된다. 관리 화면은 전부 인증 결과에 따라
- *   갈리고, 에디터는 Tiptap이 렌더 중 난수를 써서 빌드 시점에 그릴 수 없다(프리렌더는 재현
- *   가능한 출력만 허용한다)
- * - `instant = false`: 미리 그릴 껍데기가 없으므로 블로킹 라우트로 둔다. Suspense 자리를
- *   만드는 건 로그인 여부를 모른 채 관리 화면 틀을 보여주는 셈이다
- *
- * 공개 지면에서는 반대로 캐시가 기본이 된다.
+ * 레이아웃 자신은 데이터를 읽지 않는다. 그래야 이동한 순간 이 자리까지는 바로 그려진다.
  */
-export const instant = false;
-
-export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-  await connection();
-
-  return children;
+export default function AdminLayout({ children }: LayoutProps<"/admin">) {
+  return <Suspense fallback={<div className="min-h-full bg-paper" />}>{children}</Suspense>;
 }

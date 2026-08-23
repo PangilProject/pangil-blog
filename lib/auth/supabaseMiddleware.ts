@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from "next/server";
 import { hasSupabaseAuthEnv, isAdminEmail, readSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
 
 /**
- * middleware에서 세션을 확인하고, 갱신된 인증 쿠키를 응답에 실어 보낸다.
+ * proxy(구 middleware)에서 세션을 확인하고, 갱신된 인증 쿠키를 응답에 실어 보낸다.
  * 실 보안 경계는 여기 하나가 아니다 — 변경 액션은 lib/actions/withAdmin이 다시 막는다(05 §3.2).
  */
 export async function isAdminRequest(
