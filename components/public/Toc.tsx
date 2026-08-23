@@ -75,7 +75,9 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
       {/* 데스크탑: 우측 여백 sticky */}
       <nav
         aria-label="목차"
-        className="sticky top-10 hidden max-h-[70vh] overflow-y-auto border-edge border-l pl-4 lg:block"
+        // sticky는 이 요소가 아니라 바깥 flex 아이템에 걸린다(지면 라우트) — 여기 걸면 부모가
+        // 이 높이만큼만 커서 붙을 자리가 없다
+        className="hidden border-edge border-l pl-4 lg:block"
       >
         <p className="mb-2.5 font-typewriter text-[10.5px] tracking-[0.14em] text-faint">목차</p>
         {list}

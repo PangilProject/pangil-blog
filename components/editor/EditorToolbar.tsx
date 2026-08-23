@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CODE_LANGUAGES } from "@/lib/editor/codeLanguages";
 import { cn } from "@/lib/utils";
 
 /**
@@ -85,6 +86,12 @@ export type EditorToolbarProps = {
   activeCommands?: ToolbarCommand[];
   onBlockStyleChange?: (style: BlockStyle) => void;
   onCommand?: (command: ToolbarCommand) => void;
+  /**
+   * 커서가 코드 블록 안일 때의 언어. null이면 언어 선택을 놓지 않는다 —
+   * 코드 블록이 아닌 자리에서 언어 목록이 떠 있으면 무엇에 적용되는지 알 수 없다
+   */
+  codeLanguage?: string | null;
+  onCodeLanguageChange?: (language: string) => void;
   /** 우측 힌트 — "마크다운 단축 입력도 됩니다" 등 */
   hint?: string;
   className?: string;
@@ -96,6 +103,8 @@ export function EditorToolbar({
   activeCommands = [],
   onBlockStyleChange,
   onCommand,
+  codeLanguage,
+  onCodeLanguageChange,
   hint,
   className,
 }: EditorToolbarProps) {
@@ -129,6 +138,31 @@ export function EditorToolbar({
           ))}
         </SelectContent>
       </Select>
+
+      {/*
+        코드 블록 안에서만 언어를 고른다(02 §5.5 "코드 블록(언어 지정)"). 고정 툴바 안에
+        있으므로 떠다니는 UI가 아니다(ADR-001 §5). ```ts처럼 울타리에 적는 길도 그대로 있다.
+      */}
+      {codeLanguage !== null && codeLanguage !== undefined && (
+        <>
+          <Separator />
+          <Select value={codeLanguage} onValueChange={(value) => onCodeLanguageChange?.(value)}>
+            <SelectTrigger
+              aria-label="코드 언어"
+              className="min-w-[104px] rounded-none text-[13px] text-ink"
+            >
+              <SelectValue placeholder="언어" />
+            </SelectTrigger>
+            <SelectContent>
+              {CODE_LANGUAGES.map((language) => (
+                <SelectItem key={language.value} value={language.value} className="text-[13px]">
+                  {language.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
 
       <Separator />
 

@@ -1,5 +1,5 @@
 import { CopyButton } from "@/components/public/CopyButton";
-import { languageLabel } from "@/lib/render/languageLabel";
+import { codeLanguageLabel } from "@/lib/editor/codeLanguages";
 
 /**
  * 코드 블록 (03 §3.2 · 04 §3.2) — 먹 배경 위의 코드.
@@ -17,7 +17,7 @@ export function CodeBlock({
   /** Shiki가 만든 `<pre>` HTML. null이면 평문 */
   html: string | null;
 }) {
-  const label = languageLabel(language);
+  const label = codeLanguageLabel(language);
 
   return (
     <div className="my-[1.4em] border border-[#3a3630] bg-ink">

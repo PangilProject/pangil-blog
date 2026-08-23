@@ -3,6 +3,8 @@ import "server-only";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
+import { type CodeLanguage, normalizeCodeLanguage } from "@/lib/editor/codeLanguages";
+
 /**
  * 코드 하이라이팅 (04 §3.2).
  *
@@ -40,7 +42,9 @@ const INK_THEME = {
   ],
 };
 
-const LANGUAGE_LOADERS = {
+type LanguageLoader = () => Promise<{ default: unknown }>;
+
+export const LANGUAGE_LOADERS: Record<CodeLanguage, LanguageLoader> = {
   ts: () => import("shiki/langs/typescript.mjs"),
   tsx: () => import("shiki/langs/tsx.mjs"),
   js: () => import("shiki/langs/javascript.mjs"),
@@ -51,26 +55,12 @@ const LANGUAGE_LOADERS = {
   css: () => import("shiki/langs/css.mjs"),
   html: () => import("shiki/langs/html.mjs"),
   prisma: () => import("shiki/langs/prisma.mjs"),
-} as const;
-
-/** 별칭 — 붙여넣은 마크다운의 언어 표기는 제각각이다 */
-const ALIASES: Record<string, keyof typeof LANGUAGE_LOADERS> = {
-  typescript: "ts",
-  javascript: "js",
-  shell: "bash",
-  sh: "bash",
-  zsh: "bash",
-  console: "bash",
-  postgres: "sql",
-  postgresql: "sql",
-  scss: "css",
 };
 
-export function resolveLanguage(language: string | null): keyof typeof LANGUAGE_LOADERS | null {
-  if (!language) return null;
-  const key = language.trim().toLowerCase();
-  if (key in LANGUAGE_LOADERS) return key as keyof typeof LANGUAGE_LOADERS;
-  return ALIASES[key] ?? null;
+/** 고를 수 있는 언어(codeLanguages)와 문법을 싣는 언어가 같아야 한다 — 테스트로 고정한다 */
+export function resolveLanguage(language: string | null): CodeLanguage | null {
+  const normalized = normalizeCodeLanguage(language);
+  return normalized && normalized in LANGUAGE_LOADERS ? normalized : null;
 }
 
 type Highlighter = Awaited<ReturnType<typeof createHighlighterCore>>;
@@ -78,13 +68,14 @@ type Highlighter = Awaited<ReturnType<typeof createHighlighterCore>>;
 const highlighters = new Map<string, Promise<Highlighter>>();
 
 /** 언어별로 하이라이터를 만들어 프로세스 안에서 재사용한다 */
-function getHighlighter(language: keyof typeof LANGUAGE_LOADERS): Promise<Highlighter> {
+function getHighlighter(language: CodeLanguage): Promise<Highlighter> {
   const cached = highlighters.get(language);
   if (cached) return cached;
 
   const created = createHighlighterCore({
     themes: [INK_THEME],
-    langs: [LANGUAGE_LOADERS[language]()],
+    // 로더는 동적 import 그대로다. Shiki의 LanguageInput 타입이 그 형태를 받는다
+    langs: [LANGUAGE_LOADERS[language]() as never],
     engine: createJavaScriptRegexEngine(),
   });
 
