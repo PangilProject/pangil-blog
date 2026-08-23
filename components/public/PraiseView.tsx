@@ -1,5 +1,6 @@
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { RichTextBody } from "@/components/public/RichTextBody";
+import { YouTubeLite } from "@/components/public/YouTubeLite";
 import type { PostContent } from "@/lib/content/schema";
 import { parseYouTubeId } from "@/lib/praise/youtube";
 
@@ -9,11 +10,17 @@ import { parseYouTubeId } from "@/lib/praise/youtube";
  * 섹션 라벨(타자기) + 가사(세리프) + 묵상과 기도. Verse 번호는 저장값이 아니라 파생 계산이다
  * (04 §2.5) — 에디터와 같은 규칙을 쓴다.
  *
- * 영상은 지금 **썸네일 링크**다. 클릭 전 iframe을 심지 않는 것이 아일랜드 예산(04 §3.6)의
- * YouTube lite 방침이고, 클릭 후 재생까지는 M3 슬라이스 5에서 붙인다. 그때까지도 영상으로
- * 가는 길은 끊기지 않는다.
+ * 영상은 클릭 전에는 썸네일 한 장이고, 누르면 그 자리에서 재생된다(04 §3.6 YouTube lite).
+ * 지면을 열자마자 유튜브 스크립트를 받지 않는다.
  */
-export function PraiseView({ content }: { content: Extract<PostContent, { kind: "PRAISE" }> }) {
+export function PraiseView({
+  content,
+  title,
+}: {
+  content: Extract<PostContent, { kind: "PRAISE" }>;
+  /** 임베드의 접근성 이름에 쓴다 — URL을 읽어주면 아무 도움이 안 된다 */
+  title: string;
+}) {
   const videoId = parseYouTubeId(content.youtubeUrl);
 
   const labels = content.sections.map((section) =>
@@ -27,27 +34,7 @@ export function PraiseView({ content }: { content: Extract<PostContent, { kind: 
 
   return (
     <>
-      {videoId && (
-        <a
-          href={`https://www.youtube.com/watch?v=${videoId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group relative block border border-edge"
-        >
-          {/* biome-ignore lint/performance/noImgElement: 외부 썸네일 — next/image 전환은 M3 슬라이스 5 */}
-          <img
-            src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
-            alt="찬양 영상 썸네일"
-            loading="lazy"
-            className="aspect-video w-full object-cover"
-          />
-          <span className="absolute inset-0 flex items-center justify-center">
-            <span className="border border-card/40 bg-ink/70 px-3 py-1.5 font-typewriter text-[11px] text-card transition-transform duration-200 ease-record group-hover:scale-105">
-              ▶ 유튜브에서 듣기
-            </span>
-          </span>
-        </a>
-      )}
+      {videoId && <YouTubeLite videoId={videoId} title={title} />}
 
       <div className="flex flex-col gap-2.5">
         {content.sections.map((section, index) => {
@@ -61,6 +48,9 @@ export function PraiseView({ content }: { content: Extract<PostContent, { kind: 
               label={label}
               ordinal={(totals.get(label) ?? 0) > 1 ? next : undefined}
               lyrics={section.lyrics}
+              // 공개 지면에는 에디터 안내 문구를 두지 않는다 — 빈 섹션은 연주 구간이고
+              // "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다
+              emptyLabel={null}
             />
           );
         })}
