@@ -6,6 +6,7 @@ import {
   BLOCK_STYLES_BY_VARIANT,
   MARK_COMMANDS_BY_VARIANT,
 } from "@/components/editor/EditorToolbar";
+import { CODE_LANGUAGES } from "@/lib/editor/codeLanguages";
 
 describe("툴바 구성 차등 — 03 §5.3", () => {
   it("full(기술·큐티)은 문단 스타일 5종을 모두 낸다", () => {
@@ -32,5 +33,12 @@ describe("툴바 구성 차등 — 03 §5.3", () => {
     for (const style of BLOCK_STYLES_BY_VARIANT.full) {
       expect(BLOCK_STYLE_LABELS[style]).toBeTruthy();
     }
+  });
+});
+
+describe("코드 언어 선택 (02 §5.5)", () => {
+  it("고를 수 있는 언어가 목록에 있다", () => {
+    expect(CODE_LANGUAGES.map((language) => language.value)).toContain("ts");
+    expect(CODE_LANGUAGES.map((language) => language.value)).toContain("bash");
   });
 });

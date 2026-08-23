@@ -49,7 +49,11 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
           sticky인데(04 §3.4) 그 둘은 Toc 안에서 갈린다 — 두 벌로 놓으면 하이라이트 관찰자가
           두 개 돌고 nav 랜드마크가 중복된다
         */}
-        <div className="order-1 lg:order-2 lg:w-[13rem] lg:flex-none">
+        {/*
+          sticky는 **flex 아이템**에 걸어야 한다. 안쪽 nav에 걸면 그 부모(이 div)가 nav 높이만큼만
+          커서 붙어 움직일 여지가 없다 — 목차가 스크롤을 따라오지 않던 이유다
+        */}
+        <div className="order-1 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:w-[13rem] lg:flex-none lg:overflow-y-auto">
           <Toc headings={headings} />
         </div>
       </div>
