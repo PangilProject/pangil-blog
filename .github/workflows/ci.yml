@@ -19,6 +19,10 @@ jobs:
       # 시크릿이 아니다. 실제 값은 Vercel 환경변수 / Actions Secrets에만 둔다.
       DATABASE_URL: postgresql://user:password@localhost:6543/postgres?pgbouncer=true
       DIRECT_URL: postgresql://user:password@localhost:5432/postgres
+      # Supabase Auth도 형식만 맞춘 더미다. 빌드는 실제 인증 서버에 붙지 않는다
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+      ADMIN_EMAIL: ci@example.com
     steps:
       - uses: actions/checkout@v7
 
