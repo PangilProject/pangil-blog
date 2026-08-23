@@ -1,0 +1,276 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+
+import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
+import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
+import { EditorShell } from "@/components/editor/EditorShell";
+import { PraiseSectionList } from "@/components/editor/PraiseSectionList";
+import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
+import { RichTextField } from "@/components/editor/RichTextField";
+import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { Button } from "@/components/ui/button";
+import { publishPost, upsertDraft } from "@/lib/actions/posts";
+import { suggestTitleFromYouTube } from "@/lib/actions/praise";
+import {
+  emptyPraiseForm,
+  newSection,
+  type PraiseFormValues,
+  PraisePublishFormSchema,
+  toDraftContent,
+} from "@/lib/editor/praiseForm";
+import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { parseYouTubeId, youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/praise/youtube";
+
+/**
+ * A-06 찬양 에디터 (02 §5.4 · 04 §2.5).
+ *
+ * 흐름은 "URL 붙여넣기 → 제목 제안 → 가사 타이핑 → 묵상과 기도"다.
+ *
+ * 불변식:
+ * - 제안은 제목 칸이 비어 있을 때만 채운다. 적어둔 제목을 덮어쓰지 않는다
+ * - 가사에는 서식이 없다. 툴바 서식은 "묵상과 기도"에만 적용된다(02 §5.4)
+ * - 순서는 배열 인덱스가 유일한 진실이다(04 §2.5)
+ */
+
+export type PraiseEditorProps = {
+  postId: string | null;
+  initialValues: PraiseFormValues;
+  afterPublishHref: string;
+};
+
+export function PraiseEditor({ postId, initialValues, afterPublishHref }: PraiseEditorProps) {
+  const router = useRouter();
+  const [id, setId] = useState(postId);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const form = useForm<PraiseFormValues>({ defaultValues: initialValues ?? emptyPraiseForm() });
+  const { control, register, setValue, watch, handleSubmit, getValues } = form;
+
+  const sections = useFieldArray({ control, name: "sections" });
+  // 가사·라벨을 화면에 그리려면 값을 구독해야 한다. useFieldArray의 fields는 순서만 알려준다
+  const watchedSections = watch("sections");
+  const youtubeUrl = watch("youtubeUrl");
+  const videoId = parseYouTubeId(youtubeUrl);
+
+  const save = useCallback(
+    async (values: PraiseFormValues) => {
+      const result = await upsertDraft({
+        id: id ?? undefined,
+        type: "PRAISE",
+        title: values.title,
+        content: toDraftContent(values),
+      });
+
+      if (!result.ok) {
+        throw new Error(`초안 저장 실패: ${result.reason}`);
+      }
+
+      if (!id) {
+        setId(result.id);
+        router.replace(`/admin/write/praise/${result.id}`);
+      }
+    },
+    [id, router],
+  );
+
+  const autosave = useEditorAutosave<PraiseFormValues>({ type: "PRAISE", id: id ?? "new", save });
+
+  useEffect(() => {
+    const subscription = watch((values) => {
+      autosave.onChange(values as PraiseFormValues);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, autosave]);
+
+  /**
+   * 영상이 확정되면 제목을 제안한다. 조회 실패는 조용히 넘어간다 —
+   * 제안이 없으면 직접 적으면 되고, 그게 원래 하던 일이다(00 §7-4 폴백).
+   */
+  useEffect(() => {
+    if (!videoId) return;
+
+    let cancelled = false;
+    void (async () => {
+      const result = await suggestTitleFromYouTube(youtubeWatchUrl(videoId));
+      if (cancelled || !result.ok) return;
+
+      // 적어둔 제목을 덮지 않는다. 제안은 빈 칸을 채우는 일까지다
+      if (getValues("title").trim() !== "") return;
+      setValue("title", result.suggested, { shouldDirty: true, shouldTouch: true });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [videoId, getValues, setValue]);
+
+  const onPublish = handleSubmit(async (values) => {
+    const validated = PraisePublishFormSchema.safeParse(values);
+    if (!validated.success) {
+      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없습니다");
+      return;
+    }
+
+    setPublishError(null);
+    setIsPublishing(true);
+
+    try {
+      await autosave.flush();
+
+      const target = id;
+      if (!target) {
+        setPublishError("아직 저장되지 않았어요. 잠시 후 다시 시도해 주세요");
+        return;
+      }
+
+      const result = await publishPost(target);
+      if (!result.ok) {
+        setPublishError(`발행하지 못했어요 (${result.reason})`);
+        return;
+      }
+
+      autosave.clearMirror();
+      router.push(afterPublishHref);
+    } finally {
+      setIsPublishing(false);
+    }
+  });
+
+  const items = sections.fields.map((field, index) => ({
+    key: field.id,
+    value: watchedSections[index] ?? { id: field.id, label: "Verse", lyrics: "" },
+  }));
+
+  return (
+    <EditorFocusProvider>
+      <EditorShell
+        breadcrumb={
+          <>
+            관리 · <b className="text-ink">오늘의 찬양</b>
+          </>
+        }
+        indicator={
+          <SaveIndicator
+            state={toSaveState(autosave.state)}
+            savedAgo={autosave.savedAt ? "방금" : undefined}
+          />
+        }
+        actions={
+          <>
+            <Button size="sm" type="button" onClick={() => void autosave.flush()}>
+              임시저장
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              type="button"
+              disabled={isPublishing}
+              onClick={() => void onPublish()}
+            >
+              발행
+            </Button>
+          </>
+        }
+        toolbar={<ConnectedEditorToolbar variant="slim" hint="서식은 묵상과 기도에 적용됩니다" />}
+        banner={
+          autosave.recovery ? (
+            <RecoveryBanner
+              savedAt={new Date(autosave.recovery.updatedAt).toLocaleString("ko-KR")}
+              onRestore={() => {
+                const recovered = autosave.recovery?.value;
+                if (recovered) {
+                  for (const [key, value] of Object.entries(recovered)) {
+                    setValue(key as keyof PraiseFormValues, value as never);
+                  }
+                }
+                autosave.dismissRecovery();
+              }}
+              onDismiss={autosave.dismissRecovery}
+            />
+          ) : null
+        }
+      >
+        <div className="flex flex-col gap-5 px-[6%] pt-8">
+          <div className="flex flex-col gap-2">
+            <input
+              {...register("youtubeUrl")}
+              placeholder="유튜브 주소를 붙여넣어 주세요"
+              aria-label="유튜브 주소"
+              inputMode="url"
+              className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[12.5px] text-(--accent) outline-none placeholder:text-faint"
+            />
+
+            {videoId && (
+              // 붙여넣은 문자열이 아니라 id로 만든 주소를 넣는다(lib/praise/youtube)
+              <iframe
+                key={videoId}
+                src={youtubeEmbedUrl(videoId)}
+                title="찬양 영상 미리보기"
+                allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="aspect-video w-full border border-edge bg-ink"
+              />
+            )}
+          </div>
+
+          <input
+            {...register("title")}
+            placeholder="아티스트 - 곡명"
+            aria-label="찬양 제목"
+            className="border-edge border-b bg-transparent pb-2 font-serif text-xl outline-none placeholder:text-faint"
+          />
+
+          <div className="flex flex-col gap-2">
+            <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
+              가사 · 엔터 2회로 다음 섹션, Alt+↑↓로 순서 이동
+            </span>
+            <PraiseSectionList
+              items={items}
+              onLabelChange={(index, label) =>
+                setValue(`sections.${index}.label`, label, { shouldDirty: true })
+              }
+              onLyricsChange={(index, lyrics) =>
+                setValue(`sections.${index}.lyrics`, lyrics, { shouldDirty: true })
+              }
+              onAppendAfter={(index, label) => sections.insert(index + 1, newSection(label))}
+              onRemove={(index) => sections.remove(index)}
+              onMove={(from, to) => sections.move(from, to)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
+              묵상과 기도
+            </span>
+            <Controller
+              control={control}
+              name="meditationAndPrayer"
+              render={({ field }) => (
+                <div className="border border-edge">
+                  <RichTextField
+                    ariaLabel="묵상과 기도"
+                    variant="slim"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="가사를 묵상하며 떠오른 것과 기도를 적어보세요"
+                    contentClassName="min-h-[200px] px-4 py-3"
+                  />
+                </div>
+              )}
+            />
+          </div>
+
+          {publishError && (
+            <p role="alert" className="font-typewriter text-[11.5px] text-(--accent)">
+              {publishError}
+            </p>
+          )}
+        </div>
+      </EditorShell>
+    </EditorFocusProvider>
+  );
+}
