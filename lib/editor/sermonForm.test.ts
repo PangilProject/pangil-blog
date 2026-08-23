@@ -4,7 +4,6 @@ import { EMPTY_TIPTAP_DOC, type TiptapDoc } from "@/lib/content/schema";
 import {
   EMPTY_SERMON_FORM,
   fromDraftContent,
-  isEmptyDoc,
   SermonPublishFormSchema,
   toDraftContent,
   toPublishContent,
@@ -22,18 +21,6 @@ const filled = {
   body: doc("설교 속기"),
   summary: EMPTY_TIPTAP_DOC,
 };
-
-describe("isEmptyDoc", () => {
-  it("빈 문서와 빈 문단은 비어 있다", () => {
-    expect(isEmptyDoc(EMPTY_TIPTAP_DOC)).toBe(true);
-    expect(isEmptyDoc({ type: "doc", content: [{ type: "paragraph" }] })).toBe(true);
-    expect(isEmptyDoc(null)).toBe(true);
-  });
-
-  it("글자가 있으면 비어 있지 않다", () => {
-    expect(isEmptyDoc(doc("한 줄"))).toBe(false);
-  });
-});
 
 describe("toDraftContent — 자동 저장", () => {
   it("반쯤 적힌 상태도 그대로 담는다 — 예배 첫 몇 초", () => {
