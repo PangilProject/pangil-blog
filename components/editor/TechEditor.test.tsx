@@ -259,3 +259,26 @@ describe("TechEditor — 저장 실패 (04 §2.2)", () => {
     expect(upsertDraft.mock.calls[1]?.[0]?.id).toBe("created-1");
   });
 });
+
+describe("TechEditor — 카테고리 (02 §5.5 필드 2)", () => {
+  it("저장된 카테고리가 수정 진입에서 선택돼 있다", () => {
+    renderEditor({ initialValues: { ...filled(), categoryId: "cat-2" } });
+
+    expect(screen.getByLabelText("카테고리")).toHaveTextContent("트러블슈팅");
+  });
+
+  it("고른 카테고리가 저장 payload에 실린다", async () => {
+    renderEditor({ initialValues: { ...filled(), categoryId: "" } });
+
+    await act(async () => {
+      screen.getByLabelText("카테고리").focus();
+      fireEvent.keyDown(screen.getByLabelText("카테고리"), { key: "Enter" });
+    });
+    await act(async () => {
+      screen.getByText("트러블슈팅").click();
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(upsertDraft.mock.calls.at(-1)?.[0]?.categoryId).toBe("cat-2");
+  });
+});
