@@ -17,13 +17,6 @@ import {
  * 화면을 떠다니지 않으며, 미리보기 창을 열지 않는다.
  */
 
-/** 커서가 코드 블록 안이면 그 언어(없으면 빈 문자열), 아니면 null */
-function currentCodeLanguage(editor: Editor): string | null {
-  if (!editor.isActive("codeBlock")) return null;
-  const language = editor.getAttributes("codeBlock").language;
-  return typeof language === "string" ? language : "";
-}
-
 function currentBlockStyle(editor: Editor): BlockStyle {
   if (editor.isActive("heading", { level: 2 })) return "h2";
   if (editor.isActive("heading", { level: 3 })) return "h3";
@@ -108,11 +101,6 @@ export function ConnectedEditorToolbar({
       activeCommands={editor ? activeCommands(editor) : []}
       onBlockStyleChange={(style) => editor && applyBlockStyle(editor, style)}
       onCommand={(command) => editor && applyCommand(editor, command)}
-      codeLanguage={editor ? currentCodeLanguage(editor) : null}
-      onCodeLanguageChange={(language) =>
-        // 노드를 다시 만들지 않는다 — 속성만 바꾸므로 코드가 그대로 남는다
-        editor?.chain().focus().updateAttributes("codeBlock", { language }).run()
-      }
     />
   );
 }

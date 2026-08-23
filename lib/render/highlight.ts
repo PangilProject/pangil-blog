@@ -1,15 +1,17 @@
-import "server-only";
-
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
 import { type CodeLanguage, normalizeCodeLanguage } from "@/lib/editor/codeLanguages";
+import { INK_THEME } from "@/lib/render/inkTheme";
 
 /**
  * 코드 하이라이팅 (04 §3.2).
  *
- * **서버에서만 돈다.** 렌더 시점에 HTML을 만들어 두므로 클라이언트 JS는 0KB다 — 공개 지면의
- * 아일랜드 예산(04 §3.6)에 코드 하이라이팅은 없다. 복사 버튼만 아일랜드다.
+ * **공개 지면은 서버에서만 돈다.** 렌더 시점에 HTML을 만들어 두므로 공개 페이지의 클라이언트
+ * JS는 0KB다 — 아일랜드 예산(04 §3.6)에 하이라이팅은 없고 복사 버튼만 있다.
+ *
+ * 에디터(관리 화면)는 같은 하이라이터를 브라우저에서 쓴다. 쓰는 자리에서 색이 보여야 하고
+ * (ADR-001), 두 곳이 다른 엔진을 쓰면 색이 갈린다. 그래서 이 모듈은 server-only가 아니다.
  *
  * 언어는 쓰는 것만 싣는다(ts/js/tsx/json/bash/sql로 시작, 04 §3.2). 전체 문법을 싣으면
  * 서버 번들이 수 MB 늘고, 안 쓰는 언어를 위해 그 비용을 낼 이유가 없다.
@@ -17,30 +19,6 @@ import { type CodeLanguage, normalizeCodeLanguage } from "@/lib/editor/codeLangu
  * 정규식 엔진은 JS 엔진을 쓴다(oniguruma wasm 대신) — wasm 로딩이 서버리스 콜드 스타트에
  * 얹히는 것을 피한다.
  */
-
-/** 먹지 테마 (03 §3.2 · 04 §3.2) — 배경은 --ink, 글자는 종이색 계열 */
-const INK_THEME = {
-  name: "record-ink",
-  type: "dark" as const,
-  colors: {
-    "editor.background": "#2B2823",
-    "editor.foreground": "#F3EFE4",
-  },
-  settings: [
-    { scope: ["comment", "punctuation.definition.comment"], settings: { foreground: "#8B8474" } },
-    { scope: ["string", "constant.other.symbol"], settings: { foreground: "#C7B58A" } },
-    { scope: ["constant.numeric", "constant.language"], settings: { foreground: "#D8A25B" } },
-    { scope: ["keyword", "storage", "storage.type"], settings: { foreground: "#D98872" } },
-    { scope: ["entity.name.function", "support.function"], settings: { foreground: "#A8BFA0" } },
-    {
-      scope: ["entity.name.type", "support.type", "support.class"],
-      settings: { foreground: "#9DB4C0" },
-    },
-    { scope: ["variable", "meta.definition.variable"], settings: { foreground: "#F3EFE4" } },
-    { scope: ["entity.name.tag"], settings: { foreground: "#D98872" } },
-    { scope: ["entity.other.attribute-name"], settings: { foreground: "#C7B58A" } },
-  ],
-};
 
 type LanguageLoader = () => Promise<{ default: unknown }>;
 
@@ -81,6 +59,20 @@ function getHighlighter(language: CodeLanguage): Promise<Highlighter> {
 
   highlighters.set(language, created);
   return created;
+}
+
+/** 토큰 단위 하이라이팅 — 에디터의 decoration이 쓴다 */
+export async function highlightTokens(code: string, language: string | null) {
+  const resolved = resolveLanguage(language);
+  if (!resolved) return null;
+
+  try {
+    const highlighter = await getHighlighter(resolved);
+    return highlighter.codeToTokens(code, { lang: resolved, theme: INK_THEME.name });
+  } catch (error) {
+    console.error(`[highlight] ${resolved} 토큰화 실패:`, error);
+    return null;
+  }
 }
 
 /**
