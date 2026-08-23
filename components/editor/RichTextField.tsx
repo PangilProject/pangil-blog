@@ -1,5 +1,6 @@
 "use client";
 
+import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -37,6 +38,7 @@ export function RichTextField({
   value,
   onChange,
   variant = "full",
+  placeholder,
   ariaLabel,
   autoFocus = false,
   className,
@@ -54,6 +56,9 @@ export function RichTextField({
         codeBlock: variant === "slim" ? false : {},
       }),
       HeadingWithShiftedShortcuts.configure({ levels: variant === "slim" ? [3] : [2, 3] }),
+      // 빈 칸이 6개 놓이는 QT 답변에서는 자리 안내가 없으면 화면이 고장난 것처럼 보인다
+      // (02 §5.2 필드 6의 placeholder 문구). 실제 그리기는 .record-prose가 한다
+      ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
     ],
     // 저장 계약(z.json 배열)과 Tiptap의 JSONContent는 같은 JSON을 다르게 좁힌 타입이다.
     // 변환 지점은 이 위젯 경계 한 곳뿐이므로 여기서만 맞춰준다.
