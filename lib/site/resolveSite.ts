@@ -105,6 +105,20 @@ export function isInternalPath(pathname: string): boolean {
   );
 }
 
+/**
+ * 이미 사이트 세그먼트로 시작하는 경로인가 — `/faith/sr-1`, `/dev`.
+ *
+ * 호스트가 하나인 환경(로컬·Vercel 기본 주소)에서는 이 경로를 **그대로 통과**시킨다. 안 그러면
+ * `/faith/sr-1`이 `/hub/faith/sr-1`로 리라이트돼 404가 된다 — 발행 직후 이동이 실제로 그랬다.
+ *
+ * 실제 도메인에서는 통과시키지 않는다. `faith.○/sr-1`이 정규 URL이어야 하고, 루트 도메인에서
+ * 같은 글이 다른 주소로 또 열리면 그게 중복 URL이다.
+ */
+export function sitePrefixOf(pathname: string): SiteKey | null {
+  const label = pathname.split("/")[1];
+  return isSiteKey(label ?? null) ? (label as SiteKey) : null;
+}
+
 /** 호스트 분기 결과를 실제 라우트 경로로 바꾼다. `/` → `/hub`, `/tags/x` → `/faith/tags/x` */
 export function siteRewritePath(site: SiteKey, pathname: string): string {
   const suffix = pathname === "/" ? "" : pathname;

@@ -4,8 +4,10 @@ import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { isAdminRequest } from "@/lib/auth/supabaseMiddleware";
 import {
   isInternalPath,
+  isPreviewHost,
   resolveSite,
   siteHostsFromEnv,
+  sitePrefixOf,
   siteRewritePath,
 } from "@/lib/site/resolveSite";
 
@@ -37,8 +39,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const host = request.headers.get("host");
+
+  // 호스트가 하나인 환경(로컬·Vercel 기본 주소)에서는 이미 사이트 세그먼트로 시작하는 경로를
+  // 그대로 통과시킨다. 리라이트를 또 걸면 `/faith/sr-1`이 `/hub/faith/sr-1`이 되어 404다
+  if (isPreviewHost(host) && sitePrefixOf(pathname)) {
+    return NextResponse.next();
+  }
+
   const site = resolveSite({
-    host: request.headers.get("host"),
+    host,
     siteParam: request.nextUrl.searchParams.get("site"),
     hosts: siteHostsFromEnv(process.env),
   });

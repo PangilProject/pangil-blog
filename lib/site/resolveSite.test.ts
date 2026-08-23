@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isInternalPath, resolveSite, siteRewritePath } from "@/lib/site/resolveSite";
+import { isInternalPath, resolveSite, sitePrefixOf, siteRewritePath } from "@/lib/site/resolveSite";
 
 const HOSTS = {
   root: "pangil.example",
@@ -65,6 +65,26 @@ describe("resolveSite — ?site= 개발 폴백", () => {
 
   it("알 수 없는 ?site= 값은 무시한다", () => {
     expect(resolveSite({ host: "localhost", siteParam: "admin" })).toBe("hub");
+  });
+});
+
+describe("sitePrefixOf — 이미 사이트 세그먼트로 시작하는 경로", () => {
+  /**
+   * 호스트가 하나인 환경에서 `/faith/sr-1`을 또 리라이트하면 `/hub/faith/sr-1`이 되어 404다.
+   * 발행 직후 이동이 실제로 그랬다 — 그래서 이 판정을 테스트로 고정한다.
+   */
+  it("사이트 키로 시작하면 그 키를 돌려준다", () => {
+    expect(sitePrefixOf("/faith/sr-1")).toBe("faith");
+    expect(sitePrefixOf("/dev")).toBe("dev");
+    expect(sitePrefixOf("/hub/")).toBe("hub");
+  });
+
+  it("사이트 키가 아니면 null이다", () => {
+    expect(sitePrefixOf("/")).toBeNull();
+    expect(sitePrefixOf("/sr-1")).toBeNull();
+    expect(sitePrefixOf("/tags/next")).toBeNull();
+    // 실제 글 slug가 사이트 키처럼 생기는 일은 없다(faith·dev·hub는 예약어처럼 쓰인다)
+    expect(sitePrefixOf("/development/x")).toBeNull();
   });
 });
 
