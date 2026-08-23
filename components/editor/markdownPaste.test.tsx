@@ -27,11 +27,17 @@ function renderField(props: { variant?: "full" | "slim" } = {}) {
   return { onChange, body: screen.getByLabelText("본문") };
 }
 
+/**
+ * 클립보드는 물어본 형식만 답해야 한다. 아무 형식에나 같은 글자를 돌려주면 Tiptap의 코드 블록
+ * 확장이 `vscode-editor-data`를 JSON으로 파싱하다 터진다 — 실제로 CI를 빨갛게 만들었다.
+ */
 function paste(target: HTMLElement, { text, html = "" }: { text: string; html?: string }) {
+  const data: Record<string, string> = { "text/plain": text, "text/html": html };
+
   fireEvent.paste(target, {
     clipboardData: {
-      getData: (type: string) => (type === "text/html" ? html : text),
-      types: html === "" ? ["text/plain"] : ["text/plain", "text/html"],
+      getData: (type: string) => data[type] ?? "",
+      types: Object.keys(data).filter((type) => data[type] !== ""),
     },
   });
 }
