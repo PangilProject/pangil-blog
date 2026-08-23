@@ -337,3 +337,15 @@
 .record-prose p:empty::after {
   content: "\00a0";
 }
+
+/*
+  자리 안내 문구 (Tiptap Placeholder). 빈 칸이 6개 놓이는 QT 답변에서 필요하다(02 §5.2).
+  첫 문단에만 놓는다 — 모든 빈 줄에 뜨면 글 쓰는 중에 문구가 깜빡인다.
+*/
+.record-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--faint);
+  pointer-events: none;
+}
