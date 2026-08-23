@@ -92,6 +92,12 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
     expect(screen.getByLabelText("답변 2")).toBeInTheDocument();
   });
 
+  it("답변 칸의 높이는 편집 영역에 붙는다 — 감싼 div에 주면 아래 빈 자리에 커서가 안 잡힌다", () => {
+    renderEditor();
+
+    expect(screen.getByLabelText("답변 1").className).toContain("min-h-[52px]");
+  });
+
   it("주석은 추가·삭제할 수 있다 — 없는 날도 정상이다", async () => {
     renderEditor();
 

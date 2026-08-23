@@ -203,7 +203,7 @@ export function SermonEditor({ postId, initialValues, afterPublishHref }: Sermon
                   variant="slim"
                   value={field.value}
                   onChange={field.onChange}
-                  className="min-h-[420px]"
+                  contentClassName="min-h-[420px] px-4 py-3"
                 />
               </div>
             )}

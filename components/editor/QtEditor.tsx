@@ -378,7 +378,7 @@ function QuestionItem({
             value={field.value}
             onChange={field.onChange}
             placeholder="질문을 묵상하고 답을 적어보세요"
-            className="min-h-[52px]"
+            contentClassName="min-h-[52px] px-3.5 py-2.5"
           />
         )}
       />

@@ -31,6 +31,11 @@ export type RichTextFieldProps = {
   placeholder?: string;
   ariaLabel: string;
   autoFocus?: boolean;
+  /**
+   * 편집 영역(contenteditable) 자체의 클래스. 높이는 여기서 줘야 한다 — 감싼 div에 주면
+   * 글자 아래 빈 자리를 눌렀을 때 커서가 잡히지 않는다
+   */
+  contentClassName?: string;
   className?: string;
 };
 
@@ -41,6 +46,7 @@ export function RichTextField({
   placeholder,
   ariaLabel,
   autoFocus = false,
+  contentClassName,
   className,
 }: RichTextFieldProps) {
   const { setEditor, notifyChange } = useEditorFocus();
@@ -70,7 +76,7 @@ export function RichTextField({
         "aria-multiline": "true",
         // record-prose가 제목·목록·인용을 실제로 다르게 보이게 한다(03 §5.2).
         // 이게 없으면 서식이 적용돼도 본문과 똑같이 보인다 — 실제로 그랬다.
-        class: cn("record-prose min-h-[120px] px-4 py-3 outline-none"),
+        class: cn("record-prose px-4 py-3 outline-none", contentClassName ?? "min-h-[120px]"),
       },
     },
     onUpdate: ({ editor: instance }) => {
