@@ -71,6 +71,11 @@ describe("SermonEditor — 방해 요소 제로 (02 §5.3)", () => {
     expect(screen.getByLabelText("설교 본문").className).toContain("record-prose");
   });
 
+  it("본문 높이는 편집 영역에 붙는다 — 지면 아래를 눌러도 커서가 잡혀야 한다", () => {
+    renderEditor();
+    expect(screen.getByLabelText("설교 본문").className).toContain("min-h-[420px]");
+  });
+
   it("툴바는 슬림 구성이다 — 라이브 속기를 방해하지 않는다", () => {
     renderEditor();
 
