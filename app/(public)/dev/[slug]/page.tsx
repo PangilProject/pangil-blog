@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { PostDetail } from "@/components/public/PostDetail";
+import { Toc } from "@/components/public/Toc";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
+import { collectHeadings } from "@/lib/render/richText";
 
 /**
  * D-02 기술 글 상세 (02 §2.2) — SEO 주력 지면.
@@ -25,9 +27,32 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
 
   if (!post) notFound();
 
+  // 목차는 본문 밖 우측 여백에 서므로(04 §3.4) 지면 바깥에서 제목을 훑는다
+  const headings =
+    post.content.ok && post.content.content.kind === "TECH"
+      ? collectHeadings(post.content.content.body)
+      : [];
+
   return (
     <main className="px-[5%] py-10">
-      <PostDetail post={post} />
+      {/*
+        데스크탑에서는 지면 + 우측 여백 두 칸이다. 지면 폭은 본문 가독 폭(--container-measure)에
+        묶여 있고, 목차는 그 옆에 붙는다 — 지면을 좁히지 않는다
+      */}
+      <div className="mx-auto flex w-full max-w-[calc(var(--container-measure)+15rem)] flex-col lg:flex-row lg:items-start lg:gap-10">
+        <div className="order-2 min-w-0 flex-1 lg:order-1">
+          <PostDetail post={post} />
+        </div>
+
+        {/*
+          목차는 한 번만 놓는다. 모바일에서는 본문 위 접이식, 데스크탑에서는 우측 여백
+          sticky인데(04 §3.4) 그 둘은 Toc 안에서 갈린다 — 두 벌로 놓으면 하이라이트 관찰자가
+          두 개 돌고 nav 랜드마크가 중복된다
+        */}
+        <div className="order-1 lg:order-2 lg:w-[13rem] lg:flex-none">
+          <Toc headings={headings} />
+        </div>
+      </div>
     </main>
   );
 }

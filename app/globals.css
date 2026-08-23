@@ -364,3 +364,28 @@
   color: var(--faint);
   pointer-events: none;
 }
+
+/*
+  코드 블록 (03 §3.2 · 04 §3.2). Shiki가 만든 <pre>와 폴백 <pre>가 같은 조판을 쓴다.
+  래퍼(언어 라벨·복사 버튼)가 테두리를 그리므로 안쪽 pre는 여백만 갖는다. 배경은 Shiki가
+  인라인으로 칠하는 색이 그대로 먹지색(--ink)이라 굳이 덮지 않는다.
+*/
+.record-code pre,
+.record-code-plain {
+  margin: 0;
+  padding: 0.9em 1.1em;
+  overflow-x: auto;
+  font-family: var(--stack-code);
+  font-size: 13px;
+  line-height: 1.75;
+  color: #f3efe4;
+}
+
+.record-code code,
+.record-code-plain code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
