@@ -62,7 +62,7 @@ export function useEditorAutosave<T>({
   // 마지막으로 로컬에 남긴 rev — 서버 저장이 성공하면 여기까지 동기화됐다고 표시한다
   const pendingRevRef = useRef(0);
 
-  const autosave = useMemo(
+  const buildAutosave = useCallback(
     () =>
       createAutosave<T>({
         save: async (value) => {
@@ -75,6 +75,19 @@ export function useEditorAutosave<T>({
       }),
     [mirror],
   );
+
+  /**
+   * 상태 기계를 ref에 담고, dispose된 인스턴스는 다시 만든다.
+   *
+   * StrictMode(개발 모드)는 effect를 실행 → 정리 → 재실행한다. 정리에서 dispose한 인스턴스를
+   * 그대로 재사용하면 이후 모든 입력이 무시된다 — 실제로 브라우저에서 저장이 한 번도 나가지
+   * 않는 버그였다. memo로는 이 재생성을 표현할 수 없다.
+   */
+  const autosaveRef = useRef<ReturnType<typeof buildAutosave> | null>(null);
+  if (autosaveRef.current === null || autosaveRef.current.isDisposed()) {
+    autosaveRef.current = buildAutosave();
+  }
+  const autosave = autosaveRef.current;
 
   // 마운트 시 미동기화 로컬 스냅샷이 있으면 복구 배너를 띄운다(04 §2.3)
   useEffect(() => {
@@ -91,7 +104,11 @@ export function useEditorAutosave<T>({
     return () => window.removeEventListener("online", onOnline);
   }, [autosave]);
 
-  useEffect(() => () => autosave.dispose(), [autosave]);
+  useEffect(() => {
+    return () => {
+      autosaveRef.current?.dispose();
+    };
+  }, []);
 
   const onChange = useCallback(
     (value: T) => {

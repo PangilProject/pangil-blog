@@ -45,6 +45,8 @@ export type Autosave<T> = {
   state(): AutosaveState;
   /** 아직 서버에 안 올라간 값이 있는지 */
   isDirty(): boolean;
+  /** dispose된 인스턴스는 되살리지 않는다 — 호출자가 새로 만들어야 한다 */
+  isDisposed(): boolean;
   dispose(): void;
 };
 
@@ -154,6 +156,7 @@ export function createAutosave<T>(options: AutosaveOptions<T>): Autosave<T> {
 
     state: () => state,
     isDirty: () => pending !== null || inFlight !== null,
+    isDisposed: () => disposed,
 
     dispose() {
       disposed = true;
