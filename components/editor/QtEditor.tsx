@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { type Control, Controller, useFieldArray, useForm } from "react-hook-form";
 
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
@@ -10,6 +10,7 @@ import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
+import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
 import { ToolbarDock } from "@/components/editor/ToolbarDock";
 import { GroupTab } from "@/components/record/GroupTab";
@@ -51,6 +52,11 @@ export type QtEditorProps = {
 export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
+  /**
+   * 초안 id는 ref로도 들고 있는다. 첫 저장이 발행 클릭 안에서(flush) 끝나면 setId의 결과가
+   * 이 클로저에 보이지 않아 "아직 저장되지 않았어요"로 막힌다 — 방금 저장에 성공했는데도.
+   */
+  const idRef = useRef(postId);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [emptyAnswers, setEmptyAnswers] = useState(() => countEmptyAnswers(initialValues));
@@ -66,7 +72,7 @@ export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtE
   const save = useCallback(
     async (values: QtFormValues) => {
       const result = await upsertDraft({
-        id: id ?? undefined,
+        id: idRef.current ?? undefined,
         type: "QT",
         title: values.title,
         content: toDraftContent(values),
@@ -77,12 +83,15 @@ export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtE
         throw new Error(`초안 저장 실패: ${result.reason}`);
       }
 
-      if (!id) {
+      if (!idRef.current) {
+        idRef.current = result.id;
         setId(result.id);
         router.replace(`/admin/write/qt/${result.id}`);
       }
     },
-    [id, router],
+    // id는 ref에서 읽는다 — 상태를 읽으면 첫 저장이 끝나기 전에 큐에 있던 저장이 초안을
+    // 하나 더 만든다
+    [router],
   );
 
   const autosave = useEditorAutosave<QtFormValues>({ type: "QT", id: id ?? "new", save });
@@ -109,7 +118,7 @@ export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtE
     try {
       await autosave.flush();
 
-      const target = id;
+      const target = idRef.current;
       if (!target) {
         setPublishError("아직 저장되지 않았어요. 잠시 후 다시 시도해 주세요");
         return;
@@ -137,10 +146,13 @@ export function QtEditor({ postId, initialValues, crawl, afterPublishHref }: QtE
           </>
         }
         indicator={
-          <SaveIndicator
-            state={toSaveState(autosave.state)}
-            savedAgo={autosave.savedAt ? "방금" : undefined}
-          />
+          <>
+            <SaveIndicator
+              state={toSaveState(autosave.state)}
+              savedAgo={autosave.savedAt ? "방금" : undefined}
+            />
+            <SaveErrorNote message={autosave.lastError} />
+          </>
         }
         actions={
           <>
