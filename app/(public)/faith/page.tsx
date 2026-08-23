@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import type { RecordType } from "@/lib/record/callNumber";
@@ -30,6 +32,10 @@ function parseType(value: string | undefined): RecordType | null {
 }
 
 export default async function FaithHomePage({ searchParams }: PageProps<"/faith">) {
+  // 시계를 읽기 전에 요청을 확보한다. `new Date()`는 프리렌더에서 거부된다 —
+  // 재현 가능한 출력만 허용하기 때문이다(ADR-003). 실제로 이 페이지가 그렇게 깨졌다
+  await connection();
+
   const params = await searchParams;
   const type = parseType(typeof params.type === "string" ? params.type : undefined);
   const query = typeof params.q === "string" ? params.q : undefined;

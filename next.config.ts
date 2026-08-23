@@ -11,6 +11,17 @@ const nextConfig: NextConfig = {
    * 것(인증·쿠키)은 그대로 동적으로 남긴다.
    */
   cacheComponents: true,
+
+  /**
+   * OG 카드 생성이 쓰는 두 패키지는 번들에 넣을 수 없다.
+   * - `@resvg/resvg-js`: 네이티브 애드온(.node). 번들러가 묶으면 "could not resolve
+   *   @resvg/resvg-js-darwin-arm64"로 라우트가 죽는다
+   * - `satori`: 런타임에 harfbuzz wasm을 node_modules에서 읽는다. 번들에 넣으면
+   *   "ENOENT: harfbuzzjs/hb.wasm"으로 죽는다
+   *
+   * 둘 다 실제로 그렇게 깨졌다. 배포 환경에서는 npm이 각 플랫폼 바이너리를 설치한다.
+   */
+  serverExternalPackages: ["@resvg/resvg-js", "satori"],
 };
 
 export default nextConfig;
