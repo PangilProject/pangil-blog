@@ -2,7 +2,11 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
-const alias = { "@": fileURLToPath(new URL(".", import.meta.url)) };
+const alias = {
+  "@": fileURLToPath(new URL(".", import.meta.url)),
+  // 서버 전용 지시어는 Next 빌드만 해석한다 (test/serverOnlyStub.ts 주석 참고)
+  "server-only": fileURLToPath(new URL("./test/serverOnlyStub.ts", import.meta.url)),
+};
 
 /**
  * 테스트는 두 갈래다.

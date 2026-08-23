@@ -1,3 +1,4 @@
+import type { AutosaveState } from "@/lib/editor/autosave";
 import { cn } from "@/lib/utils";
 
 /**
@@ -12,6 +13,16 @@ import { cn } from "@/lib/utils";
  */
 
 export type SaveState = "idle" | "typing" | "saving" | "saved" | "offline-pending";
+
+/**
+ * 저장 상태 기계(04 §2.2)의 상태를 화면 상태(03 §6.2)로 옮긴다.
+ *
+ * 기계의 "retrying"은 화면에서 "동기화 대기"다 — 재시도 중이라는 내부 사정이 아니라
+ * "아직 서버에 못 올렸다"는 사실을 보여주는 게 작성자에게 필요한 정보다.
+ */
+export function toSaveState(state: AutosaveState): SaveState {
+  return state === "retrying" ? "offline-pending" : state;
+}
 
 export type SaveIndicatorVariant = "default" | "sermon";
 

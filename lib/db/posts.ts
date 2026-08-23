@@ -81,6 +81,25 @@ export async function listDrafts(limit = 50) {
   return rows.map((row) => ({ ...row, type: row.type as RecordType }));
 }
 
+/** A-03 글 관리 (02 §2.4) — 상태 무관 최신순 */
+export async function listAdminPosts(limit = 100) {
+  const rows = await prisma.post.findMany({
+    orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      title: true,
+      callNumber: true,
+      publishedAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return rows.map((row) => ({ ...row, type: row.type as RecordType }));
+}
+
 export type CreateDraftInput = {
   type: RecordType;
   title: string;
