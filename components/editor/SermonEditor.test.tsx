@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
@@ -135,6 +136,60 @@ describe("SermonEditor — 자동 저장 배선", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨 · 동기화 대기");
     expect(window.localStorage.getItem("draft:SERMON:post-1")).toContain("예배당에서");
+  });
+});
+
+describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
+  /**
+   * Next dev는 StrictMode로 렌더해 effect를 실행 → 정리 → 재실행한다. 정리에서 상태 기계를
+   * dispose한 뒤 같은 인스턴스를 재사용하면 이후 모든 입력이 무시된다 — 브라우저에서 저장이
+   * 한 번도 나가지 않던 실제 버그이고, StrictMode 없이 렌더하던 테스트는 이를 놓쳤다.
+   */
+  it("effect가 두 번 실행돼도 저장이 나간다", async () => {
+    render(
+      <StrictMode>
+        <SermonEditor
+          postId="post-1"
+          initialValues={{ ...EMPTY_SERMON_FORM }}
+          afterPublishHref="/admin/posts"
+        />
+      </StrictMode>,
+    );
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("설교 제목"), { target: { value: "예배 노트" } });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(upsertDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it("새 글(postId 없음)도 첫 저장에서 초안을 만들고 URL을 맞춘다", async () => {
+    upsertDraft.mockResolvedValue({ ok: true, id: "created-1", savedAt: new Date() });
+
+    render(
+      <StrictMode>
+        <SermonEditor
+          postId={null}
+          initialValues={{ ...EMPTY_SERMON_FORM }}
+          afterPublishHref="/admin/posts"
+        />
+      </StrictMode>,
+    );
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("설교 제목"), { target: { value: "새 설교" } });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(upsertDraft.mock.calls[0]?.[0]).toMatchObject({ id: undefined, title: "새 설교" });
+    expect(replace).toHaveBeenCalledWith("/admin/write/sermon/created-1");
   });
 });
 
