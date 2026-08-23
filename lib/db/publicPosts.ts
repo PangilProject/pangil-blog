@@ -160,3 +160,57 @@ export async function findOgCard(id: string): Promise<OgCard | null> {
     typeLabel: OG_TYPE_LABELS[type],
   };
 }
+
+export type ExportPost = {
+  id: string;
+  type: RecordType;
+  title: string;
+  slug: string;
+  callNumber: number | null;
+  publishedAt: Date | null;
+  updatedAt: Date;
+  excerpt: string | null;
+  categorySlug: string | null;
+  tags: string[];
+  content: ContentParseResult<PostContent>;
+};
+
+/**
+ * 마크다운 export용 전량 조회 (07 M3 · §3 lock-in 방어).
+ *
+ * 발행된 글만 내보낸다 — 초안은 아직 글이 아니다. 캐시하지 않는다: 손으로 한 번 누르는
+ * 내보내기이고, 그 순간의 진실이 필요하다.
+ */
+export async function findPostsForExport(): Promise<ExportPost[]> {
+  const rows = await prisma.post.findMany({
+    where: { status: PostStatus.PUBLISHED },
+    orderBy: [{ publishedAt: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      slug: true,
+      callNumber: true,
+      publishedAt: true,
+      updatedAt: true,
+      excerpt: true,
+      content: true,
+      category: { select: { slug: true } },
+      tags: { select: { tag: { select: { name: true } } } },
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    type: row.type as RecordType,
+    title: row.title,
+    slug: row.slug ?? row.id,
+    callNumber: row.callNumber,
+    publishedAt: row.publishedAt,
+    updatedAt: row.updatedAt,
+    excerpt: row.excerpt,
+    categorySlug: row.category?.slug ?? null,
+    tags: row.tags.map((entry) => entry.tag.name),
+    content: parsePublishContent(row.content),
+  }));
+}
