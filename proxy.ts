@@ -12,7 +12,11 @@ import {
 } from "@/lib/site/resolveSite";
 
 /**
- * 3호스트 분기 (04 §1.3):
+ * 3호스트 분기 (04 §1.3).
+ *
+ * 파일 이름이 `proxy.ts`다 — Next 16에서 `middleware` 규약이 이 이름으로 바뀌었다(04 §1.3의
+ * "middleware"는 이 파일을 가리킨다). 동작은 같다.
+ *
  *   root      → /hub/*
  *   dev.*     → /dev/*
  *   faith.*   → /faith/*
@@ -20,7 +24,7 @@ import {
  *
  * 개발 중에는 Vercel 기본 주소·로컬호스트에서 ?site= 쿼리로 3면을 전환한다(08 §3).
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 3면 리라이트를 타지 않는 내부 경로(/admin, /design)는 먼저 걸러낸다.
