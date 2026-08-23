@@ -22,6 +22,24 @@ const nextConfig: NextConfig = {
    * 둘 다 실제로 그렇게 깨졌다. 배포 환경에서는 npm이 각 플랫폼 바이너리를 설치한다.
    */
   serverExternalPackages: ["@resvg/resvg-js", "satori"],
+
+  images: {
+    /**
+     * 업로드 이미지는 Supabase Storage에서 온다(04 §3.3). 호스트를 env에서 읽는 이유는
+     * dev·prod 프로젝트가 다른 주소를 쓰기 때문이다 — 하드코딩하면 한쪽에서 이미지가 막힌다.
+     *
+     * 마이그레이션·붙여넣기로 들어온 외부 이미지는 최적화 대상이 아니다(렌더러가 그대로 그린다).
+     */
+    remotePatterns: process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? [
+          {
+            protocol: "https" as const,
+            hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname,
+            pathname: "/storage/v1/object/public/**",
+          },
+        ]
+      : [],
+  },
 };
 
 export default nextConfig;

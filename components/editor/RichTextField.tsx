@@ -14,6 +14,7 @@ import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
 import { CodeBlockFenceOnEnter } from "@/lib/editor/codeBlockFence";
 import { CodeHighlight } from "@/lib/editor/codeHighlight";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
+import { ImagePaste, type ImageUploadResult } from "@/lib/editor/imagePaste";
 import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,12 @@ import { cn } from "@/lib/utils";
  */
 
 export type RichTextFieldProps = {
+  /**
+   * 이미지 업로드 담당. **이 위젯은 업로드를 모른다** — Server Action을 여기서 import하면
+   * 클라이언트 컴포넌트의 모듈 그래프에 Prisma까지 딸려온다(실제로 테스트가 그렇게 깨졌다).
+   * 넘기지 않으면 붙여넣은 이미지는 무시된다.
+   */
+  uploadImage?: (file: File) => Promise<ImageUploadResult | null>;
   value: RichTextValue | undefined;
   onChange: (value: RichTextValue) => void;
   /** 슬림 구성은 설교·찬양용 — 제목1과 코드 블록을 뺀다(03 §5.3) */
@@ -49,6 +56,7 @@ export function RichTextField({
   value,
   onChange,
   variant = "full",
+  uploadImage,
   placeholder,
   ariaLabel,
   autoFocus = false,
@@ -86,6 +94,8 @@ export function RichTextField({
             }),
             CodeHighlight,
             Image.configure({ inline: false }),
+            // 스크린샷 붙여넣기가 기술 글의 실제 작성 경로다(04 §3.3)
+            ...(uploadImage ? [ImagePaste.configure({ upload: uploadImage })] : []),
           ]
         : []),
     ],

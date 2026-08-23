@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { CodeBlock } from "@/components/public/CodeBlock";
+import { PostImage } from "@/components/public/PostImage";
 import type { TiptapDoc } from "@/lib/content/schema";
 import { headingId } from "@/lib/render/headingId";
 
@@ -214,12 +215,16 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
     case "image": {
       const src = typeof node.attrs?.src === "string" ? node.attrs.src : null;
       if (!src) return null;
-      const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt : "";
 
-      // next/image 전환은 업로드와 함께 온다(M3 슬라이스 5 · 04 §3.3). 지금은 원본 주소를
-      // 그대로 쓴다 — 마이그레이션·붙여넣기로 들어온 외부 이미지가 이미 있다
-      // biome-ignore lint/performance/noImgElement: 저장된 이미지 크기가 아직 없다(M3 슬라이스 5)
-      return <img key={key} src={src} alt={alt} loading="lazy" />;
+      return (
+        <PostImage
+          key={key}
+          src={src}
+          alt={typeof node.attrs?.alt === "string" ? node.attrs.alt : ""}
+          width={typeof node.attrs?.width === "number" ? node.attrs.width : null}
+          height={typeof node.attrs?.height === "number" ? node.attrs.height : null}
+        />
+      );
     }
 
     default: {

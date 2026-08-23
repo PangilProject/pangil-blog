@@ -20,8 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { uploadPostImage } from "@/lib/actions/images";
 import { publishPost, upsertDraft } from "@/lib/actions/posts";
 import type { CategoryOption } from "@/lib/db/categories";
+import { measureImage } from "@/lib/editor/measureImage";
 import {
   deriveExcerpt,
   EMPTY_TECH_FORM,
@@ -89,6 +91,24 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
   );
 
   const autosave = useEditorAutosave<TechFormValues>({ type: "TECH", id: id ?? "new", save });
+
+  /**
+   * 붙여넣은·끌어놓은 이미지를 Storage로 올린다(04 §3.3). 크기는 브라우저가 잰다 — 파일을
+   * 이미 들고 있는 쪽이 재는 게 정확하고, 서버에서 이미지 헤더를 파싱할 필요가 없다.
+   */
+  const uploadImage = useCallback(async (file: File) => {
+    const size = await measureImage(file);
+    const form = new FormData();
+    form.set("file", file);
+    if (idRef.current) form.set("postId", idRef.current);
+    if (size) {
+      form.set("width", String(size.width));
+      form.set("height", String(size.height));
+    }
+
+    const result = await uploadPostImage(form);
+    return result.ok ? { url: result.url, width: result.width, height: result.height } : null;
+  }, []);
 
   useEffect(() => {
     const subscription = watch((values) => {
@@ -232,6 +252,7 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
                   ariaLabel="본문"
                   value={field.value}
                   onChange={field.onChange}
+                  uploadImage={uploadImage}
                   placeholder="마크다운을 붙여넣거나 바로 적어보세요"
                   contentClassName="min-h-[420px] px-4 py-3"
                 />
