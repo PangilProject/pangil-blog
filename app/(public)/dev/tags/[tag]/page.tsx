@@ -28,6 +28,7 @@ export default async function TagListPage({ params, searchParams }: PageProps<"/
 
   return (
     <ListPageView
+      site="dev"
       title={`#${name}`}
       month={`${toKstDate(now).month}월`}
       counts={counts}

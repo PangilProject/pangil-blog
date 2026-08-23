@@ -60,6 +60,7 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
 
   return (
     <ListPageView
+      site="faith"
       title={query ? `"${query}" 검색 결과` : "믿음의 기록"}
       month={`${toKstDate(now).month}월`}
       counts={counts}

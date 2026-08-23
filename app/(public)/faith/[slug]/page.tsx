@@ -2,6 +2,7 @@ import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { PostDetail } from "@/components/public/PostDetail";
+import { SiteHeader } from "@/components/public/SiteHeader";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { postTag } from "@/lib/revalidate/tags";
 
@@ -32,7 +33,9 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
   cacheTag(postTag(post.id));
 
   return (
-    <main className="px-[5%] py-10">
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
+      <SiteHeader site="faith" />
+
       <PostDetail post={post} />
     </main>
   );
