@@ -1,15 +1,18 @@
 "use client";
 
+import { CodeBlock } from "@tiptap/extension-code-block";
 import { Image } from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 
+import { CodeBlockNodeView } from "@/components/editor/CodeBlockNodeView";
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
 import { CodeBlockFenceOnEnter } from "@/lib/editor/codeBlockFence";
+import { CodeHighlight } from "@/lib/editor/codeHighlight";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
 import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
@@ -62,7 +65,8 @@ export function RichTextField({
       StarterKit.configure({
         // 제목은 단축 입력을 한 칸 민 확장으로 대체한다 (lib/editor/headingShortcuts 참고)
         heading: false,
-        codeBlock: variant === "slim" ? false : {},
+        // 코드 블록은 full 구성에서 NodeView(언어 선택)와 함께 다시 등록한다
+        codeBlock: false,
       }),
       HeadingWithShiftedShortcuts.configure({ levels: variant === "slim" ? [3] : [2, 3] }),
       // 빈 칸이 6개 놓이는 QT 답변에서는 자리 안내가 없으면 화면이 고장난 것처럼 보인다
@@ -71,7 +75,18 @@ export function RichTextField({
       // 마크다운 붙여넣기는 기술 글의 최우선 인터랙션이다(02 §5.5). full 구성에만 붙인다 —
       // 설교 라이브 속기와 찬양 묵상에는 이미지·코드 블록이 들어올 자리가 없다
       ...(variant === "full"
-        ? [MarkdownPaste, CodeBlockFenceOnEnter, Image.configure({ inline: false })]
+        ? [
+            MarkdownPaste,
+            CodeBlockFenceOnEnter,
+            // 블록 안에서 언어를 고르고(NodeView), 그 자리에서 색이 입는다(CodeHighlight)
+            CodeBlock.extend({
+              addNodeView() {
+                return ReactNodeViewRenderer(CodeBlockNodeView);
+              },
+            }),
+            CodeHighlight,
+            Image.configure({ inline: false }),
+          ]
         : []),
     ],
     // 저장 계약(z.json 배열)과 Tiptap의 JSONContent는 같은 JSON을 다르게 좁힌 타입이다.
