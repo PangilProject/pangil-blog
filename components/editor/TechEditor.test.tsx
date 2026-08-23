@@ -197,3 +197,65 @@ describe("TechEditor — 발행", () => {
     expect(publishPost).toHaveBeenCalledWith("post-1");
   });
 });
+
+describe("TechEditor — 저장 실패 (04 §2.2)", () => {
+  it("첫 저장이 발행 클릭 안에서 끝나도 발행된다 — 방금 저장했는데 막히면 안 된다", async () => {
+    upsertDraft.mockResolvedValue({ ok: true, id: "created-1", savedAt: new Date() });
+    renderEditor({ postId: null, initialValues: { ...filled(), title: "새 글" } });
+
+    // 자동 저장 debounce가 터지기 전에 바로 발행한다 (flush가 초안을 만든다)
+    await act(async () => {
+      screen.getByLabelText("제목").focus();
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "새 글 제목" } });
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    expect(publishPost).toHaveBeenCalledWith("created-1");
+    expect(screen.queryByText(/아직 저장되지 않았어요/)).toBeNull();
+  });
+
+  it("저장이 계속 실패하면 사유를 화면에 남긴다 — 동기화 대기만 보이면 할 수 있는 일이 없다", async () => {
+    upsertDraft.mockResolvedValue({ ok: false, reason: "invalid-content" });
+    renderEditor();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "고친 제목" } });
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(screen.getByText(/invalid-content/)).toBeInTheDocument();
+  });
+
+  it("저장이 다시 성공하면 사유는 사라진다", async () => {
+    upsertDraft.mockResolvedValueOnce({ ok: false, reason: "invalid-content" });
+    renderEditor();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나" } });
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+    expect(screen.getByText(/invalid-content/)).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "둘" } });
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(screen.queryByText(/invalid-content/)).toBeNull();
+  });
+
+  it("새 글에서 저장이 두 번 나가도 초안은 하나다", async () => {
+    upsertDraft.mockResolvedValue({ ok: true, id: "created-1", savedAt: new Date() });
+    renderEditor({ postId: null, initialValues: EMPTY_TECH_FORM });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나" } });
+      await vi.advanceTimersByTimeAsync(1200);
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나 둘" } });
+      await vi.advanceTimersByTimeAsync(1200);
+    });
+
+    expect(upsertDraft.mock.calls[0]?.[0]?.id).toBeUndefined();
+    expect(upsertDraft.mock.calls[1]?.[0]?.id).toBe("created-1");
+  });
+});

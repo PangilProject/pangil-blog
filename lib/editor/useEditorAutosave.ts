@@ -35,6 +35,11 @@ export type UseEditorAutosaveResult<T> = {
   /** 마운트 시점에 발견된 미동기화 로컬 스냅샷 (복구 배너용) */
   recovery: MirrorSnapshot<T> | null;
   dismissRecovery: () => void;
+  /**
+   * 마지막 저장 실패 사유. 계속 재시도하지만, 왜 실패하는지 화면에 남긴다 —
+   * "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
+   */
+  lastError: string | null;
   /** 발행 완료 등 — 미러를 비운다 */
   clearMirror: () => void;
 };
@@ -48,6 +53,7 @@ export function useEditorAutosave<T>({
   const [state, setState] = useState<AutosaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [recovery, setRecovery] = useState<MirrorSnapshot<T> | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   // 저장 함수가 매 렌더 바뀌어도 상태 기계를 다시 만들지 않는다
   const saveRef = useRef(save);
@@ -59,6 +65,14 @@ export function useEditorAutosave<T>({
     return createLocalMirror<T>({ type, id, storage: resolved });
   }, [type, id, storage]);
 
+  /**
+   * 미러를 ref로도 들고 있는다. 첫 저장에서 id가 "new" → 실제 id로 바뀌면 미러 키도 바뀌는데,
+   * 상태 기계는 처음 만들 때의 미러를 클로저에 잡고 있어 그대로 두면 이후 동기화 표시가
+   * 사라진 키에 적힌다 — 복구 배너가 이미 올라간 내용을 다시 묻는다
+   */
+  const mirrorRef = useRef(mirror);
+  mirrorRef.current = mirror;
+
   // 마지막으로 로컬에 남긴 rev — 서버 저장이 성공하면 여기까지 동기화됐다고 표시한다
   const pendingRevRef = useRef(0);
 
@@ -68,12 +82,14 @@ export function useEditorAutosave<T>({
         save: async (value) => {
           const revAtSend = pendingRevRef.current;
           await saveRef.current(value);
-          mirror?.markSynced(revAtSend);
+          mirrorRef.current?.markSynced(revAtSend);
+          setLastError(null);
         },
         onStateChange: setState,
         onSaved: setSavedAt,
+        onError: (error) => setLastError(error instanceof Error ? error.message : String(error)),
       }),
-    [mirror],
+    [],
   );
 
   /**
@@ -112,9 +128,16 @@ export function useEditorAutosave<T>({
 
   const onChange = useCallback(
     (value: T) => {
-      // 로컬이 먼저다. 네트워크가 죽어도 이 줄은 성공한다
-      const snapshot = mirror?.write(value);
-      if (snapshot) pendingRevRef.current = snapshot.rev;
+      // 로컬이 먼저다. 네트워크가 죽어도 이 줄은 성공한다.
+      // 저장소가 실패해도(용량·사파리 프라이빗 모드) 서버 저장은 계속 나가야 한다 —
+      // 보험이 실패했다고 본체를 멈추면 그게 유실이다
+      try {
+        const snapshot = mirror?.write(value);
+        if (snapshot) pendingRevRef.current = snapshot.rev;
+      } catch (error) {
+        setLastError(error instanceof Error ? error.message : String(error));
+      }
+
       autosave.change(value);
     },
     [autosave, mirror],
@@ -127,6 +150,7 @@ export function useEditorAutosave<T>({
     flush: useCallback(() => autosave.flush(), [autosave]),
     recovery,
     dismissRecovery: useCallback(() => setRecovery(null), []),
+    lastError,
     clearMirror: useCallback(() => mirror?.clear(), [mirror]),
   };
 }
