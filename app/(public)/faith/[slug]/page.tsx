@@ -1,7 +1,9 @@
+import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { PostDetail } from "@/components/public/PostDetail";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
+import { postTag } from "@/lib/revalidate/tags";
 
 /**
  * F-03 묵상 글 상세 (02 §2.3).
@@ -25,6 +27,10 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
 
   if (!post) notFound();
 
+  // 이 지면의 캐시 항목에도 태그를 명시한다. 안쪽 조회에만 붙이면 조회 결과는 새로 읽히는데
+  // 이미 만들어진 HTML이 그대로 남는다 — 언어를 고쳐도 지면이 안 바뀌던 이유다
+  cacheTag(postTag(post.id));
+
   return (
     <main className="px-[5%] py-10">
       <PostDetail post={post} />
@@ -39,6 +45,8 @@ export async function generateMetadata({ params }: PageProps<"/faith/[slug]">) {
   const post = await findPublishedPostBySlug("faith", slug);
 
   if (!post) return {};
+
+  cacheTag(postTag(post.id));
 
   return {
     title: post.title,

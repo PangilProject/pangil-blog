@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 import { withAdmin } from "@/lib/actions/withAdmin";
 import { DraftSchema, matchesPostType } from "@/lib/content/schema";
@@ -155,13 +155,12 @@ export const deletePost = withAdmin(async (_user, postId: string): Promise<Delet
  * M2에는 아직 캐시되는 공개 페이지가 없어 실효가 없지만, 태그 목록을 발행 경로에 붙여두어야
  * M3에서 지면을 만들 때 빠뜨리지 않는다.
  *
- * **M3에서 결정할 것**: Next 16은 무효화를 두 갈래로 나눴다.
- * - revalidateTag(tag, profile): stale-while-revalidate — 낡은 내용을 먼저 보여준다
- * - updateTag(tag): 즉시 만료(read-your-own-writes), Server Action 전용, Cache Components 전제
+ * **`updateTag`를 쓴다**(ADR-003). `revalidateTag`는 stale-while-revalidate라 낡은 내용을 먼저
+ * 보여주는데, 02 §3.2가 "발행 직후 공개 페이지로 이동"을 확정했으므로 그건 곧 신뢰 문제다 —
+ * 방금 쓴 글을 보러 갔는데 옛 내용이 보이면 그게 결함이다. 실제로 코드 블록 언어를 고쳐 저장한
+ * 뒤에도 지면이 그대로였다.
  *
- * 02 §3.2가 "발행 직후 공개 페이지로 이동"을 확정했으므로 발행 경로는 updateTag여야 한다 —
- * 방금 쓴 글을 보러 갔는데 낡은 내용이 보이면 그게 곧 신뢰 문제다. 다만 Cache Components를
- * 켜는 것은 앱 전체 데이터 접근 규칙을 바꾸는 결정이라 공개 지면을 만드는 M3에서 함께 정한다.
+ * updateTag는 Server Action 전용이고 이 파일의 모든 경로가 Server Action이다.
  */
 async function revalidatePost(postId: string, type: RecordType, categoryId: string | null) {
   const [tagNames, categorySlug] = await Promise.all([
@@ -170,6 +169,6 @@ async function revalidatePost(postId: string, type: RecordType, categoryId: stri
   ]);
 
   for (const tag of postRevalidationTags({ id: postId, type, categorySlug, tagNames })) {
-    revalidateTag(tag, "max");
+    updateTag(tag);
   }
 }

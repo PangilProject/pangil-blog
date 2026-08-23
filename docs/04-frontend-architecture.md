@@ -33,13 +33,17 @@
 ```
 [발행/수정/삭제/PRIVATE 전환] (Server Action)
   → DB 쓰기 (Prisma)
-  → revalidateTag 일괄:
+  → updateTag 일괄 (구현 시 확정, 2026-08-23 · ADR-003):
       post:{id} / list:{site} / list:{site}:{type|category} / tag:{site}:{각 태그} / feed:{site}
       (태그는 site 스코프 — dev/faith 동명 태그 교차 무효화 차단. 05 §5에서 정밀화)
   → 공개 페이지로 redirect (02 문서 확정 플로우)
 ```
 
 - **수정 저장 = 저장 즉시 공개 반영** (별도 "반영" 버튼 없음, 확정)
+- **무효화 API = `updateTag`**(즉시 만료, Server Action 전용). `revalidateTag`는
+  stale-while-revalidate라 발행 직후 도착한 지면이 낡은 내용을 보여준다 — 02 §3.2의 "발행 직후
+  공개 페이지로 이동"과 정면으로 어긋난다(ADR-003). 캐시 항목에는 조회 함수와 지면 **양쪽**에
+  태그를 붙인다. 조회에만 붙이면 데이터는 새로 읽히는데 이미 만들어진 HTML이 그대로 남는다
 - **PRIVATE 전환 = 무효화 + 단순 404** (410 미사용, 확정)
 - 크롤러(GitHub Actions)는 DRAFT만 생성 → 공개 캐시를 건드리지 않음. 크롤러 장애와 사이트 가용성이 완전 분리 (프리모템 #1 정합)
 
