@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { AdminNav } from "@/components/admin/AdminNav";
+import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
+import { getAdminUser } from "@/lib/auth/adminSession";
 import { listAdminPosts } from "@/lib/db/posts";
 import { formatCallNumber } from "@/lib/record/callNumber";
+import { editorPath } from "@/lib/record/todayCard";
 
 /**
  * A-03 글 관리 (02 §2.4) — 최소 구현.
@@ -11,35 +16,39 @@ import { formatCallNumber } from "@/lib/record/callNumber";
  * 필터·삭제·PRIVATE 전환은 M2 나머지 에디터를 붙인 뒤에 채운다.
  */
 export default async function AdminPostsPage() {
+  const user = await getAdminUser();
+  if (!user) redirect(ADMIN_LOGIN_PATH);
+
   const posts = await listAdminPosts();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-8">
-      <header className="flex flex-col gap-1">
-        <p className="font-typewriter text-[11px] text-faint">A-03</p>
-        <h1 className="font-serif text-xl">글 관리</h1>
-      </header>
+    <div className="flex min-h-full flex-col bg-paper">
+      <AdminNav />
 
-      {posts.length === 0 ? (
-        <p className="text-sm text-ink-soft">아직 글이 없어요.</p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
-          {posts.map((post) => (
-            <li key={post.id} className="flex flex-wrap items-baseline gap-3 px-4 py-3">
-              <span className="w-[92px] font-typewriter text-[10.5px] text-(--accent)">
-                {formatCallNumber({ type: post.type, callNumber: post.callNumber }) ?? "초안"}
-              </span>
-              <Link
-                href={`/admin/write/${post.type.toLowerCase()}/${post.id}`}
-                className="flex-1 text-[14px] hover:underline"
-              >
-                {post.title || "제목 없음"}
-              </Link>
-              <span className="font-typewriter text-[10.5px] text-faint">{post.status}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+      <main className="mx-auto flex w-full max-w-[720px] flex-col gap-5 px-[5%] py-8">
+        <h1 className="font-serif text-lg">글 관리</h1>
+
+        {posts.length === 0 ? (
+          <p className="text-sm text-ink-soft">아직 글이 없어요.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
+            {posts.map((post) => (
+              <li key={post.id} className="flex flex-wrap items-baseline gap-3 px-4 py-3">
+                <span className="w-[92px] font-typewriter text-[10.5px] text-(--accent)">
+                  {formatCallNumber({ type: post.type, callNumber: post.callNumber }) ?? "초안"}
+                </span>
+                <Link
+                  href={editorPath(post.type, post.id)}
+                  className="flex-1 text-[14px] hover:underline"
+                >
+                  {post.title || "제목 없음"}
+                </Link>
+                <span className="font-typewriter text-[10.5px] text-faint">{post.status}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </div>
   );
 }
