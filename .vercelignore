@@ -1,0 +1,15 @@
+# CLI 배포는 이 디렉터리를 그대로 업로드한다. .env가 딸려 올라가면 dev 자격증명이 배포
+# 환경에 섞인다 — 실제 값은 Vercel 환경변수에만 둔다(08 §2, AGENTS "절대 하지 말 것").
+# .vercelignore가 있으면 .gitignore 대신 이 파일이 쓰이므로, 빼야 할 것을 다 적는다.
+.env
+.env.*
+
+.git
+node_modules
+.next
+prisma/generated
+coverage
+
+# 배포에 필요 없는 것
+docs
+.claude
