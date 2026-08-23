@@ -2,6 +2,8 @@
 
 import { type KeyboardEvent, useState } from "react";
 
+import { isComposing } from "@/lib/editor/ime";
+
 /**
  * 태그 입력 (02 §5.5 필드 6 · dev 태그 탐색 대응).
  *
@@ -28,6 +30,9 @@ export function TagInput({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    // 조합 중인 Enter는 입력기의 것이다 — 가로채면 태그가 "안녕하세"와 "요"로 갈린다
+    if (isComposing(event)) return;
+
     if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
       commit(draft);
