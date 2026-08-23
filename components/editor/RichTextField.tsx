@@ -1,5 +1,6 @@
 "use client";
 
+import { Image } from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -9,6 +10,7 @@ import { useEffect } from "react";
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
+import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +67,9 @@ export function RichTextField({
       // 빈 칸이 6개 놓이는 QT 답변에서는 자리 안내가 없으면 화면이 고장난 것처럼 보인다
       // (02 §5.2 필드 6의 placeholder 문구). 실제 그리기는 .record-prose가 한다
       ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
+      // 마크다운 붙여넣기는 기술 글의 최우선 인터랙션이다(02 §5.5). full 구성에만 붙인다 —
+      // 설교 라이브 속기와 찬양 묵상에는 이미지·코드 블록이 들어올 자리가 없다
+      ...(variant === "full" ? [MarkdownPaste, Image.configure({ inline: false })] : []),
     ],
     // 저장 계약(z.json 배열)과 Tiptap의 JSONContent는 같은 JSON을 다르게 좁힌 타입이다.
     // 변환 지점은 이 위젯 경계 한 곳뿐이므로 여기서만 맞춰준다.
