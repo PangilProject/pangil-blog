@@ -1,0 +1,88 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
+import { PostList } from "@/components/public/PostList";
+import type { ListCard } from "@/lib/db/publicLists";
+
+/**
+ * 목록 카드는 상세 지면·OG 카드와 같은 조판을 쓴다(04 §3.5). 여기서 고정하는 것은
+ * "어디로 가는가"와 "지면별로 무엇을 보여주는가"다.
+ */
+const base: ListCard = {
+  id: "post-1",
+  type: "QT",
+  title: "주님이 네 악을",
+  slug: "qt-1",
+  callNumber: 1,
+  publishedAt: new Date("2026-08-23T00:00:00Z"),
+  excerpt: null,
+  thumbnailUrl: null,
+  categoryName: null,
+  categorySlug: null,
+  scriptureRef: "열왕기상 2장 41~46절",
+  tags: [],
+};
+
+describe("PostList", () => {
+  it("카드가 그 글의 공개 지면을 가리킨다", () => {
+    render(<PostList cards={[base]} />);
+
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/faith/qt-1");
+    expect(screen.getByText("주님이 네 악을")).toBeInTheDocument();
+  });
+
+  it("faith 카드는 말씀 범위와 타입을 보여준다", () => {
+    render(<PostList cards={[base]} />);
+
+    expect(screen.getByText("열왕기상 2장 41~46절")).toBeInTheDocument();
+    expect(screen.getByText(/큐티/)).toBeInTheDocument();
+    expect(screen.getByText("QT-0001")).toBeInTheDocument();
+  });
+
+  it("dev 카드는 요약과 태그를 보여준다 — 카테고리는 청구기호에 이미 있다(03 §6.3)", () => {
+    render(
+      <PostList
+        cards={[
+          {
+            ...base,
+            id: "post-2",
+            type: "TECH",
+            slug: "next-16",
+            title: "Next 16 캐시",
+            excerpt: "무효화를 두 갈래로 나눴다",
+            scriptureRef: null,
+            categoryName: "FE",
+            categorySlug: "fe",
+            tags: ["Next.js", "캐시"],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/dev/next-16");
+    expect(screen.getByText("무효화를 두 갈래로 나눴다")).toBeInTheDocument();
+    // 청구기호 줄에만 카테고리가 있다
+    expect(screen.getByText("0001 · FE")).toBeInTheDocument();
+    expect(screen.getByText("Next.js · 캐시")).toBeInTheDocument();
+  });
+
+  it("빈 목록은 칸이 비었다고 말한다 (03 §5.1)", () => {
+    render(<PostList cards={[]} />);
+
+    expect(screen.getByText("이 칸은 아직 비어 있어요")).toBeInTheDocument();
+  });
+
+  it("검색 결과가 없을 때는 문구를 갈아끼운다", () => {
+    render(<PostList cards={[]} emptyMessage="찾는 기록이 없어요" />);
+
+    expect(screen.getByText("찾는 기록이 없어요")).toBeInTheDocument();
+  });
+
+  it("카드 회전은 인덱스에서 나오는 고정값이다 — 볼 때마다 흔들리면 안 된다", () => {
+    const cards = [base, { ...base, id: "post-2", slug: "qt-2" }];
+    const first = render(<PostList cards={cards} />).container.innerHTML;
+    const second = render(<PostList cards={cards} />).container.innerHTML;
+
+    expect(first).toBe(second);
+  });
+});
