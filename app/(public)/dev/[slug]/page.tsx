@@ -2,6 +2,7 @@ import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { PostDetail } from "@/components/public/PostDetail";
+import { SiteHeader } from "@/components/public/SiteHeader";
 import { Toc } from "@/components/public/Toc";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { collectHeadings } from "@/lib/render/richText";
@@ -40,7 +41,9 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
       : [];
 
   return (
-    <main className="px-[5%] py-10">
+    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
+      <SiteHeader site="dev" />
+
       {/*
         데스크탑에서는 지면 + 우측 여백 두 칸이다. 지면 폭은 본문 가독 폭(--container-measure)에
         묶여 있고, 목차는 그 옆에 붙는다 — 지면을 좁히지 않는다

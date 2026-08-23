@@ -45,6 +45,7 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
 
   return (
     <ListPageView
+      site="dev"
       title={query ? `"${query}" 검색 결과` : "개발의 기록"}
       month={`${toKstDate(now).month}월`}
       counts={counts}

@@ -1,8 +1,10 @@
 import { ListHeader } from "@/components/public/ListHeader";
 import { Pagination } from "@/components/public/Pagination";
 import { PostList } from "@/components/public/PostList";
+import { SiteHeader } from "@/components/public/SiteHeader";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
 import type { ListPage, RecordCounts } from "@/lib/db/publicLists";
+import type { PublicSite } from "@/lib/revalidate/tags";
 
 /**
  * 목록 지면 껍데기 (F-01/F-02/F-04 · D-01/D-03 · 03 §5.1).
@@ -11,6 +13,7 @@ import type { ListPage, RecordCounts } from "@/lib/db/publicLists";
  * 헤더 카운트, 카드 그리드, 페이지네이션, 검색창은 같다 — 네 벌로 두면 그중 하나만 낡는다.
  */
 export function ListPageView({
+  site,
   title,
   month,
   counts,
@@ -22,6 +25,7 @@ export function ListPageView({
   searchQuery,
   emptyMessage,
 }: {
+  site: PublicSite;
   title: string;
   month: string;
   counts: RecordCounts;
@@ -35,6 +39,8 @@ export function ListPageView({
 }) {
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 px-[5%] py-10">
+      <SiteHeader site={site} />
+
       <ListHeader
         title={title}
         month={month}

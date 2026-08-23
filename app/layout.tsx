@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { fontVariables } from "@/app/fonts/fonts";
+import { ThemeProvider } from "@/components/public/ThemeProvider";
 
 import "./globals.css";
 
@@ -15,8 +16,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${fontVariables} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    // suppressHydrationWarning: 테마 클래스는 첫 페인트 전 인라인 스크립트가 심는다(04 §3.6)
+    <html lang="ko" suppressHydrationWarning className={`${fontVariables} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

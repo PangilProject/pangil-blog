@@ -31,6 +31,7 @@ export default async function TagListPage({
 
   return (
     <ListPageView
+      site="faith"
       title={`#${name}`}
       month={`${toKstDate(now).month}월`}
       counts={counts}
