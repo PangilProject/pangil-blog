@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { DeletePostButton } from "@/components/admin/DeletePostButton";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { listAdminPosts } from "@/lib/db/posts";
@@ -44,6 +45,7 @@ export default async function AdminPostsPage() {
                   {post.title || "제목 없음"}
                 </Link>
                 <span className="font-typewriter text-[10.5px] text-faint">{post.status}</span>
+                <DeletePostButton postId={post.id} title={post.title} />
               </li>
             ))}
           </ul>
