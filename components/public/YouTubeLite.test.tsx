@@ -20,7 +20,7 @@ describe("YouTubeLite", () => {
   it("JS가 없어도 유튜브로 가는 링크다", () => {
     render(<YouTubeLite {...props} />);
 
-    expect(screen.getByRole("link")).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "손잡고 함께 가세 듣기" })).toHaveAttribute(
       "href",
       "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     );
