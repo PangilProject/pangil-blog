@@ -7,6 +7,7 @@ import { DraftSchema, matchesPostType } from "@/lib/content/schema";
 import { parsePublishContent } from "@/lib/db/content";
 import {
   createDraft,
+  deletePostRecord,
   findCategorySlug,
   findEditablePost,
   findPostTagNames,
@@ -128,6 +129,24 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
     slug: published.slug,
     callNumber: published.callNumber,
   };
+});
+
+export type DeletePostResult = { ok: true } | { ok: false; reason: "not-found" };
+
+/**
+ * 글 삭제 (02 §2.4 A-03).
+ *
+ * 되돌릴 수 없으므로 화면에서 두 번 눌러야 한다(components/admin/DeletePostButton).
+ * 청구기호는 결번으로 남는다(05 §5) — 번호는 이력이지 카운트가 아니다.
+ */
+export const deletePost = withAdmin(async (_user, postId: string): Promise<DeletePostResult> => {
+  const deleted = await deletePostRecord(postId);
+  if (!deleted) return { ok: false, reason: "not-found" };
+
+  // 지워진 글의 지면도 갱신해야 한다 — 목록에 남아 있으면 404로 가는 링크가 된다
+  await revalidatePost(deleted.id, deleted.type, deleted.categoryId);
+
+  return { ok: true };
 });
 
 /**

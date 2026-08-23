@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { DeletePostButton } from "@/components/admin/DeletePostButton";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { listDrafts } from "@/lib/db/posts";
@@ -33,19 +34,20 @@ export default async function AdminDraftsPage() {
         ) : (
           <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
             {drafts.map((draft) => (
-              <li key={draft.id}>
+              <li key={draft.id} className="flex flex-wrap items-baseline gap-3 px-4 py-3">
+                <span className="w-[68px] font-typewriter text-[10.5px] text-faint">
+                  {RECORD_TYPE_LABELS[draft.type]}
+                </span>
                 <Link
                   href={editorPath(draft.type, draft.id)}
-                  className="flex flex-wrap items-baseline gap-3 px-4 py-3 hover:bg-paper"
+                  className="flex-1 text-[14px] hover:underline"
                 >
-                  <span className="w-[68px] font-typewriter text-[10.5px] text-faint">
-                    {RECORD_TYPE_LABELS[draft.type]}
-                  </span>
-                  <span className="flex-1 text-[14px]">{draft.title || "제목 없음"}</span>
-                  <span className="font-typewriter text-[10.5px] text-faint">
-                    {formatRelativeTime(draft.updatedAt, now)}
-                  </span>
+                  {draft.title || "제목 없음"}
                 </Link>
+                <span className="font-typewriter text-[10.5px] text-faint">
+                  {formatRelativeTime(draft.updatedAt, now)}
+                </span>
+                <DeletePostButton postId={draft.id} title={draft.title} />
               </li>
             ))}
           </ul>

@@ -218,6 +218,37 @@ export async function publishPostRecord({
   });
 }
 
+export type DeletedPost = {
+  id: string;
+  type: RecordType;
+  categoryId: string | null;
+  callNumber: number | null;
+};
+
+/**
+ * 글 삭제 (02 §2.4 A-03).
+ *
+ * 청구기호 카운터는 되돌리지 않는다 — **삭제 시 결번을 허용한다**(05 §5). 번호는 이력이지
+ * 카운트가 아니므로 재사용하면 옛 링크와 기록이 어긋난다.
+ *
+ * PostTag는 스키마에서 cascade로 지워지고, Asset·CrawlRun의 postId는 null이 된다.
+ * 통계(StatEvent)는 FK가 없어 그대로 남는다 — 글 삭제가 과거 통계를 지우면 안 된다(05 §1.4).
+ *
+ * 삭제 대상을 먼저 읽어 돌려주는 이유는 호출자가 무효화 태그를 계산해야 하기 때문이다(04 §1.2).
+ */
+export async function deletePostRecord(id: string): Promise<DeletedPost | null> {
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { id: true, type: true, categoryId: true, callNumber: true },
+  });
+
+  if (!post) return null;
+
+  await prisma.post.delete({ where: { id } });
+
+  return { ...post, type: post.type as RecordType };
+}
+
 /** 태그 이름 목록 — 무효화 태그 계산에 쓴다(04 §1.2) */
 export async function findPostTagNames(postId: string): Promise<string[]> {
   const rows = await prisma.postTag.findMany({
