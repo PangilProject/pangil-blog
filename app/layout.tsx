@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "기록",
   robots: { index: true, follow: true },
+  // 지면별 피드다(app/(feeds)/rss.xml). 호스트가 지면을 가르므로 경로는 하나로 족하다
+  alternates: { types: { "application/rss+xml": "/rss.xml" } },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
