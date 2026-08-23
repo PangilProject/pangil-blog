@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
-import type { RichTextValue } from "@/lib/editor/sermonForm";
+import type { RichTextValue } from "@/lib/editor/richText";
 import { cn } from "@/lib/utils";
 
 /**
