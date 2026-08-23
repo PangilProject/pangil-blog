@@ -142,6 +142,56 @@ export async function countPublishedPosts(
   return { thisMonth, total };
 }
 
+export type FeedItem = {
+  id: string;
+  type: RecordType;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  publishedAt: Date | null;
+  updatedAt: Date;
+};
+
+/**
+ * 피드·sitemap용 전체 목록 (07 M3 · 04 §1.2 S-01/02).
+ *
+ * **요약과 링크만 싣는다**(07 M3 확정) — 본문 전문을 피드에 넣으면 리더에서 다 읽히고 지면으로
+ * 오지 않는다. 조판이 이 블로그의 절반이므로 그건 손해다.
+ *
+ * 페이지네이션이 없다. sitemap은 전부 실어야 하고 RSS는 최근 것만 자르므로 호출자가 자른다.
+ */
+export async function findFeedItems(site: PublicSite, limit?: number): Promise<FeedItem[]> {
+  "use cache";
+
+  cacheTag(feedTag(site));
+  cacheTag(listTag(site));
+
+  const rows = await prisma.post.findMany({
+    where: { status: PostStatus.PUBLISHED, type: { in: TYPES_BY_SITE[site] } },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    ...(limit ? { take: limit } : {}),
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      publishedAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    type: row.type as RecordType,
+    title: row.title,
+    slug: row.slug ?? "",
+    excerpt: row.excerpt,
+    publishedAt: row.publishedAt,
+    updatedAt: row.updatedAt,
+  }));
+}
+
 /** dev 카테고리 필터에 쓸 목록 — 글이 있는 카테고리만 (빈 칸막이를 만들지 않는다) */
 export async function findUsedCategories(): Promise<{ name: string; slug: string }[]> {
   "use cache";
