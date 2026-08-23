@@ -6,7 +6,5 @@ import { EMPTY_SERMON_FORM } from "@/lib/editor/sermonForm";
  * 첫 자동 저장에서 초안이 만들어지고 URL이 /admin/write/sermon/{id}로 교체된다.
  */
 export default function NewSermonPage() {
-  return (
-    <SermonEditor postId={null} initialValues={EMPTY_SERMON_FORM} afterPublishHref="/admin/posts" />
-  );
+  return <SermonEditor postId={null} initialValues={EMPTY_SERMON_FORM} />;
 }

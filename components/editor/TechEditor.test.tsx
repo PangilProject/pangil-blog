@@ -39,13 +39,7 @@ function filled(): TechFormValues {
 
 function renderEditor(overrides: Partial<Parameters<typeof TechEditor>[0]> = {}) {
   return render(
-    <TechEditor
-      postId="post-1"
-      initialValues={filled()}
-      categories={CATEGORIES}
-      afterPublishHref="/admin/posts"
-      {...overrides}
-    />,
+    <TechEditor postId="post-1" initialValues={filled()} categories={CATEGORIES} {...overrides} />,
   );
 }
 
@@ -173,7 +167,7 @@ describe("TechEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/admin/posts");
+    expect(push).toHaveBeenCalledWith("/dev/next-16");
   });
 
   it("카테고리가 없으면 막는다", async () => {

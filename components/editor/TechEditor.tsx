@@ -31,6 +31,7 @@ import {
   toDraftMeta,
 } from "@/lib/editor/techForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { publicPostPath } from "@/lib/record/paths";
 
 /**
  * A-07 기술 에디터 (02 §5.5).
@@ -46,15 +47,9 @@ export type TechEditorProps = {
   postId: string | null;
   initialValues: TechFormValues;
   categories: CategoryOption[];
-  afterPublishHref: string;
 };
 
-export function TechEditor({
-  postId,
-  initialValues,
-  categories,
-  afterPublishHref,
-}: TechEditorProps) {
+export function TechEditor({ postId, initialValues, categories }: TechEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -128,7 +123,9 @@ export function TechEditor({
       }
 
       autosave.clearMirror();
-      router.push(afterPublishHref);
+      // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라
+      // 발행 결과의 slug에서 나온다 — 방금 만들어진 주소라 여기서만 알 수 있다
+      router.push(publicPostPath("TECH", result.slug));
     } finally {
       setIsPublishing(false);
     }

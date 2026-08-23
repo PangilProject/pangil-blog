@@ -15,7 +15,6 @@ export default async function EditPraisePage({ params }: PageProps<"/admin/write
     <PraiseEditor
       postId={post.id}
       initialValues={fromDraftContent(post.content.ok ? post.content.content : null, post.title)}
-      afterPublishHref="/admin/posts"
     />
   );
 }

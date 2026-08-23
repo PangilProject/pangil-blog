@@ -46,14 +46,7 @@ function crawledValues(): QtFormValues {
 }
 
 function renderEditor(overrides: Partial<Parameters<typeof QtEditor>[0]> = {}) {
-  return render(
-    <QtEditor
-      postId="post-1"
-      initialValues={crawledValues()}
-      afterPublishHref="/admin/posts"
-      {...overrides}
-    />,
-  );
+  return render(<QtEditor postId="post-1" initialValues={crawledValues()} {...overrides} />);
 }
 
 beforeEach(() => {
@@ -147,7 +140,7 @@ describe("QtEditor — 답변 공란은 경고만 (07 M2 DoD)", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/admin/posts");
+    expect(push).toHaveBeenCalledWith("/faith/qt-1");
   });
 
   it("답변이 전부 비어 있어도 발행된다", async () => {
@@ -178,7 +171,7 @@ describe("QtEditor — 자동 저장 배선", () => {
   it("답변을 고치면 로컬에 먼저 남고 잠시 뒤 서버로 올라간다", async () => {
     render(
       <StrictMode>
-        <QtEditor postId="post-1" initialValues={crawledValues()} afterPublishHref="/admin/posts" />
+        <QtEditor postId="post-1" initialValues={crawledValues()} />
       </StrictMode>,
     );
 

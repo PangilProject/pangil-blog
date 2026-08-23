@@ -20,7 +20,6 @@ export default async function EditSermonPage({ params }: PageProps<"/admin/write
     <SermonEditor
       postId={post.id}
       initialValues={fromDraftContent(post.content.ok ? post.content.content : null, post.title)}
-      afterPublishHref="/admin/posts"
     />
   );
 }

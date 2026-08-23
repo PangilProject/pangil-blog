@@ -6,12 +6,5 @@ import { EMPTY_TECH_FORM } from "@/lib/editor/techForm";
 export default async function NewTechPage() {
   const categories = await listCategories();
 
-  return (
-    <TechEditor
-      postId={null}
-      initialValues={EMPTY_TECH_FORM}
-      categories={categories}
-      afterPublishHref="/admin/posts"
-    />
-  );
+  return <TechEditor postId={null} initialValues={EMPTY_TECH_FORM} categories={categories} />;
 }

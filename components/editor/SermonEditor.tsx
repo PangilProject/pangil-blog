@@ -20,6 +20,7 @@ import {
   toDraftContent,
 } from "@/lib/editor/sermonForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { publicPostPath } from "@/lib/record/paths";
 
 /**
  * A-05 설교 에디터 (02 §5.3 · 프리모템 #2).
@@ -34,11 +35,9 @@ import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 export type SermonEditorProps = {
   postId: string | null;
   initialValues: SermonFormValues;
-  /** 발행 후 돌아갈 곳. 공개 상세는 M3에서 생기므로 지금은 글 관리(A-03)로 보낸다 */
-  afterPublishHref: string;
 };
 
-export function SermonEditor({ postId, initialValues, afterPublishHref }: SermonEditorProps) {
+export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -119,7 +118,9 @@ export function SermonEditor({ postId, initialValues, afterPublishHref }: Sermon
       }
 
       autosave.clearMirror();
-      router.push(afterPublishHref);
+      // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라
+      // 발행 결과의 slug에서 나온다 — 방금 만들어진 주소라 여기서만 알 수 있다
+      router.push(publicPostPath("SERMON", result.slug));
     } finally {
       setIsPublishing(false);
     }

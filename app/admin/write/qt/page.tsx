@@ -9,5 +9,5 @@ import { emptyQtForm } from "@/lib/editor/qtForm";
  * 빈 칸으로 열린다.
  */
 export default function NewQtPage() {
-  return <QtEditor postId={null} initialValues={emptyQtForm()} afterPublishHref="/admin/posts" />;
+  return <QtEditor postId={null} initialValues={emptyQtForm()} />;
 }
