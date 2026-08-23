@@ -20,6 +20,10 @@ export function AdminNav() {
         <Link href="/admin/posts" className="hover:text-ink">
           글 관리
         </Link>
+        {/* 언제든 떠날 수 있다는 사실을 화면에 둔다(07 §3) */}
+        <a href="/admin/export" className="hover:text-ink">
+          내보내기
+        </a>
         <form action={signOut}>
           <button type="submit" className="hover:text-ink">
             로그아웃
