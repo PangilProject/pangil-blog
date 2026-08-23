@@ -9,6 +9,7 @@ import { useEffect } from "react";
 
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
+import { CodeBlockFenceOnEnter } from "@/lib/editor/codeBlockFence";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
 import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
@@ -69,7 +70,9 @@ export function RichTextField({
       ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
       // 마크다운 붙여넣기는 기술 글의 최우선 인터랙션이다(02 §5.5). full 구성에만 붙인다 —
       // 설교 라이브 속기와 찬양 묵상에는 이미지·코드 블록이 들어올 자리가 없다
-      ...(variant === "full" ? [MarkdownPaste, Image.configure({ inline: false })] : []),
+      ...(variant === "full"
+        ? [MarkdownPaste, CodeBlockFenceOnEnter, Image.configure({ inline: false })]
+        : []),
     ],
     // 저장 계약(z.json 배열)과 Tiptap의 JSONContent는 같은 JSON을 다르게 좁힌 타입이다.
     // 변환 지점은 이 위젯 경계 한 곳뿐이므로 여기서만 맞춰준다.
