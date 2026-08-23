@@ -144,7 +144,10 @@ describe("SermonEditor — 자동 저장 배선", () => {
       await vi.advanceTimersByTimeAsync(1200);
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨 · 동기화 대기");
+    // 저장 실패 사유(SaveErrorNote)도 같은 자리에 서므로 문구로 집는다
+    expect(screen.getByText("로컬 저장됨 · 동기화 대기")).toBeInTheDocument();
+    // 사유도 함께 남는다 — "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
+    expect(screen.getByText("offline")).toBeInTheDocument();
     expect(window.localStorage.getItem("draft:SERMON:post-1")).toContain("예배당에서");
   });
 });
