@@ -1,0 +1,85 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import type { RichTextHeading } from "@/lib/render/richText";
+import { cn } from "@/lib/utils";
+
+/**
+ * 기술 글 목차 (04 §3.4) — "책 여백의 메모".
+ *
+ * 위치 확정: **데스크탑은 우측 여백 sticky, 모바일은 본문 상단 접이식.**
+ * 현재 섹션 하이라이트가 아일랜드 4개 중 하나다(04 §3.6) — 목록 자체는 서버가 보낸 데이터로
+ * 그리고, 이 컴포넌트는 스크롤에 따라 어디를 읽고 있는지만 표시한다.
+ *
+ * 제목이 하나뿐이면 목차를 놓지 않는다. 항목 한 줄짜리 목차는 지면만 먹는다.
+ */
+export function Toc({ headings }: { headings: RichTextHeading[] }) {
+  const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null);
+
+  useEffect(() => {
+    if (headings.length === 0) return;
+
+    const elements = headings
+      .map((heading) => document.getElementById(heading.id))
+      .filter((element): element is HTMLElement => element !== null);
+
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 화면에 걸린 것 중 가장 위를 현재로 본다 — 아래로 읽어 내려가는 흐름에 맞다
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible[0]) setActiveId(visible[0].target.id);
+      },
+      // 제목이 화면 상단 근처에 왔을 때를 "읽는 중"으로 본다
+      { rootMargin: "-10% 0px -70% 0px", threshold: 0 },
+    );
+
+    for (const element of elements) observer.observe(element);
+    return () => observer.disconnect();
+  }, [headings]);
+
+  if (headings.length < 2) return null;
+
+  const list = (
+    <ol className="flex flex-col gap-1.5">
+      {headings.map((heading) => (
+        <li key={heading.id} className={heading.level === 3 ? "pl-3" : undefined}>
+          <a
+            href={`#${heading.id}`}
+            aria-current={activeId === heading.id ? "location" : undefined}
+            className={cn(
+              "block text-[12px] leading-[1.5] transition-colors duration-150",
+              activeId === heading.id ? "text-(--accent)" : "text-faint hover:text-ink-soft",
+            )}
+          >
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
+
+  return (
+    <>
+      {/* 모바일: 본문 위 접이식 */}
+      <details className="mb-6 border border-edge bg-card px-4 py-3 lg:hidden">
+        <summary className="cursor-pointer font-typewriter text-[11px] text-faint">목차</summary>
+        <div className="mt-3">{list}</div>
+      </details>
+
+      {/* 데스크탑: 우측 여백 sticky */}
+      <nav
+        aria-label="목차"
+        className="sticky top-10 hidden max-h-[70vh] overflow-y-auto border-edge border-l pl-4 lg:block"
+      >
+        <p className="mb-2.5 font-typewriter text-[10.5px] tracking-[0.14em] text-faint">목차</p>
+        {list}
+      </nav>
+    </>
+  );
+}

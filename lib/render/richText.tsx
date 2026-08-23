@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { CodeBlock } from "@/components/public/CodeBlock";
 import type { TiptapDoc } from "@/lib/content/schema";
 import { headingId } from "@/lib/render/headingId";
 
@@ -22,6 +23,70 @@ export type RichTextHeading = { id: string; text: string; level: 2 | 3 };
 export type RenderedRichText = {
   content: ReactNode;
   headings: RichTextHeading[];
+};
+
+export type CodeBlockSource = { code: string; language: string | null };
+
+/**
+ * 하이라이팅 결과를 찾는 키. 같은 코드·같은 언어면 같은 결과이므로 내용 자체를 키로 쓴다 —
+ * 노드 위치를 키로 쓰면 문서를 고칠 때마다 어긋난다.
+ */
+export function codeKey({ code, language }: CodeBlockSource): string {
+  return `${language ?? ""}\u0000${code}`;
+}
+
+/** 하이라이팅할 코드 블록을 미리 모은다. 렌더는 동기이고 하이라이팅은 비동기라서 갈라 놓는다 */
+export function collectCodeBlocks(doc: TiptapDoc | null | undefined): CodeBlockSource[] {
+  const found: CodeBlockSource[] = [];
+
+  const walk = (nodes: unknown) => {
+    if (!Array.isArray(nodes)) return;
+    for (const raw of nodes) {
+      const node = raw as Node;
+      if (node.type === "codeBlock") {
+        found.push({
+          code: textOf(node),
+          language: typeof node.attrs?.language === "string" ? node.attrs.language : null,
+        });
+      }
+      walk(node.content);
+    }
+  };
+
+  walk(doc?.content);
+  return found;
+}
+
+/**
+ * 제목만 훑는다. 목차는 지면 레이아웃(본문 밖 우측 여백)이 필요로 하므로 본문 렌더 결과를
+ * 기다릴 수 없다 — 대신 앵커 계산을 렌더와 **같은 함수**(headingId)로 하고, 두 결과가 같다는
+ * 것을 테스트로 고정한다. 어긋나면 목차 링크가 엉뚱한 곳으로 간다.
+ */
+export function collectHeadings(doc: TiptapDoc | null | undefined): RichTextHeading[] {
+  const headings: RichTextHeading[] = [];
+  const seen = new Map<string, number>();
+
+  const walk = (nodes: unknown) => {
+    if (!Array.isArray(nodes)) return;
+    for (const raw of nodes) {
+      const node = raw as Node;
+      if (node.type === "heading") {
+        const level = node.attrs?.level === 2 ? 2 : 3;
+        const text = textOf(node);
+        headings.push({ id: headingId(text, seen), text, level });
+        continue;
+      }
+      walk(node.content);
+    }
+  };
+
+  walk(doc?.content);
+  return headings;
+}
+
+export type RenderOptions = {
+  /** codeKey → 하이라이팅된 HTML. 없으면 평문 코드 블록으로 그린다 */
+  highlighted?: Map<string, string>;
 };
 
 type Mark = { type?: unknown; attrs?: Record<string, unknown> };
@@ -70,7 +135,11 @@ function textOf(node: Node): string {
   return (node.content as Node[]).map(textOf).join("");
 }
 
-type Context = { headings: RichTextHeading[]; seen: Map<string, number> };
+type Context = {
+  headings: RichTextHeading[];
+  seen: Map<string, number>;
+  highlighted: Map<string, string> | undefined;
+};
 
 function renderChildren(content: unknown, context: Context, prefix: string): ReactNode[] {
   if (!Array.isArray(content)) return [];
@@ -124,11 +193,15 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
 
     case "codeBlock": {
       const language = typeof node.attrs?.language === "string" ? node.attrs.language : null;
-      // 하이라이팅은 Shiki가 붙는다(M3 슬라이스 2). 여기서는 언어를 클래스로만 남긴다
+      const code = textOf(node);
+
       return (
-        <pre key={key} data-language={language ?? undefined}>
-          <code className={language ? `language-${language}` : undefined}>{textOf(node)}</code>
-        </pre>
+        <CodeBlock
+          key={key}
+          code={code}
+          language={language}
+          html={context.highlighted?.get(codeKey({ code, language })) ?? null}
+        />
       );
     }
 
@@ -157,8 +230,11 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
   }
 }
 
-export function renderRichText(doc: TiptapDoc | null | undefined): RenderedRichText {
-  const context: Context = { headings: [], seen: new Map() };
+export function renderRichText(
+  doc: TiptapDoc | null | undefined,
+  options: RenderOptions = {},
+): RenderedRichText {
+  const context: Context = { headings: [], seen: new Map(), highlighted: options.highlighted };
 
   if (!doc || !Array.isArray(doc.content)) {
     return { content: null, headings: [] };

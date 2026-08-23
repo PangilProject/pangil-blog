@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { TiptapDoc } from "@/lib/content/schema";
-import { renderRichText } from "@/lib/render/richText";
+import { codeKey, collectHeadings, renderRichText } from "@/lib/render/richText";
 
 /**
  * 렌더러는 묵상·기술이 공유하는 유일한 직렬화기다(04 §3.1). 여기서 고정하는 것은 두 가지다.
@@ -44,7 +44,7 @@ describe("renderRichText — 블록", () => {
     expect(container.querySelector("hr")).not.toBeNull();
   });
 
-  it("코드 블록은 언어를 남기고 줄바꿈을 지킨다", () => {
+  it("코드 블록은 언어 라벨·복사 버튼과 함께 서고 줄바꿈을 지킨다", () => {
     const { container } = view(
       doc({
         type: "codeBlock",
@@ -53,9 +53,27 @@ describe("renderRichText — 블록", () => {
       }),
     );
 
-    const code = container.querySelector("pre code");
-    expect(code?.className).toBe("language-ts");
-    expect(code?.textContent).toBe("const a = 1;\nconst b = 2;");
+    expect(container.textContent).toContain("TypeScript");
+    expect(container.querySelector("pre code")?.textContent).toBe("const a = 1;\nconst b = 2;");
+  });
+
+  it("하이라이팅된 HTML이 있으면 그것을 쓴다 — 없으면 평문이다", () => {
+    const source = doc({
+      type: "codeBlock",
+      attrs: { language: "ts" },
+      content: [text("const a = 1;")],
+    });
+    const highlighted = new Map([
+      [
+        codeKey({ code: "const a = 1;", language: "ts" }),
+        '<pre class="shiki"><code>색칠됨</code></pre>',
+      ],
+    ]);
+
+    const { content } = renderRichText(source as TiptapDoc, { highlighted });
+    const { container } = render(<div>{content}</div>);
+
+    expect(container.querySelector(".record-code")?.textContent).toBe("색칠됨");
   });
 
   it("이미지는 alt와 함께 지연 로딩한다", () => {
@@ -167,5 +185,31 @@ describe("renderRichText — 낯선 입력", () => {
     expect(renderRichText(null).content).toBeNull();
     expect(renderRichText({ type: "doc", content: [] }).content).toEqual([]);
     expect(renderRichText({ type: "doc" } as unknown as TiptapDoc).headings).toEqual([]);
+  });
+});
+
+describe("collectHeadings — 목차 추출 (04 §3.4)", () => {
+  const sample = doc(
+    { type: "heading", attrs: { level: 2 }, content: [text("정리")] },
+    { type: "paragraph", content: [text("본문")] },
+    {
+      type: "blockquote",
+      content: [{ type: "heading", attrs: { level: 3 }, content: [text("안쪽")] }],
+    },
+    { type: "heading", attrs: { level: 2 }, content: [text("정리")] },
+  );
+
+  it("렌더가 만든 앵커와 정확히 같다 — 어긋나면 목차 링크가 엉뚱한 곳으로 간다", () => {
+    const { headings } = renderRichText(sample as TiptapDoc);
+
+    expect(collectHeadings(sample as TiptapDoc)).toEqual(headings);
+  });
+
+  it("중첩된 제목도 순서대로 담는다", () => {
+    expect(collectHeadings(sample as TiptapDoc).map((heading) => heading.id)).toEqual([
+      "정리",
+      "안쪽",
+      "정리-2",
+    ]);
   });
 });
