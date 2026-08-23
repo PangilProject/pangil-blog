@@ -53,6 +53,15 @@ describe("emptyPraiseForm", () => {
   it("섹션 id는 서로 다르다 — 재정렬 키다", () => {
     expect(newSection().id).not.toBe(newSection().id);
   });
+
+  /**
+   * 빈 폼은 서버에서도 만들어진다(새 글 페이지). 프리렌더는 재현 가능한 출력만 허용하므로
+   * 여기서 난수를 쓰면 빌드가 거부한다 — 실제로 그랬다(ADR-003).
+   */
+  it("빈 폼의 섹션 id는 결정적이다 — 서버에서 만들어도 안전하다", () => {
+    expect(emptyPraiseForm().sections[0]?.id).toBe(emptyPraiseForm().sections[0]?.id);
+    expect(emptyPraiseForm().sections[0]?.id).toBe("section-1");
+  });
 });
 
 describe("발행 게이트", () => {
