@@ -42,8 +42,20 @@ export type PraiseFormValues = {
 
 export const DEFAULT_SECTION_LABEL = "Verse";
 
+/**
+ * 새 섹션. id는 배열 안에서만 유일하면 된다(React key · dnd-kit).
+ *
+ * nanoid는 브라우저에서 섹션을 더할 때만 쓴다. **서버 프리렌더에서는 난수를 쓸 수 없다**
+ * (Cache Components, ADR-003 — 재현되지 않는 출력이라 빌드가 거부한다). 그래서 빈 폼과
+ * 저장값 복원의 id는 자리 번호로 결정적으로 만든다.
+ */
 export function newSection(label: string = DEFAULT_SECTION_LABEL): PraiseSectionFormValue {
   return { id: nanoid(), label, lyrics: "" };
+}
+
+/** 자리 번호로 만드는 결정적 id — 서버에서 만들어도 안전하다 */
+export function sectionIdAt(index: number): string {
+  return `section-${index + 1}`;
 }
 
 export function emptyPraiseForm(): PraiseFormValues {
@@ -51,7 +63,7 @@ export function emptyPraiseForm(): PraiseFormValues {
     title: "",
     youtubeUrl: "",
     // 빈 화면을 주지 않는다. 첫 섹션은 늘 놓여 있다
-    sections: [newSection()],
+    sections: [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
     meditationAndPrayer: EMPTY_RICH_TEXT,
   };
 }
@@ -142,9 +154,9 @@ export function toPublishContent(values: PraiseFormValues): PostContent {
 export function fromDraftContent(content: DraftContent | null, title: string): PraiseFormValues {
   if (content?.kind !== "PRAISE") return { ...emptyPraiseForm(), title };
 
-  const sections = (content.sections ?? []).map((section) => ({
-    // 저장된 id가 없으면 새로 만든다 — 재정렬 키가 없으면 드래그가 엉킨다
-    id: section.id ?? nanoid(),
+  const sections = (content.sections ?? []).map((section, index) => ({
+    // 저장된 id가 없으면 자리 번호로 채운다 — 재정렬 키가 없으면 드래그가 엉킨다
+    id: section.id ?? sectionIdAt(index),
     label: fromContentLabel(section.label),
     lyrics: section.lyrics ?? "",
   }));
@@ -152,7 +164,10 @@ export function fromDraftContent(content: DraftContent | null, title: string): P
   return {
     title,
     youtubeUrl: content.youtubeUrl ?? "",
-    sections: sections.length > 0 ? sections : [newSection()],
+    sections:
+      sections.length > 0
+        ? sections
+        : [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
     meditationAndPrayer: (content.meditationAndPrayer ?? EMPTY_TIPTAP_DOC) as RichTextValue,
   };
 }

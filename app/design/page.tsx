@@ -23,8 +23,10 @@ import { formatCallNumber } from "@/lib/record/callNumber";
  * 재현했는지 눈으로 대조하는 자리다(07 M1 DoD).
  *
  * 개발 전용이다. 프로덕션에서는 404 — 컴포넌트 갤러리는 배포 산출물이 아니다.
+ *
+ * 세그먼트 설정을 적지 않는다(ADR-003). 데이터를 읽지 않는 페이지는 Cache Components에서
+ * 그대로 프리렌더된다.
  */
-export const dynamic = "force-static";
 
 export default function DesignGalleryPage() {
   if (process.env.NODE_ENV === "production") notFound();
