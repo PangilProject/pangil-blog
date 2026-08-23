@@ -1,9 +1,11 @@
+import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { PostDetail } from "@/components/public/PostDetail";
 import { Toc } from "@/components/public/Toc";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { collectHeadings } from "@/lib/render/richText";
+import { postTag } from "@/lib/revalidate/tags";
 
 /**
  * D-02 기술 글 상세 (02 §2.2) — SEO 주력 지면.
@@ -26,6 +28,10 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
   const post = await findPublishedPostBySlug("dev", slug);
 
   if (!post) notFound();
+
+  // 이 지면의 캐시 항목에도 태그를 명시한다. 안쪽 조회에만 붙이면 조회 결과는 새로 읽히는데
+  // 이미 만들어진 HTML이 그대로 남는다 — 언어를 고쳐도 지면이 안 바뀌던 이유다
+  cacheTag(postTag(post.id));
 
   // 목차는 본문 밖 우측 여백에 서므로(04 §3.4) 지면 바깥에서 제목을 훑는다
   const headings =
@@ -68,6 +74,8 @@ export async function generateMetadata({ params }: PageProps<"/dev/[slug]">) {
   const post = await findPublishedPostBySlug("dev", slug);
 
   if (!post) return {};
+
+  cacheTag(postTag(post.id));
 
   return {
     title: post.title,
