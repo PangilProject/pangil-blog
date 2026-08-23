@@ -63,10 +63,9 @@ export function RichTextField({
         "aria-label": ariaLabel,
         role: "textbox",
         "aria-multiline": "true",
-        class: cn(
-          "min-h-[120px] px-4 py-3 outline-none",
-          "prose-headings:font-serif text-[15px] leading-body",
-        ),
+        // record-prose가 제목·목록·인용을 실제로 다르게 보이게 한다(03 §5.2).
+        // 이게 없으면 서식이 적용돼도 본문과 똑같이 보인다 — 실제로 그랬다.
+        class: cn("record-prose min-h-[120px] px-4 py-3 outline-none"),
       },
     },
     onUpdate: ({ editor: instance }) => {
