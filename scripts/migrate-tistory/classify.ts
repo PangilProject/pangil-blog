@@ -21,7 +21,10 @@ export type Classified =
       /** TECH만 씀. faith는 카테고리를 쓰지 않는다(02 §4) */
       categorySlug: string | null;
     }
-  | { kind: "review"; reason: string };
+  /** 규칙이 판정하지 못했다. 이 수가 0이 아니면 아직 이관할 준비가 안 된 것이다 */
+  | { kind: "review"; reason: string }
+  /** 일부러 안 가져온다(서식·빈 틀). 판정 실패와 구분해야 리포트를 믿을 수 있다 */
+  | { kind: "exclude"; reason: string };
 
 /** 깨진 이모지·기호를 털어낸 이름 */
 function clean(segment: string): string {
@@ -49,8 +52,9 @@ export function classify(categoryPath: string): Classified {
   const segments = categoryPath.split("/").map(clean).filter(Boolean);
 
   if (segments.length === 0) {
-    // 서식·임시 메모 23편. 이관하지 않고 리포트에만 남긴다(사용자 확인)
-    return { kind: "review", reason: "카테고리 없음(서식·임시 글)" };
+    // 티스토리에서 카테고리를 안 골랐다. 서식과 진짜 글이 섞여 있어 규칙으로는 못 가른다 —
+    // overrides가 글 단위로 정한다
+    return { kind: "review", reason: "카테고리 없음" };
   }
 
   const [top, sub = ""] = segments;

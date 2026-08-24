@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { RecordType } from "@/lib/record/callNumber";
 import { classify, type MigrationSite } from "@/scripts/migrate-tistory/classify";
 import { ExtractError, extractPost } from "@/scripts/migrate-tistory/extract";
+import { overrideFor } from "@/scripts/migrate-tistory/overrides";
 
 /**
  * 마이그레이션 dry-run 리포트 (05 §6.1 · AGENTS.md "dry-run이 기본").
@@ -104,7 +105,8 @@ function main() {
   console.log(`[migrate] ${input} — HTML ${files.length}편`);
 
   const rows: Row[] = [];
-  const skipped: Skipped[] = [];
+  const excluded: Skipped[] = [];
+  const review: Skipped[] = [];
   const failed: { file: string; error: string }[] = [];
 
   for (const file of files) {
@@ -120,15 +122,18 @@ function main() {
       continue;
     }
 
-    const classified = classify(post.categoryPath);
+    // 글 단위 예외가 규칙을 이긴다 — 카테고리를 안 고른 32편이 그렇다
+    const classified = overrideFor(post.legacyId) ?? classify(post.categoryPath);
 
-    if (classified.kind === "review") {
-      skipped.push({
+    if (classified.kind !== "post") {
+      const row = {
         legacyId: post.legacyId,
         file: post.file,
         title: post.title,
         reason: classified.reason,
-      });
+      };
+      if (classified.kind === "exclude") excluded.push(row);
+      else review.push(row);
       continue;
     }
 
@@ -188,14 +193,18 @@ function main() {
 
   console.log(`\n이관 대상  ${rows.length}편`);
 
-  if (skipped.length > 0) {
-    console.log(`\n검토 큐  ${skipped.length}편 — 이관하지 않는다`);
-    for (const [reason, count] of group(skipped, (row) => row.reason)) {
-      console.log(`  ${String(count).padStart(4)}  ${reason}`);
+  if (excluded.length > 0) {
+    console.log(`\n제외  ${excluded.length}편 — 일부러 가져오지 않는다`);
+    for (const row of excluded) console.log(`   · ${row.title || row.file} (${row.reason})`);
+  }
+
+  if (review.length > 0) {
+    // 이 수가 0이 아니면 아직 이관할 준비가 안 된 것이다. 규칙이나 overrides에 답이 없다
+    console.log(`\n검토 큐  ${review.length}편 — 사람이 정해야 한다`);
+    for (const row of review) {
+      console.log(`   · ${row.file}${row.title ? ` — ${row.title}` : ""} (${row.reason})`);
     }
-    for (const row of skipped) {
-      console.log(`        · ${row.file}${row.title ? ` — ${row.title}` : ""}`);
-    }
+    process.exitCode = 1;
   }
 
   if (failed.length > 0) {
