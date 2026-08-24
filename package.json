@@ -15,6 +15,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "test": "vitest run",
+    "migrate": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/migrate-tistory/report.mts",
     "crawl": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/crawler/run.mts",
     "test:watch": "vitest",
     "db:generate": "prisma generate",

@@ -1,0 +1,737 @@
+
+<meta charset="utf-8">
+<html lang="ko">
+<head>
+    <link rel="stylesheet" type="text/css" href="./../style.css" />
+    <title>[컴퓨터 네트워크] Socket programming (Part 2) - (2)</title>
+</head>
+<body id="tt-body-page" class="">
+<div id="wrap" class="wrap-right">
+    <div id="container">
+        <main class="main ">
+            <div class="area-main">
+                <div class="area-view">
+                    <div class="article-header">
+                        <div class="inner-article-header">
+                            <div class="box-meta">
+                                <h2 class="title-article">[컴퓨터 네트워크] Socket programming (Part 2) - (2)</h2>
+                                <div class="box-info">
+                                    <p class="category">? 한동대학교/Computer Networking</p>
+                                    <p class="date">2025-07-01 18:28:27</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="article-view">
+                        <div class="contents_style">
+                            <blockquote data-ke-style="style1"><p data-ke-size="size16"><span style="font-family: 'Noto Serif KR';"><p>일자 : 24-2 11주차 1차시</p>
+</span></p></blockquote><h3>[3] select()</h3>
+<pre><code class="language-c">#include &lt;sys/select.h&gt; // select 함수 사용을 위한 헤더 파일
+#include &lt;sys/time.h&gt; // timeval 구조체 사용을 위한 헤더 파일
+
+// select 함수 선언
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+
+struct timeval {
+  long tv_sec; /* 초 단위 */
+  long tv_usec; /* 마이크로초 단위 */
+}</code></pre>
+<h4>1) 역할</h4>
+<p>: 동기 I/O 다중화 (Synchronous I/O multiplexing)</p>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li><p>nfds : 세트 내에서 가장 높은 번호의 파일 디스크립터에 1을 더한 값</p>
+<ul>
+<li>select()는 FD_SETSIZE 미만의 파일 디스크립터 번호만 모니터링할 수 있다.</li>
+</ul>
+</li>
+<li><p>readfds : 읽기 준비 상태를 모니터링할 파일 디스크립터가 있는 세트</p>
+</li>
+<li><p>writefds : 쓰기 준비 상태를 모니터링할 파일 디스크립터가 있는 세트</p>
+</li>
+<li><p>exceptfds : &quot;예외 조건&quot;을 모니터링할 파일 디스크립터가 있는 세트</p>
+</li>
+<li><p>timeout : 파일 디스크립터가 준비될 때까지 select()가 대기할 시간 간격</p>
+<ul>
+<li>timeout이 Null일 경우, 무한 대기</li>
+<li>timeout이 0일 경우, 대기하지 않고 즉시 반환</li>
+</ul>
+</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>반환 값<ul>
+<li>성공 시: 성공한 세트 내 파일 디스크립터 수</li>
+<li>타임아웃 발생 시: 0</li>
+</ul>
+</li>
+</ul>
+<h3>[4] Call procedures of select()</h3>
+<ol>
+<li>Step One.<ul>
+<li>Set file descriptors: 모니터링할 파일 디스크립터를 설정하는 것이다. 예를 들어, 읽기, 쓰기, 예외 처리를 위한 파일 디스크립터 세트를 구성하는 작업이다.</li>
+<li>Set check range: 확인할 파일 디스크립터의 범위를 설정하는 것이다. <code>nfds</code> 파라미터에 해당하며, 파일 디스크립터의 최대값에 1을 더한 값을 지정한다.</li>
+<li>Set timeout: <code>select()</code> 함수가 대기할 시간(타임아웃)을 설정하는 것이다. 타임아웃 값에 따라 <code>select()</code> 함수는 파일 디스크립터의 상태 변화를 기다리는 시간을 결정한다.</li>
+</ul>
+</li>
+<li>Step Two.<ul>
+<li>Call select(): 설정한 파일 디스크립터 세트와 타임아웃 값을 기반으로 <code>select()</code> 함수를 호출하는 것이다. <code>select()</code> 함수는 파일 디스크립터가 읽기, 쓰기, 또는 예외 조건에 대해 준비 상태인지 확인한다.</li>
+</ul>
+</li>
+<li>Step Three.<ul>
+<li>Check result of select(): <code>select()</code> 함수의 결과를 확인하는 것이다. 파일 디스크립터가 준비 상태인지 여부를 판별하며, 각 파일 디스크립터가 읽기 가능(Readable), 쓰기 가능(Writable), 예외(Exception) 상태인지 확인하는 과정이다.</li>
+</ul>
+</li>
+</ol>
+<h3>[5] Descriptor sets</h3>
+<p>: 디스크립터 세트</p>
+<ul>
+<li><code>fd_set</code>: 정수 배열<ul>
+<li>각 정수의 각 비트는 하나의 디스크립터에 해당합니다.</li>
+<li>관련 매크로 함수들이 존재한다.</li>
+</ul>
+</li>
+</ul>
+<h4>1) 함수 / 설명 표</h4>
+<table>
+<thead>
+<tr>
+<th>매크로 함수</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>void FD_ZERO(fd_set *set)</td>
+<td>세트에서 모든 항목을 제거한다</td>
+</tr>
+<tr>
+<td>void FD_SET(int fd, fd_set *set)</td>
+<td><code>fd</code>를 세트에 추가한다</td>
+</tr>
+<tr>
+<td>void FD_CLR(int fd, fd_set *set)</td>
+<td><code>fd</code>를 세트에서 제거한다</td>
+</tr>
+<tr>
+<td>int FD_ISSET(int fd, fd_set *set)</td>
+<td><code>fd</code>가 세트에 포함되어 있으면 true를 반환한다</td>
+</tr>
+</tbody></table>
+<h4>2) 예시</h4>
+<p>이 예시는 <code>FD_ZERO</code>, <code>FD_SET</code>, <code>FD_CLR</code>, <code>FD_ISSET</code> 함수를 사용하여 <code>fd_set</code> 세트를 관리하는 과정을 보여준다. <code>FD_ZERO</code>는 세트를 초기화하고, <code>FD_SET</code>은 특정 파일 디스크립터를 추가하며, <code>FD_CLR</code>는 특정 파일 디스크립터를 제거하고, <code>FD_ISSET</code>은 세트에 해당 파일 디스크립터가 포함되어 있는지 확인하는 기능을 한다.</p>
+<ul>
+<li>fd_set: array of integers<ul>
+<li>Each bit in each integer corresponds to a descriptor</li>
+<li>The related macro functions</li>
+</ul>
+</li>
+</ul>
+<h4>1) 표로 보는 function / description</h4>
+<table>
+<thead>
+<tr>
+<th>Macro function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>void FD_ZERO(fd_set *set)</td>
+<td>Clear all entities from the set</td>
+</tr>
+<tr>
+<td>void FD_SET(int fd, fd_set *set)</td>
+<td>Add fd to the set</td>
+</tr>
+<tr>
+<td>void FD_CLR(int fd, fd_set *set)</td>
+<td>Remove fd to the set</td>
+</tr>
+<tr>
+<td>int FD_ISSET(int fd, fd_set *set)</td>
+<td>Return true if fd is in the set</td>
+</tr>
+</tbody></table>
+<h4>2) 예시</h4>
+<p><img src="https://velog.velcdn.com/images/oksk6681/post/a773b379-a3f2-403e-b3e4-59919095cd34/image.png" alt=""></p>
+<h3>[6] Detecting changes of file descriptor</h3>
+<p>: 파일 디스크립터의 변화 감지</p>
+<p><img src="https://velog.velcdn.com/images/oksk6681/post/31dd1372-63b8-43ea-b8f7-37f11649b48e/image.png" alt=""></p>
+<ul>
+<li><strong>질문</strong>: 어떤 파일 디스크립터가 준비되었는지 어떻게 알 수 있나요?</li>
+<li><strong>답변</strong>: <code>select()</code> 함수를 호출하기 전과 후의 <code>fd_set</code> 상태를 확인함으로써 알 수 있습니다.</li>
+</ul>
+<h4>과정 설명</h4>
+<ol>
+<li><p><strong>Before calling select()</strong></p>
+<ul>
+<li><code>fd_set</code> 내 모든 파일 디스크립터는 준비 상태가 아닌(0) 상태입니다.</li>
+<li>예를 들어, <code>fd0</code>, <code>fd1</code>, <code>fd2</code>, <code>fd3</code>의 값이 모두 0으로 설정됩니다.</li>
+</ul>
+</li>
+<li><p><strong>When fd1 and fd3 change</strong></p>
+<ul>
+<li><code>select()</code> 호출 이후, 파일 디스크립터 중 <code>fd1</code>과 <code>fd3</code>가 준비 상태로 변경됩니다.</li>
+</ul>
+</li>
+<li><p><strong>After calling select()</strong></p>
+<ul>
+<li><code>fd_set</code> 내에서 준비된 파일 디스크립터는 1로 표시됩니다.</li>
+<li>위의 예시에서 <code>fd1</code>과 <code>fd3</code>의 값이 1로 변경된 것을 통해 준비 상태임을 확인할 수 있습니다. </li>
+</ul>
+</li>
+</ol>
+<p>이와 같은 방식으로 <code>select()</code> 함수는 파일 디스크립터의 상태 변화를 감지하며, 각 파일 디스크립터의 준비 여부를 판단할 수 있습니다.</p>
+<h3>[7] Detecting changes of file descriptor</h3>
+<p>: 파일 디스크립터의 변화 감지</p>
+<ul>
+<li>소켓이 준비 상태가 되는 조건들</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>조건</th>
+<th>읽기 가능?</th>
+<th>쓰기 가능?</th>
+<th>예외?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>읽을 데이터가 있을 때</td>
+<td>O</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>새로운 연결이 대기 중인 소켓에 준비되었을 때</td>
+<td>O</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>읽기 반이 닫혔을 때(FIN 수신됨)</td>
+<td>O</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>쓰기를 위한 공간이 있을 때</td>
+<td></td>
+<td>O</td>
+<td></td>
+</tr>
+<tr>
+<td>쓰기 반이 닫혔을 때</td>
+<td></td>
+<td>O</td>
+<td></td>
+</tr>
+<tr>
+<td>TCP의 대역 외(out-of-band) 데이터가 있을 때</td>
+<td></td>
+<td></td>
+<td>O</td>
+</tr>
+</tbody></table>
+<p>물론입니다! 아래는 요청하신 내용을 한국어로 번역한 것입니다.</p>
+<h2>2. 다양한 입출력 함수</h2>
+<h3>[1] recv() 및 send()</h3>
+<pre><code class="language-c">#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+ssize_t send(int sockfd, const void *buf, size_t len, int flags);</code></pre>
+<h4>1) flags</h4>
+<table>
+<thead>
+<tr>
+<th>옵션</th>
+<th>설명</th>
+<th>recv</th>
+<th>send</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MSG_DONTROUTE</td>
+<td>패킷을 전송할 때 게이트웨이를 사용하지 않고, 직접 연결된 네트워크의 호스트에게만 전송</td>
+<td></td>
+<td>O</td>
+</tr>
+<tr>
+<td>?MSG_DONTWAIT?</td>
+<td>논블로킹 작업을 활성화</td>
+<td>O</td>
+<td>O</td>
+</tr>
+<tr>
+<td>MSG_OOB</td>
+<td>긴급(Out-of-band) 데이터를 전송하거나 수신</td>
+<td>O</td>
+<td>O</td>
+</tr>
+<tr>
+<td>?MSG_PEEK?</td>
+<td>수신 큐의 시작에서 데이터를 반환하지만 해당 데이터를 큐에서 제거하지 않음</td>
+<td>O</td>
+<td></td>
+</tr>
+<tr>
+<td>MSG_WAITALL</td>
+<td>모든 데이터를 대기(전체 요청이 만족될 때까지 블록)</td>
+<td>O</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3>[2-1] readv() &amp; writev()</h3>
+<h4>1) readv()와 writev() 시스템 호출의 작동 방식</h4>
+<ol>
+<li><p><strong>readv() 함수의 경우</strong><br><img src="https://velog.velcdn.com/images/oksk6681/post/62512a03-41d8-434c-87af-4f650b5069e6/image.png" alt=""></p>
+<ul>
+<li>read function: 입력 버퍼(Input buffer)에서 각각의 Array 1, 2, 3으로 개별적인 read() 호출을 통해 데이터를 읽어온다.</li>
+<li>readv function: 입력 버퍼에서 단일 readv() 호출로 여러 Array(1, 2, 3)에 동시에 데이터를 읽어올 수 있다.</li>
+</ul>
+</li>
+<li><p><strong>writev() 함수의 경우</strong><br><img src="https://velog.velcdn.com/images/oksk6681/post/9a4f1f3f-fc82-44a6-88aa-1efc3da55f45/image.png" alt=""></p>
+<ul>
+<li>write function: Array 1, 2, 3에서 출력 버퍼(Output buffer)로 각각 개별적인 write() 호출을 통해 데이터를 쓴다.</li>
+<li>writev function: 여러 Array(1, 2, 3)에서 출력 버퍼로 단일 writev() 호출로 동시에 데이터를 쓸 수 있다.</li>
+</ul>
+</li>
+<li><p>주요 차이점:</p>
+</li>
+</ol>
+<ul>
+<li>일반 read/write는 각각의 배열마다 개별적인 시스템 콜이 필요하다.</li>
+<li>readv/writev는 한 번의 시스템 콜로 여러 배열의 입출력을 처리할 수 있어 더 효율적이다.</li>
+<li>이는 특히 여러 메모리 버퍼를 다룰 때 시스템 콜의 오버헤드를 줄일 수 있다는 장점이 있다.</li>
+</ul>
+<h3>[2-2] readv() &amp; writev()</h3>
+<pre><code class="language-c">#include &lt;sys/uio.h&gt; // iovec 구조체를 사용하기 위해 필요한 헤더 파일
+
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt);</code></pre>
+<h4>1) 역할</h4>
+<ul>
+<li>여러 개의 버퍼에 데이터 읽기 또는 쓰기<ul>
+<li>readv와 writev는 단일 함수 호출로 여러 버퍼에 대해 읽거나 쓸 수 있게 해준다.</li>
+</ul>
+</li>
+</ul>
+<h4>2) 반환 값</h4>
+<p>: 하나 이상의 버퍼에서 읽거나 쓰기</p>
+<ul>
+<li>성공<ul>
+<li>readv: 읽은 바이트 수</li>
+<li>writev: 쓴 바이트 수</li>
+</ul>
+</li>
+<li>오류: -1</li>
+</ul>
+<h4>3) 파라미터 설명</h4>
+<ul>
+<li><p>fd: 파일 디스크립터</p>
+</li>
+<li><p>iov: iovec 구조체의 주소</p>
+<p>struct iovec {</p>
+<pre><code>void *iov_base; /* 시작 주소 */
+size_t iov_len; /* 전송할 바이트 수 */</code></pre><p>};</p>
+</li>
+<li><p>iovcnt: 배열의 개수</p>
+</li>
+</ul>
+<h3>[3] 소켓과 표준 입출력</h3>
+<ul>
+<li>표준 입출력 스트림은 소켓과 함께 사용할 수 있지만, 고려해야 할 몇 가지 사항이 있다.<ul>
+<li>fdopen 함수를 호출하여 어떤 디스크립터에서든 표준 입출력 스트림을 생성할 수 있다.</li>
+<li>마찬가지로, 표준 입출력 스트림이 주어지면 fileno 함수를 호출하여 해당 디스크립터를 얻을 수 있다.</li>
+<li>fseek, fsetpos, rewind 함수는 모두 lseek을 호출하는데, 이는 소켓에서 실패한다.</li>
+<li>읽기와 쓰기 문제를 처리하는 가장 쉬운 방법은 주어진 소켓에 대해 두 개의 표준 입출력 스트림을 여는 것이다: 하나는 읽기를 위한 것이고, 다른 하나는 쓰기를 위한 것이다.</li>
+</ul>
+</li>
+</ul>
+<h3>[4] 표준 입출력</h3>
+<ul>
+<li>표준 입출력 함수<ul>
+<li>파일 포인터(FILE *)를 사용한다.</li>
+<li>예: fopen(), fclose(), fwrite(), fread()</li>
+</ul>
+</li>
+<li>시스템 함수<ul>
+<li>파일 디스크립터(int)를 사용한다.</li>
+<li>예: open(), close(), write(), read()</li>
+</ul>
+</li>
+</ul>
+<h3>[5-1] fdopen()</h3>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+FILE *fdopen(int fildes, const char *mode);</code></pre>
+<h4>1) 역할</h4>
+<p>: 파일 디스크립터와 스트림을 연결한다.</p>
+<ul>
+<li>파일 디스크립터와 스트림을 연결한다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li>filedes: 파일 디스크립터</li>
+<li>mode:<ul>
+<li>r: 파일을 읽기 위해 연다.</li>
+<li>w: 파일을 쓰기 위해 연다.</li>
+<li>a: 파일의 끝에서 쓰기 위해 연다.</li>
+<li>r+: 파일을 읽기와 쓰기 위해 연다.</li>
+<li>w+: 파일을 읽기와 쓰기 위해 연다.</li>
+<li>a+: 파일의 끝에서 읽기와 쓰기 위해 연다.</li>
+</ul>
+</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 스트림에 대한 포인터</li>
+<li>오류: 널 포인터</li>
+</ul>
+<h3>[5-2] fileno()</h3>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+int fileno(FILE *stream);</code></pre>
+<h4>1) 역할</h4>
+<p>: 스트림 포인터를 파일 디스크립터에 매핑한다.</p>
+<ul>
+<li>stream이 가리키는 스트림에 연결된 정수 파일 디스크립터를 반환한다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li>stream: 파일 디스크립터</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 스트림과 연결된 파일 디스크립터의 정수 값</li>
+<li>오류: 널 포인터</li>
+</ul>
+<h3>[6] 입력과 출력 스트림 분리</h3>
+<ul>
+<li>주어진 소켓에 대해 읽기와 쓰기를 위한 두 개의 표준 입출력 스트림을 여는 것이 일반적이다.<ul>
+<li>편리한 처리를 위해</li>
+<li>그러나 연결을 닫을 때 중복된 파일 디스크립터를 신중하게 처리해야 한다.</li>
+</ul>
+</li>
+</ul>
+<h3>[7-1] Problem when closing 소켓</h3>
+<h4>1) <strong>핵심 문제:</strong></h4>
+<ul>
+<li>하나의 소켓에 대해 read와 write용 FILE 포인터를 각각 얻더라도, 둘 중 하나에 대해 fclose()를 호출하면 소켓이 완전히 닫히게 된다.</li>
+<li>즉, half-close가 아닌 완전 종료가 발생한다.</li>
+</ul>
+<h4>2) 예시 코드 분석</h4>
+<p><strong>서버 측 코드 (sep_serv.c):</strong></p>
+<pre><code class="language-c">readfp = fdopen(clnt_sock, &quot;r&quot;);
+writefp = fdopen(clnt_sock, &quot;w&quot;);
+
+fputs(&quot;FROM SERVER: Hi~ client? \n&quot;, writefp);
+fputs(&quot;I love all of the world \n&quot;, writefp);
+fputs(&quot;You are awesome! \n&quot;, writefp);
+fflush(writefp);
+
+fclose(writefp);    // writefp를 닫으면
+fgets(buf, sizeof(buf), readfp);    // 이 부분은 실행되지 않음</code></pre>
+<p><strong>클라이언트 측 코드 (sep_clnt.c):</strong></p>
+<pre><code class="language-c">readfp = fdopen(sock, &quot;r&quot;);
+writefp = fdopen(sock, &quot;w&quot;);
+
+while (1)
+{
+    if (fgets(buf, sizeof(buf), readfp)==NULL) 
+        break;
+    fputs(buf, stdout);
+    fflush(stdout);
+}
+
+fputs(&quot;FROM CLIENT: Thank you! \n&quot;, writefp);
+fflush(writefp);
+fclose(writefp); fclose(readfp);</code></pre>
+<h5>(1) <strong>문제점 설명:</strong></h5>
+<ol>
+<li>서버가 writefp를 fclose()로 닫으면 소켓 자체가 완전히 닫힌다.</li>
+<li>이로 인해 서버의 fgets() 함수는 실행되지 않는다.</li>
+<li>소켓이 완전히 닫히면서 File Descriptor와 모든 FILE 포인터들이 함께 닫힌다.</li>
+</ol>
+<h5>(2) <strong>영향:</strong></h5>
+<ul>
+<li>이러한 동작은 half-close를 구현하기 어렵게 만든다.</li>
+<li>한쪽 방향의 통신만 닫으려고 해도 양방향 통신이 모두 종료된다.</li>
+<li>이는 소켓 프로그래밍에서 주의해야 할 중요한 특성이다.</li>
+</ul>
+<h3>[7-2] dup() 및 dup2()</h3>
+<pre><code class="language-c">#include &lt;unistd.h&gt;
+
+// oldfd의 파일 디스크립터를 복제하는 함수
+int dup(int oldfd);
+
+// oldfd의 파일 디스크립터를 newfd로 복제하는 함수
+int dup2(int oldfd, int newfd);</code></pre>
+<h4>1) 역할</h4>
+<p>: 파일 디스크립터를 복제한다.</p>
+<ul>
+<li>dup() 시스템 호출은 oldfd 파일 디스크립터의 복사본을 생성하며, 새로운 디스크립터를 위해 사용되지 않는 가장 낮은 번호의 파일 디스크립터를 사용한다.</li>
+<li>dup2() 시스템 호출은 dup()와 동일한 작업을 수행하지만, 사용되지 않는 가장 낮은 번호의 파일 디스크립터 대신 newfd에 지정된 파일 디스크립터 번호를 사용한다.</li>
+</ul>
+<h4>2) 반환 값</h4>
+<ul>
+<li>반환 값<ul>
+<li>성공: 새로운 파일 디스크립터</li>
+<li>오류: -1</li>
+</ul>
+</li>
+</ul>
+<h3>[7-3] Solution when closing</h3>
+<h4>1) <strong>핵심 솔루션</strong></h4>
+<ul>
+<li>Half-close는 파일 디스크립터를 복제함으로써 달성할 수 있다.</li>
+</ul>
+<h4>2) <strong>개선된 코드 분석:</strong></h4>
+<p><strong>서버 측 코드 (sep_serv2.c):</strong></p>
+<pre><code class="language-c">readfp = fdopen(clnt_sock, &quot;r&quot;);
+writefp = fdopen(dup(clnt_sock), &quot;w&quot;);    // 파일 디스크립터 복제
+
+fputs(&quot;FROM SERVER: Hi~ client? \n&quot;, writefp);
+fputs(&quot;I love all of the world \n&quot;, writefp);
+fputs(&quot;You are awesome! \n&quot;, writefp);
+fflush(writefp);
+
+shutdown(fileno(writefp), SHUT_WR);    // 출력 스트림만 종료
+fclose(writefp);
+
+fgets(buf, sizeof(buf), readfp); fputs(buf, stdout);    // 정상 실행됨
+fclose(readfp);</code></pre>
+<p><strong>클라이언트 측 코드 (sep_clnt.c):</strong></p>
+<pre><code class="language-c">readfp = fdopen(sock, &quot;r&quot;);
+writefp = fdopen(sock, &quot;w&quot;);
+
+while (1)
+{
+    if (fgets(buf, sizeof(buf), readfp)==NULL) 
+        break;
+    fputs(buf, stdout);
+    fflush(stdout);
+}
+
+fputs(&quot;FROM CLIENT: Thank you! \n&quot;, writefp);
+fflush(writefp);
+fclose(writefp); fclose(readfp);</code></pre>
+<h5>(1) <strong>주요 변경사항과 특징:</strong></h5>
+<ol>
+<li><code>dup()</code>를 사용하여 파일 디스크립터를 복제한다.</li>
+<li><code>shutdown()</code> 함수를 사용하여 출력 스트림만 종료한다.</li>
+<li>소켓은 모든 관련 파일 디스크립터가 닫힐 때까지 완전히 종료되지 않는다.</li>
+</ol>
+<h5>(2) <strong>장점:</strong></h5>
+<ul>
+<li>half-close 구현이 가능해진다.</li>
+<li>읽기와 쓰기 스트림을 독립적으로 제어할 수 있다.</li>
+<li>데이터 송수신의 완전성을 보장할 수 있다.</li>
+</ul>
+<h5>(3) <strong>동작 원리:</strong></h5>
+<ol>
+<li>파일 디스크립터를 복제하여 독립적인 read/write 스트림을 생성한다.</li>
+<li>shutdown() 함수로 특정 스트림만 종료가 가능하다.</li>
+<li>모든 관련 파일 디스크립터가 닫혀야 소켓이 완전히 종료된다.</li>
+</ol>
+<h5>(4) <strong>실행 결과:</strong></h5>
+<ul>
+<li>서버와 클라이언트 간의 half-close가 성공적으로 구현되어 데이터 송수신이 정상적으로 이루어진다.</li>
+<li>fgets() 함수가 정상적으로 실행되어 클라이언트의 응답을 받을 수 있다.</li>
+</ul>
+<h2>3. 멀티 스레드 프로그래밍</h2>
+<h3>[1] 스레드</h3>
+<ul>
+<li>경량 프로세스<ul>
+<li>스레드는 프로세스보다 시스템 자원을 덜 요구한다.</li>
+<li>프로세스 내의 모든 스레드는 스택 공간을 제외하고 동일한 주소 공간을 공유한다.</li>
+<li>스레드 간 통신은 프로세스 간 통신보다 더 효율적이고 사용하기 쉽다.</li>
+</ul>
+</li>
+</ul>
+<h3>[2] 스레드 vs. 프로세스</h3>
+<p><img src="https://velog.velcdn.com/images/oksk6681/post/f65e9148-ccd2-4396-83a9-c8086c1ac294/image.png" alt=""></p>
+<ul>
+<li>프로세스는 서로 별도의 메모리 공간을 유지한다.</li>
+<li>스레드는 스택을 제외하고 동일한 메모리 공간을 공유한다.</li>
+</ul>
+<h3>[3] Pthread</h3>
+<ul>
+<li>Pthread는 1995년에 IEEE POSIX(휴대용 운영 체제 인터페이스)에 의해 규정된 표준화된 스레드 프로그래밍 인터페이스이다.</li>
+<li>Pthreads는 pthread.h 헤더/포함 파일과 스레드 라이브러리를 사용하여 구현된 C 언어 프로그래밍 타입과 프로시저 호출의 집합으로 정의된다.</li>
+</ul>
+<h3>[4] Pthread API</h3>
+<ul>
+<li>?스레드 관리?<ul>
+<li>스레드 생성, 종료, 조인 등 스레드에 직접 작용하는 함수들이다.</li>
+</ul>
+</li>
+<li>?뮤텍스?<ul>
+<li>뮤텍스 생성, 파괴, 잠금, 잠금 해제를 제공한다.</li>
+</ul>
+</li>
+<li>세마포어<ul>
+<li>세마포어 생성, 파괴, 대기, 포스트를 제공한다.</li>
+</ul>
+</li>
+<li>조건 변수<ul>
+<li>특정 변수 값에 따라 생성, 파괴, 대기 및 신호를 주는 함수를 포함한다.</li>
+</ul>
+</li>
+</ul>
+<h3>[5] 스레드 생성</h3>
+<pre><code class="language-c">#include &lt;pthread.h&gt;
+
+// 새로운 스레드를 생성하는 함수
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+void *(*start_routine) (void *), void *arg);</code></pre>
+<h4>1) 역할</h4>
+<p>: 새로운 스레드를 생성한다.</p>
+<ul>
+<li>호출 프로세스에서 새로운 스레드를 시작한다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li>thread: 성공 시 새로운 스레드 ID</li>
+<li>attr: 스레드 속성을 설정하기 위한 값. 기본값은 NULL.</li>
+<li>start_routine: 스레드가 생성될 때 실행할 루틴</li>
+<li>arg: 전달할 인수</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 0</li>
+<li>오류: 오류 번호</li>
+</ul>
+<h3>[6] 스레드 조인</h3>
+<pre><code class="language-c">#include &lt;pthread.h&gt;
+
+// 종료된 스레드와 조인하는 함수
+int pthread_join(pthread_t thread, void **retval);</code></pre>
+<h4>1) 역할</h4>
+<p>: 종료된 스레드와 조인한다.</p>
+<ul>
+<li>지정된 스레드가 반환될 때까지 호출 스레드를 차단한다.</li>
+<li>부모 스레드가 반환되면 모든 자식 스레드는 종료된다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li>thread: 종료할 지정된 스레드</li>
+<li>retval: 종료된 스레드의 반환 값(참조로 반환되는 포인터)</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 0</li>
+<li>오류: 오류 번호</li>
+</ul>
+<h3>[7] 스레드 분리 (Thread Detach)</h3>
+<pre><code class="language-c">#include &lt;pthread.h&gt;
+int pthread_detach(pthread_t thread);</code></pre>
+<h4>1) 역할</h4>
+<p>: 스레드를 분리한다</p>
+<ul>
+<li><code>thread</code>로 식별된 스레드를 분리 상태로 설정한다.</li>
+<li>분리된 스레드가 종료되면, 해당 스레드의 자원이 자동으로 시스템에 반환된다. 이는 다른 스레드가 종료된 스레드와 조인(join)할 필요가 없다.</li>
+<li>비차단(non-blocking) 함수이다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li><code>thread</code>: 종료할 스레드를 지정한다.</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 0</li>
+<li>오류: 오류 번호</li>
+</ul>
+<h3>[8] 스레드 취소 (Thread Cancel)</h3>
+<pre><code class="language-c">#include &lt;pthread.h&gt;
+int pthread_cancel(pthread_t thread);</code></pre>
+<h4>1) 역할</h4>
+<p>: 스레드에 취소 요청을 보낸다</p>
+<ul>
+<li>이 함수는 스레드에 취소 요청을 보낸다.</li>
+<li>타겟 스레드가 취소 요청에 반응하는지 여부 및 시점은 해당 스레드의 두 가지 속성에 따라 달라진다: 취소 가능 상태와 유형이다.</li>
+<li>취소 가능 상태는 <code>pthread_setcancelstate()</code>에 의해 결정된다.</li>
+<li>취소 유형은 <code>pthread_setcanceltype()</code>에 의해 결정된다.</li>
+</ul>
+<h4>2) 파라미터 설명</h4>
+<ul>
+<li><code>thread</code>: 취소할 스레드의 ID이다.</li>
+</ul>
+<h4>3) 반환 값</h4>
+<ul>
+<li>성공: 0</li>
+<li>오류: 비영(非零) 오류 번호</li>
+</ul>
+<h2>Summary</h2>
+<ol>
+<li>select() 함수</li>
+</ol>
+<ul>
+<li><p>동기 I/O 다중화</p>
+</li>
+<li><p>여러 파일 디스크립터의 상태를 동시에 모니터링</p>
+<ul>
+<li>timeout 설정으로 대기 시간 조절 가능</li>
+<li>fd_set으로 파일 디스크립터 관리 (FD_ZERO, FD_SET, FD_CLR, FD_ISSET)</li>
+</ul>
+</li>
+</ul>
+<ol start="2">
+<li>입출력 함수</li>
+</ol>
+<ul>
+<li><p>주요 함수들</p>
+<ul>
+<li>recv/send: 소켓 통신용 기본 함수</li>
+<li>readv/writev: 여러 버퍼에 대한 입출력을 한 번에 처리</li>
+<li>fdopen/fileno: 파일 디스크립터와 스트림 간 변환</li>
+</ul>
+</li>
+<li><p>Half-close 해결책</p>
+<ul>
+<li>dup()로 파일 디스크립터 복제</li>
+<li>shutdown()으로 특정 방향만 통신 종료 가능</li>
+<li>읽기/쓰기 스트림 독립적 제어 가능</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li>멀티스레드 프로그래밍</li>
+</ol>
+<ul>
+<li>스레드 특징<ul>
+<li>프로세스보다 가벼운 실행 단위</li>
+<li>스택 제외한 메모리 공간 공유</li>
+<li>스레드 간 통신이 프로세스 간 통신보다 효율적</li>
+</ul>
+</li>
+<li>주요 Pthread 함수<ul>
+<li>pthread_create: 새 스레드 생성</li>
+<li>pthread_join: 스레드 종료 대기</li>
+<li>pthread_detach: 스레드 분리</li>
+<li>pthread_cancel: 스레드 취소</li>
+</ul>
+</li>
+</ul>
+<ol start="4">
+<li>중요 포인트:</li>
+</ol>
+<ul>
+<li>select()는 I/O 다중화의 기본</li>
+<li>파일 디스크립터 복제로 half-close 구현</li>
+<li>스레드는 자원 공유로 효율적인 병렬 처리 가능</li>
+</ul>
+<hr>
+<p><img src="https://velog.velcdn.com/images/oksk6681/post/b946b220-aac9-4d19-abc8-91268791cd35/image.jpg" alt=""></p>
+
+                        </div>
+                        <br/>
+                        <div class="tags">
+                            #한동대학교 #네트워킹 #컴네 #csee #전산전자공학부 #computer networks and the internet #고윤민교수님 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

@@ -13,7 +13,7 @@
       "!prisma/generated",
       "!next-env.d.ts",
       "!docs",
-      "!scripts/crawler/fixtures"
+      "!scripts/**/fixtures"
     ]
   },
   "formatter": {
