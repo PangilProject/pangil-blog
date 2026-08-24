@@ -70,3 +70,8 @@ export function formatKstDay(now: Date): string {
 export function isSunday(now: Date): boolean {
   return toKstDate(now).weekday === 0;
 }
+
+/** "2026-08-24" → 그 KST 날짜의 @db.Date 값. 크롤러가 보내온 runDate를 키로 쓸 때 */
+export function kstDateKeyAsUtcMidnight(key: string): Date {
+  return new Date(`${key}T00:00:00.000Z`);
+}
