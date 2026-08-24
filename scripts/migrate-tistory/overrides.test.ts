@@ -10,7 +10,8 @@ import { overrideFor } from "@/scripts/migrate-tistory/overrides";
 describe("overrideFor", () => {
   it("카테고리를 빼먹은 묵상 글을 타입까지 정해준다", () => {
     expect(overrideFor(519)).toMatchObject({ site: "faith", type: "QT" });
-    expect(overrideFor(137)).toMatchObject({ site: "faith", type: "SERMON" }); // 수요 채플
+    // "주일 예배 설교"인데 티스토리에서 QT로 분류돼 있었다
+    expect(overrideFor(320)).toMatchObject({ site: "faith", type: "SERMON" });
     expect(overrideFor(523)).toMatchObject({ site: "faith", type: "PRAISE" });
   });
 
@@ -36,7 +37,8 @@ describe("overrideFor", () => {
   });
 
   it("서식은 제외한다 — 발행하면 빈 글이 공개된다", () => {
-    for (const id of [4, 10, 17, 66, 70, 95, 660, 661, 662]) {
+    // 137 수요 채플은 "말씀 / 1. / Summary :"만 있는 빈 틀이었다
+    for (const id of [4, 10, 17, 66, 70, 95, 137, 660, 661, 662]) {
       expect(overrideFor(id)).toEqual({ kind: "exclude", reason: "서식·빈 틀" });
     }
   });
