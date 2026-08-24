@@ -13,8 +13,9 @@ import { INK_THEME } from "@/lib/render/inkTheme";
  * 에디터(관리 화면)는 같은 하이라이터를 브라우저에서 쓴다. 쓰는 자리에서 색이 보여야 하고
  * (ADR-001), 두 곳이 다른 엔진을 쓰면 색이 갈린다. 그래서 이 모듈은 server-only가 아니다.
  *
- * 언어는 쓰는 것만 싣는다(ts/js/tsx/json/bash/sql로 시작, 04 §3.2). 전체 문법을 싣으면
- * 서버 번들이 수 MB 늘고, 안 쓰는 언어를 위해 그 비용을 낼 이유가 없다.
+ * 언어는 쓰는 것만 싣는다(04 §3.2). 전체 문법을 싣으면 서버 번들이 수 MB 늘고, 안 쓰는
+ * 언어를 위해 그 비용을 낼 이유가 없다 — 목록이 늘어난 것은 티스토리 이관에서 실제로 쓰인
+ * 언어를 확인했기 때문이다(M5).
  *
  * 정규식 엔진은 JS 엔진을 쓴다(oniguruma wasm 대신) — wasm 로딩이 서버리스 콜드 스타트에
  * 얹히는 것을 피한다.
@@ -33,6 +34,13 @@ export const LANGUAGE_LOADERS: Record<CodeLanguage, LanguageLoader> = {
   css: () => import("shiki/langs/css.mjs"),
   html: () => import("shiki/langs/html.mjs"),
   prisma: () => import("shiki/langs/prisma.mjs"),
+  java: () => import("shiki/langs/java.mjs"),
+  swift: () => import("shiki/langs/swift.mjs"),
+  c: () => import("shiki/langs/c.mjs"),
+  cpp: () => import("shiki/langs/cpp.mjs"),
+  python: () => import("shiki/langs/python.mjs"),
+  yaml: () => import("shiki/langs/yaml.mjs"),
+  md: () => import("shiki/langs/markdown.mjs"),
 };
 
 /** 고를 수 있는 언어(codeLanguages)와 문법을 싣는 언어가 같아야 한다 — 테스트로 고정한다 */
