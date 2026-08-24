@@ -34,6 +34,7 @@ const DEV = [
 /** 내용이 "26년도 N월", 빈 불릿뿐인 틀. 발행하면 빈 글이 공개된다 */
 const TEMPLATES = [
   4, // [묵상 서식]
+  137, // 수요 채플 — "말씀 / 1. / 설교 제목 / Summary :" 만 있는 빈 틀
   10, // [설교 서식]
   17, // [찬양 서식]
   66, // [타입스크립트] 서식
@@ -49,7 +50,8 @@ type Resolved = Classified;
 const BY_LEGACY_ID = new Map<number, Resolved>([
   // faith — 카테고리를 빼먹고 올린 글들
   [519, { kind: "post", site: "faith", type: "QT", categorySlug: null }],
-  [137, { kind: "post", site: "faith", type: "SERMON", categorySlug: null }], // 수요 채플
+  // "주일 예배 설교"인데 티스토리에서 QT로 분류돼 있었다. 본문에 질문 4그룹이 없다
+  [320, { kind: "post", site: "faith", type: "SERMON", categorySlug: null }],
   [523, { kind: "post", site: "faith", type: "PRAISE", categorySlug: null }], // 어노인팅 9집
   // dev — 카테고리만 정해주면 되는 글들
   [542, { kind: "post", site: "dev", type: "TECH", categorySlug: "infra" }], // Amazon S3

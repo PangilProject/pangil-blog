@@ -1,10 +1,14 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { parsePublishContent } from "@/lib/db/content";
+import { QT_GROUP_COUNT, QT_QUESTION_COUNT } from "@/lib/content/schema";
+import { parseDraftContent, parsePublishContent } from "@/lib/db/content";
 import type { RecordType } from "@/lib/record/callNumber";
 import { classify, type MigrationSite } from "@/scripts/migrate-tistory/classify";
-import { type ConvertNote, htmlToTiptapContent } from "@/scripts/migrate-tistory/convertHtml";
+import { htmlToTiptapContent } from "@/scripts/migrate-tistory/convertHtml";
+import { convertPraise } from "@/scripts/migrate-tistory/convertPraise";
+import { convertQt } from "@/scripts/migrate-tistory/convertQt";
+import { convertSermon } from "@/scripts/migrate-tistory/convertSermon";
 import { ExtractError, extractPost } from "@/scripts/migrate-tistory/extract";
 import { overrideFor } from "@/scripts/migrate-tistory/overrides";
 
@@ -53,8 +57,7 @@ type Row = {
   tables: number;
   codeBlocks: number;
   iframes: number;
-  /** 변환까지 해본 결과. faith 타입은 슬라이스 3에서 붙는다 */
-  convert: { ok: boolean; issues: string[]; notes: ConvertNote[] } | null;
+  convert: { ok: boolean; issues: string[]; notes: string[]; gate: string[] };
 };
 
 type Skipped = { legacyId: number; file: string; title: string; reason: string };
@@ -88,14 +91,91 @@ function printTally(title: string, counts: Map<string, number>) {
 }
 
 /**
- * TECH 본문 변환 + 적재 전 검증 (05 §6.3 "모든 변환 결과는 적재 전 safeParse").
- * 통과 못 하면 DB에 넣지 않는다 — 깨진 구조가 바로 공개되는 것을 원천 차단한다.
+ * 타입별 변환 + 적재 전 검증 (05 §6.3 "모든 변환 결과는 적재 전 safeParse").
+ *
+ * safeParse는 형식만 본다 — 빈 문자열도 문자열이다. 그래서 타입별 **필수 구조 게이트**를
+ * 따로 둔다(§6.3 "QT 6문4그룹 / 찬양 URL+≥1섹션 / 설교 3필드"). 둘 중 하나라도 걸리면
+ * 검토 큐로 가고 DB에 들어가지 않는다.
  */
-function convertTech(bodyHtml: string) {
-  const { content, notes } = htmlToTiptapContent(bodyHtml);
-  const parsed = parsePublishContent({ kind: "TECH", body: { type: "doc", content } });
+function convertBody(type: RecordType, bodyHtml: string) {
+  const converted = convertOne(type, bodyHtml);
 
-  return { ok: parsed.ok, issues: parsed.ok ? [] : parsed.issues, notes };
+  // 게이트를 넘은 글만 발행 스키마를 통과해야 한다. 못 넘은 글은 초안으로 들어가므로
+  // 초안 스키마로 검증한다 — 그것마저 실패하면 저장 자체가 안 되니 반드시 알아야 한다
+  const parsed =
+    converted.gate.length === 0
+      ? parsePublishContent(converted.content)
+      : parseDraftContent(converted.content);
+
+  return {
+    ok: parsed.ok && converted.gate.length === 0,
+    issues: parsed.ok ? [] : parsed.issues,
+    notes: converted.notes,
+    gate: converted.gate,
+  };
+}
+
+function convertOne(type: RecordType, bodyHtml: string) {
+  if (type === "QT") {
+    const { content, notes } = convertQt(bodyHtml);
+    return { content, notes, gate: qtGate(content) };
+  }
+
+  if (type === "SERMON") {
+    const { content, notes } = convertSermon(bodyHtml);
+    return { content, notes, gate: sermonGate(content) };
+  }
+
+  if (type === "PRAISE") {
+    const { content, notes } = convertPraise(bodyHtml);
+    return { content, notes, gate: praiseGate(content) };
+  }
+
+  const { content, notes } = htmlToTiptapContent(bodyHtml);
+  const body = { kind: "TECH" as const, body: { type: "doc" as const, content } };
+
+  return {
+    content: body,
+    notes: notes.map((note) => `${note.kind}: ${note.detail}`),
+    // 원본부터 본문이 없는 글이 4편 있다("(미완료)" 제목). 빈 지면을 공개하지 않는다
+    gate: content.length === 0 ? ["본문 없음"] : [],
+  };
+}
+
+function qtGate(content: ReturnType<typeof convertQt>["content"]): string[] {
+  const issues: string[] = [];
+  const questions = content.questionGroups.reduce(
+    (total, group) => total + group.questions.length,
+    0,
+  );
+
+  if (content.scriptureRef === "") issues.push("말씀 범위 없음");
+  if (content.scriptureBody === "") issues.push("말씀 본문 없음");
+  if (content.questionGroups.length !== QT_GROUP_COUNT) {
+    issues.push(`그룹 ${content.questionGroups.length}개`);
+  }
+  if (questions !== QT_QUESTION_COUNT) issues.push(`질문 ${questions}개`);
+
+  return issues;
+}
+
+function sermonGate(content: ReturnType<typeof convertSermon>["content"]): string[] {
+  const issues: string[] = [];
+
+  if (content.scriptureRef === "") issues.push("말씀 범위 없음");
+  if (content.scriptureBody === "") issues.push("말씀 본문 없음");
+  if ((content.body as { content: unknown[] }).content.length === 0) issues.push("본문 없음");
+
+  return issues;
+}
+
+function praiseGate(content: ReturnType<typeof convertPraise>["content"]): string[] {
+  const issues: string[] = [];
+
+  if (!content.youtubeUrl) issues.push("유튜브 주소 없음");
+  if (content.sections.length === 0) issues.push("섹션 없음");
+
+  return issues;
 }
 
 function main() {
@@ -165,7 +245,7 @@ function main() {
       tables: countIn(post.bodyHtml, /<table/g),
       codeBlocks: countIn(post.bodyHtml, /<pre/g),
       iframes: countIn(post.bodyHtml, /<iframe/g),
-      convert: classified.type === "TECH" ? convertTech(post.bodyHtml) : null,
+      convert: convertBody(classified.type, post.bodyHtml),
     });
   }
 
@@ -207,34 +287,33 @@ function main() {
     );
   }
 
-  const converted = rows.filter((row) => row.convert !== null);
-  const convertFailed = converted.filter((row) => !row.convert?.ok);
-  const notes = converted.flatMap((row) => row.convert?.notes ?? []);
+  const blocked = rows.filter((row) => !row.convert.ok);
+  const notes = rows.flatMap((row) => row.convert.notes);
 
-  console.log(
-    `\nTECH 본문 변환  ${converted.length}편 중 통과 ${converted.length - convertFailed.length}편`,
-  );
+  console.log("\n본문 변환");
+  for (const type of ["QT", "SERMON", "PRAISE", "TECH"] as RecordType[]) {
+    const ofType = rows.filter((row) => row.type === type);
+    if (ofType.length === 0) continue;
+    const passed = ofType.filter((row) => row.convert.ok).length;
+    console.log(`  ${type.padEnd(7)} ${String(passed).padStart(4)} / ${ofType.length}`);
+  }
+
   if (notes.length > 0) {
     printTally(
       "  변환 노트",
-      group(notes, (note) => `${note.kind}: ${note.detail}`),
+      group(notes, (note) => note),
     );
   }
 
-  // 본문이 통째로 비는 것은 노트가 아니라 사고다. 어느 글인지 이름을 대야 한다
-  const empty = converted.filter((row) =>
-    row.convert?.notes.some((note) => note.kind === "empty-body"),
-  );
-  if (empty.length > 0) {
-    console.log("\n  본문이 빈 글 — 원본을 확인해야 한다");
-    for (const row of empty) console.log(`   · ${row.file} — ${row.title}`);
-  }
-  if (convertFailed.length > 0) {
-    console.error("  검증 실패");
-    for (const row of convertFailed) {
-      console.error(`   · ${row.file} — ${row.convert?.issues.slice(0, 2).join(" / ")}`);
+  console.log(`\n적재 계획  발행 ${rows.length - blocked.length}편 · 초안 ${blocked.length}편`);
+
+  if (blocked.length > 0) {
+    // 게이트를 못 넘은 글은 **버리지 않고 초안으로** 넣는다(05 §6.3의 검토 큐를 A-02 초안함이
+    // 겸한다). 빈 지면을 공개하지 않으면서 글을 잃지도 않는다 — 손으로 채우고 발행하면 된다
+    console.log("  초안으로 들어가는 글 — 손으로 채운 뒤 발행한다");
+    for (const row of blocked) {
+      console.log(`   · ${row.file} — ${[...row.convert.gate, ...row.convert.issues].join(" · ")}`);
     }
-    process.exitCode = 1;
   }
 
   console.log(`\n이관 대상  ${rows.length}편`);

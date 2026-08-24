@@ -23,6 +23,14 @@ export type ConvertNote = {
   detail: string;
 };
 
+export type ConvertOptions = {
+  /**
+   * 빈 문단을 남긴다. 찬양 가사에서 **빈 줄이 절 구분**이기 때문이다 — 기본값은 버리는 것이고
+   * (티스토리는 `<p>&nbsp;</p>`를 줄 간격으로 쓴다), 가사에서만 뜻이 있다.
+   */
+  keepEmptyParagraphs?: boolean;
+};
+
 export type ConvertResult = {
   /** TiptapDoc의 content 배열 */
   content: unknown[];
@@ -235,11 +243,14 @@ function inline(node: Node, marks: Mark[], notes: ConvertNote[]): TiptapNode[] {
   return children(marks);
 }
 
-function paragraph(content: TiptapNode[]): TiptapNode[] {
+function paragraph(content: TiptapNode[], keepEmpty = false): TiptapNode[] {
   // 빈 문단은 버린다. 티스토리 본문에는 `<p>&nbsp;</p>`가 줄 간격으로 잔뜩 들어 있다
-  if (content.length === 0) return [];
-  if (content.every((child) => child.type === "text" && (child.text ?? "").trim() === ""))
-    return [];
+  const empty =
+    content.length === 0 ||
+    content.every((child) => child.type === "text" && (child.text ?? "").trim() === "");
+
+  if (empty) return keepEmpty ? [{ type: "paragraph" }] : [];
+
   return [{ type: "paragraph", content }];
 }
 
@@ -322,13 +333,13 @@ function table(element: Element, notes: ConvertNote[]): TiptapNode[] {
 }
 
 /** 블록 순회 */
-function blocks(nodes: Node[], notes: ConvertNote[]): TiptapNode[] {
+function blocks(nodes: Node[], notes: ConvertNote[], keepEmpty = false): TiptapNode[] {
   const out: TiptapNode[] = [];
   /** 블록 사이에 흩어진 글자를 모아 문단으로 만든다 */
   let loose: TiptapNode[] = [];
 
   const flush = () => {
-    out.push(...paragraph(loose));
+    out.push(...paragraph(loose, keepEmpty));
     loose = [];
   };
 
@@ -466,11 +477,11 @@ function blocks(nodes: Node[], notes: ConvertNote[]): TiptapNode[] {
   return out;
 }
 
-export function htmlToTiptapContent(html: string): ConvertResult {
+export function htmlToTiptapContent(html: string, options: ConvertOptions = {}): ConvertResult {
   const notes: ConvertNote[] = [];
   const { document } = new JSDOM(`<body>${html}</body>`).window;
 
-  const content = blocks([...document.body.childNodes], notes);
+  const content = blocks([...document.body.childNodes], notes, options.keepEmptyParagraphs);
 
   if (content.length === 0) notes.push({ kind: "empty-body", detail: "변환 결과가 비었습니다" });
 
