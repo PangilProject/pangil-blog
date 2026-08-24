@@ -1,0 +1,99 @@
+
+<meta charset="utf-8">
+<html lang="ko">
+<head>
+    <link rel="stylesheet" type="text/css" href="./../style.css" />
+    <title>[혼자공부하는SQL] 12강</title>
+</head>
+<body id="tt-body-page" class="">
+<div id="wrap" class="wrap-right">
+    <div id="container">
+        <main class="main ">
+            <div class="area-main">
+                <div class="area-view">
+                    <div class="article-header">
+                        <div class="inner-article-header">
+                            <div class="box-meta">
+                                <h2 class="title-article">[혼자공부하는SQL] 12강</h2>
+                                <div class="box-info">
+                                    <p class="category">??‍? BE/? MySQL</p>
+                                    <p class="date">2025-02-19 13:51:37</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="article-view">
+                        <div class="contents_style">
+                            <h1>05-1. 테이블 만들기</h1>
+<h2 data-ke-size="size26">0. 시작하기 전에</h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>테이블은 표로 구성된 2차원 구조로, 행과 열로 구성되어 있다.</li>
+<li>행운 로우나 레코드라 부르며, 열은 컬럼 또는 필드라고 부른다.</li>
+</ul>
+<h2 data-ke-size="size26">1. 데이터베이스와 테이블 설계하기</h2>
+<p><figure class="imageblock alignCenter" >
+    <span data-lightbox="lightbox">
+        <img src="./img/img.png"  />
+    </span>
+    <figcaption></figcaption>
+</figure></p>
+<h3 data-ke-size="size23">1) 테이블의 구조 정의</h3>
+<p data-ke-size="size16">: 테이블에 데이터 형식을 지정하는 데 정답은 없다.</p>
+<p><figure class="imageblock alignCenter" >
+    <span data-lightbox="lightbox">
+        <img src="./img/img_1.png"  />
+    </span>
+    <figcaption></figcaption>
+</figure></p>
+<h3 data-ke-size="size23">2) 데이터베이스 만들기</h3>
+<pre class="n1ql"><code>DROP DATABASE IF EXISTS naver_db;
+CREATE DATABASE naver_db;</code></pre>
+<h3 data-ke-size="size23">3) 테이블 만들기</h3>
+<pre class="sql"><code>USE naver_db;
+DROP TABLE IF EXISTS member;
+CREATE TABLE member(
+    mem_id CHAR(8) NOT NULL PRIMARY KEY,
+    mem_name VARCHAR(10) NOT NULL,
+    mem_number TINYINT NOT NULL,
+    addr CHAR(2) NOT NULL,
+    phone1 CHAR(3) NULL,
+    phone2 CHAR(8) NOT NULL,
+    height TINYINT UNSIGNED NOT NULL,
+    debut_date DATE NOT NULL
+);</code></pre>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>PRIMARY KEY</li>
+<li>NOT NULL</li>
+<li>UNSIGNED</li>
+</ul>
+<pre class="sql"><code>DROP TABLE IF EXISTS buy;
+CREATE TABLE buy(
+    num INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    mem_id CHAR(8) NULL,
+    prod_name CHAR(6) NOT NULL,
+    group_name CHAR(4) NULL,
+    price INT UNSIGNED NOT NULL,
+    amount SMALLINT UNSIGNED NOT NULL,
+    FOREIGN KEY(mem_id) REFERENCES member(mem_id)
+);</code></pre>
+<h3 data-ke-size="size23">4) 데이터 입력하기</h3>
+<pre class="sql"><code>INSERT INTO member VALUES ('TWC', '트와이스', 9, '서울', '02', '11111111', 167, '2015-10-10');
+INSERT INTO member VALUES ('BLK', '블랙핑크', 4, '경남', '055', '22222222', 163, '2016-08-08');
+INSERT INTO member VALUES ('WMN', '여자친구', 6, '경기', '031', '33333333', 166, '2015-01-15');</code></pre>
+<pre class="sql"><code>INSERT INTO buy VALUES (NULL, 'BLK', '지갑', NULL, 30, 2);
+INSERT INTO buy VALUES (NULL, 'BLK', '맥북프로', '디지털', 1000, 1);
+</code></pre>
+                        </div>
+                        <br/>
+                        <div class="tags">
+                            #Database #dbms #SQL #데이터베이스 #SQLD #혼자공부하는sql 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

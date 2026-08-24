@@ -14,6 +14,9 @@ export const CATEGORIES = [
   { name: "정보", slug: "info" },
   { name: "인프라", slug: "infra" },
   { name: "CS", slug: "cs" },
+  // 티스토리 "한동대학교" 157편이 들어올 자리다(05 §6.2, M5). CS로 몰면 일반화학·EAP·
+  // 미술의 이해까지 CS가 된다 — 학교 수업 정리는 그 자체로 한 갈래다
+  { name: "학교", slug: "school" },
 ];
 
 export type SeedCategoriesResult = { upserted: number; skipped: boolean };

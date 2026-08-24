@@ -1,0 +1,82 @@
+import type { RecordType } from "@/lib/record/callNumber";
+
+/**
+ * 카테고리 → site·타입·분류 (05 §6.2를 실물로 정정).
+ *
+ * 문서는 "블로그별 zip이 site 1차 분기"라고 봤지만, 실제 백업 하나에 묵상과 기술이 섞여
+ * 있다. 그래서 site는 카테고리로 가른다 — 다행히 본문 신호 추측보다 훨씬 정확하다.
+ *
+ * 백업의 카테고리 텍스트에는 이모지가 `?`로 깨져 들어온다(티스토리 내보내기가 4바이트
+ * 문자를 버린다). 그래서 **한글·영문 부분만 남겨** 비교한다 — 이모지에 의존하면 다음
+ * 백업에서 또 깨진다.
+ */
+
+export type MigrationSite = "faith" | "dev";
+
+export type Classified =
+  | {
+      kind: "post";
+      site: MigrationSite;
+      type: RecordType;
+      /** TECH만 씀. faith는 카테고리를 쓰지 않는다(02 §4) */
+      categorySlug: string | null;
+    }
+  | { kind: "review"; reason: string };
+
+/** 깨진 이모지·기호를 털어낸 이름 */
+function clean(segment: string): string {
+  return segment
+    .replace(/[^\p{Script=Hangul}\p{L}\p{N}\s()\-.+#/]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** TECH 상위 카테고리 → 우리 카테고리 slug (사용자 확인, 2026-08-25) */
+const TECH_CATEGORY_SLUGS: Record<string, string> = {
+  FE: "fe",
+  BE: "be",
+  개발: "dev",
+  프로젝트: "dev",
+  회고: "retrospective",
+  "정보 공유": "info",
+  한동대학교: "school",
+};
+
+/** BE 아래지만 실은 인프라인 것들 */
+const INFRA_SUBS = ["K9s", "Docker", "AWS"];
+
+export function classify(categoryPath: string): Classified {
+  const segments = categoryPath.split("/").map(clean).filter(Boolean);
+
+  if (segments.length === 0) {
+    // 서식·임시 메모 23편. 이관하지 않고 리포트에만 남긴다(사용자 확인)
+    return { kind: "review", reason: "카테고리 없음(서식·임시 글)" };
+  }
+
+  const [top, sub = ""] = segments;
+
+  if (top === "묵상") {
+    if (sub.includes("QT")) return { kind: "post", site: "faith", type: "QT", categorySlug: null };
+    if (sub.includes("설교")) {
+      return { kind: "post", site: "faith", type: "SERMON", categorySlug: null };
+    }
+    return { kind: "review", reason: `묵상 하위 분류를 모릅니다: "${sub || "(없음)"}"` };
+  }
+
+  if (top === "찬양") {
+    // 하위(어노인팅·마커스·FIA…)는 앨범·팀 이름이고 타입은 하나다
+    return { kind: "post", site: "faith", type: "PRAISE", categorySlug: null };
+  }
+
+  if (top === "미사용") {
+    return { kind: "review", reason: `미사용 카테고리: "${sub || "(없음)"}"` };
+  }
+
+  const slug = TECH_CATEGORY_SLUGS[top];
+  if (!slug) return { kind: "review", reason: `모르는 카테고리: "${top}"` };
+
+  const categorySlug =
+    top === "BE" && INFRA_SUBS.some((name) => sub.includes(name)) ? "infra" : slug;
+
+  return { kind: "post", site: "dev", type: "TECH", categorySlug };
+}
