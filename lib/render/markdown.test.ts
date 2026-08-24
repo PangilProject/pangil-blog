@@ -92,9 +92,9 @@ describe("tiptapToMarkdown", () => {
   it("모르는 노드도 글자는 남긴다", () => {
     expect(
       tiptapToMarkdown(
-        doc({ type: "table", content: [{ type: "tableRow", content: [text("셀")] }] }),
+        doc({ type: "callout", content: [{ type: "paragraph", content: [text("낯선 블록")] }] }),
       ),
-    ).toBe("셀");
+    ).toBe("낯선 블록");
   });
 
   it("빈 문서는 빈 문자열이다", () => {
@@ -132,5 +132,50 @@ describe("붙여넣기 파서와의 왕복", () => {
     ]) {
       expect(roundTripped).toContain(fragment);
     }
+  });
+});
+
+describe("표 (M5 이관)", () => {
+  const table: TiptapDoc = {
+    type: "doc",
+    content: [
+      {
+        type: "table",
+        content: [
+          {
+            type: "tableRow",
+            content: [
+              {
+                type: "tableHeader",
+                content: [{ type: "paragraph", content: [{ type: "text", text: "함수" }] }],
+              },
+              {
+                type: "tableHeader",
+                content: [{ type: "paragraph", content: [{ type: "text", text: "설명" }] }],
+              },
+            ],
+          },
+          {
+            type: "tableRow",
+            content: [
+              {
+                type: "tableCell",
+                content: [{ type: "paragraph", content: [{ type: "text", text: "select()" }] }],
+              },
+              {
+                type: "tableCell",
+                content: [{ type: "paragraph", content: [{ type: "text", text: "a | b" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("GFM 표로 내보낸다", () => {
+    expect(tiptapToMarkdown(table)).toBe(
+      ["| 함수 | 설명 |", "| --- | --- |", "| select() | a \\| b |"].join("\n"),
+    );
   });
 });

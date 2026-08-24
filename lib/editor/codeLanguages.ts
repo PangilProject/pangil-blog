@@ -16,6 +16,15 @@ export const CODE_LANGUAGES = [
   { value: "css", label: "CSS" },
   { value: "html", label: "HTML" },
   { value: "prisma", label: "Prisma" },
+  // 아래는 티스토리 이관(M5)에서 실제로 쓰인 언어들이다. "고를 수는 있는데 색이 안 입는
+  // 언어"를 만들지 않으려면 lib/render/highlight의 로더도 같이 늘려야 한다(테스트로 고정)
+  { value: "java", label: "Java" },
+  { value: "swift", label: "Swift" },
+  { value: "c", label: "C" },
+  { value: "cpp", label: "C++" },
+  { value: "python", label: "Python" },
+  { value: "yaml", label: "YAML" },
+  { value: "md", label: "Markdown" },
 ] as const;
 
 export type CodeLanguage = (typeof CODE_LANGUAGES)[number]["value"];
@@ -30,7 +39,13 @@ const ALIASES: Record<string, CodeLanguage> = {
   console: "bash",
   postgres: "sql",
   postgresql: "sql",
+  pgsql: "sql",
   scss: "css",
+  py: "python",
+  yml: "yaml",
+  markdown: "md",
+  "c++": "cpp",
+  xml: "html",
 };
 
 export function normalizeCodeLanguage(language: string | null | undefined): CodeLanguage | null {

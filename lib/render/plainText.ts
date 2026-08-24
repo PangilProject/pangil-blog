@@ -28,6 +28,9 @@ const BLOCK_TYPES = new Set([
   "orderedList",
   "horizontalRule",
   "tableRow",
+  // 칸을 경계로 보지 않으면 "합계" + "3" 이 "합계3"으로 붙어 검색에 걸리지 않는다
+  "tableCell",
+  "tableHeader",
 ]);
 
 function walk(node: unknown, out: string[]): void {

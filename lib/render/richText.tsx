@@ -136,6 +136,12 @@ function textOf(node: Node): string {
   return (node.content as Node[]).map(textOf).join("");
 }
 
+/** 병합된 칸. 1이면 속성을 그리지 않는다 */
+function spanOf(node: Node, name: "colspan" | "rowspan"): number | undefined {
+  const value = node.attrs?.[name];
+  return typeof value === "number" && value > 1 ? value : undefined;
+}
+
 type Context = {
   headings: RichTextHeading[];
   seen: Map<string, number>;
@@ -205,6 +211,37 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
         />
       );
     }
+
+    /*
+      표는 에디터 툴바에 없지만(ADR-001) 티스토리에서 옮겨온 글에 298개가 있다. 넓은 표가
+      본문 폭을 밀어내지 않도록 자기 안에서만 좌우로 넘긴다 — 지면이 가로로 스크롤되면
+      읽는 자리가 흔들린다
+    */
+    case "table":
+      return (
+        <div key={key} className="my-5 overflow-x-auto">
+          <table>
+            <tbody>{children()}</tbody>
+          </table>
+        </div>
+      );
+
+    case "tableRow":
+      return <tr key={key}>{children()}</tr>;
+
+    case "tableHeader":
+      return (
+        <th key={key} colSpan={spanOf(node, "colspan")} rowSpan={spanOf(node, "rowspan")}>
+          {children()}
+        </th>
+      );
+
+    case "tableCell":
+      return (
+        <td key={key} colSpan={spanOf(node, "colspan")} rowSpan={spanOf(node, "rowspan")}>
+          {children()}
+        </td>
+      );
 
     case "horizontalRule":
       return <hr key={key} />;

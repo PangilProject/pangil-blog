@@ -2,6 +2,7 @@
 
 import { CodeBlock } from "@tiptap/extension-code-block";
 import { Image } from "@tiptap/extension-image";
+import { TableKit } from "@tiptap/extension-table";
 import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
@@ -94,6 +95,10 @@ export function RichTextField({
             }),
             CodeHighlight,
             Image.configure({ inline: false }),
+            // 표는 **툴바에 넣지 않는다**(ADR-001 최소 툴바). 그런데도 등록하는 이유는
+            // 티스토리에서 옮겨온 138편에 표가 298개 있고, 확장이 없으면 그 글을 한 번
+            // 편집하는 순간 Tiptap이 모르는 노드를 조용히 버린다 — 이관한 표를 지키는 장치다
+            TableKit.configure({ table: { resizable: false } }),
             // 스크린샷 붙여넣기가 기술 글의 실제 작성 경로다(04 §3.3)
             ...(uploadImage ? [ImagePaste.configure({ upload: uploadImage })] : []),
           ]

@@ -90,6 +90,33 @@ function listBlock(node: Node, ordered: boolean, depth: number): string {
     .join("\n");
 }
 
+/**
+ * 표 → GFM 표. 마크다운에 표를 접는 문법은 없으므로 셀 안의 줄바꿈은 공백으로 눕히고,
+ * 파이프는 이스케이프한다. 병합 칸(colspan)은 마크다운에 없어 **내용만** 남는다 —
+ * 조판을 잃는 것과 내용을 잃는 것은 급이 다르다(이 파일의 원칙).
+ */
+function tableBlock(node: Node): string {
+  const rows = (Array.isArray(node.content) ? (node.content as Node[]) : []).map((row) =>
+    (Array.isArray(row.content) ? (row.content as Node[]) : []).map((cell) =>
+      textOf(cell).replace(/\s+/g, " ").replace(/\|/g, "\\|").trim(),
+    ),
+  );
+
+  if (rows.length === 0) return "";
+
+  const width = Math.max(...rows.map((row) => row.length));
+  const line = (cells: string[]) =>
+    `| ${Array.from({ length: width }, (_, index) => cells[index] ?? "").join(" | ")} |`;
+
+  const [head, ...rest] = rows;
+
+  return [
+    line(head),
+    `| ${Array.from({ length: width }, () => "---").join(" | ")} |`,
+    ...rest.map(line),
+  ].join("\n");
+}
+
 function blocks(nodes: Node[], depth = 0): string {
   return nodes
     .map((node) => {
@@ -123,6 +150,9 @@ function blocks(nodes: Node[], depth = 0): string {
           const language = typeof node.attrs?.language === "string" ? node.attrs.language : "";
           return `\`\`\`${language}\n${textOf(node)}\n\`\`\``;
         }
+
+        case "table":
+          return tableBlock(node);
 
         case "horizontalRule":
           return "---";
