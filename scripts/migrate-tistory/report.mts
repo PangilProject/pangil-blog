@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { parsePublishContent } from "@/lib/db/content";
 import type { RecordType } from "@/lib/record/callNumber";
 import { classify, type MigrationSite } from "@/scripts/migrate-tistory/classify";
+import { type ConvertNote, htmlToTiptapContent } from "@/scripts/migrate-tistory/convertHtml";
 import { ExtractError, extractPost } from "@/scripts/migrate-tistory/extract";
 import { overrideFor } from "@/scripts/migrate-tistory/overrides";
 
@@ -51,6 +53,8 @@ type Row = {
   tables: number;
   codeBlocks: number;
   iframes: number;
+  /** 변환까지 해본 결과. faith 타입은 슬라이스 3에서 붙는다 */
+  convert: { ok: boolean; issues: string[]; notes: ConvertNote[] } | null;
 };
 
 type Skipped = { legacyId: number; file: string; title: string; reason: string };
@@ -81,6 +85,17 @@ function group<T>(rows: T[], key: (row: T) => string): Map<string, number> {
 function printTally(title: string, counts: Map<string, number>) {
   console.log(`\n${title}`);
   for (const [name, count] of counts) console.log(`  ${String(count).padStart(4)}  ${name}`);
+}
+
+/**
+ * TECH 본문 변환 + 적재 전 검증 (05 §6.3 "모든 변환 결과는 적재 전 safeParse").
+ * 통과 못 하면 DB에 넣지 않는다 — 깨진 구조가 바로 공개되는 것을 원천 차단한다.
+ */
+function convertTech(bodyHtml: string) {
+  const { content, notes } = htmlToTiptapContent(bodyHtml);
+  const parsed = parsePublishContent({ kind: "TECH", body: { type: "doc", content } });
+
+  return { ok: parsed.ok, issues: parsed.ok ? [] : parsed.issues, notes };
 }
 
 function main() {
@@ -150,6 +165,7 @@ function main() {
       tables: countIn(post.bodyHtml, /<table/g),
       codeBlocks: countIn(post.bodyHtml, /<pre/g),
       iframes: countIn(post.bodyHtml, /<iframe/g),
+      convert: classified.type === "TECH" ? convertTech(post.bodyHtml) : null,
     });
   }
 
@@ -189,6 +205,36 @@ function main() {
       "외부 이미지 호스트 — 이관 대상(원본이 사라지면 깨진다)",
       group(remoteImages, imageHost),
     );
+  }
+
+  const converted = rows.filter((row) => row.convert !== null);
+  const convertFailed = converted.filter((row) => !row.convert?.ok);
+  const notes = converted.flatMap((row) => row.convert?.notes ?? []);
+
+  console.log(
+    `\nTECH 본문 변환  ${converted.length}편 중 통과 ${converted.length - convertFailed.length}편`,
+  );
+  if (notes.length > 0) {
+    printTally(
+      "  변환 노트",
+      group(notes, (note) => `${note.kind}: ${note.detail}`),
+    );
+  }
+
+  // 본문이 통째로 비는 것은 노트가 아니라 사고다. 어느 글인지 이름을 대야 한다
+  const empty = converted.filter((row) =>
+    row.convert?.notes.some((note) => note.kind === "empty-body"),
+  );
+  if (empty.length > 0) {
+    console.log("\n  본문이 빈 글 — 원본을 확인해야 한다");
+    for (const row of empty) console.log(`   · ${row.file} — ${row.title}`);
+  }
+  if (convertFailed.length > 0) {
+    console.error("  검증 실패");
+    for (const row of convertFailed) {
+      console.error(`   · ${row.file} — ${row.convert?.issues.slice(0, 2).join(" / ")}`);
+    }
+    process.exitCode = 1;
   }
 
   console.log(`\n이관 대상  ${rows.length}편`);
