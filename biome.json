@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!.next", "!node_modules", "!prisma/generated", "!next-env.d.ts", "!docs"]
+    "includes": [
+      "**",
+      "!.next",
+      "!node_modules",
+      "!prisma/generated",
+      "!next-env.d.ts",
+      "!docs",
+      "!scripts/crawler/fixtures"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -63,6 +71,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
   "css": {
     "parser": {
       "tailwindDirectives": true
