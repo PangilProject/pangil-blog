@@ -43,6 +43,18 @@ async function createPrivateBucket(url: string, key: string) {
 
 export type BackupUpload = { path: string; bytes: number };
 
+/**
+ * 버킷이 없다는 응답인가.
+ *
+ * **상태 코드로 판단하면 안 된다.** Supabase Storage는 이걸 `400`으로 주고 본문에만
+ * `{"statusCode":"404","error":"Bucket not found"}`를 담는다 — 404를 기다리던 첫 구현이
+ * 첫 백업에서 그대로 실패했다.
+ */
+function isMissingBucket(status: number, body: string): boolean {
+  if (status !== 400 && status !== 404) return false;
+  return body.includes("Bucket not found") || body.includes("NoSuchBucket");
+}
+
 /** `backups/db/2026-08-24.json` — 같은 날 두 번 돌면 덮어쓴다(하루 한 장) */
 export async function uploadBackup(dateKey: string, body: string): Promise<BackupUpload> {
   const { url, key } = storageEnv();
@@ -61,16 +73,17 @@ export async function uploadBackup(dateKey: string, body: string): Promise<Backu
     });
 
   let response = await put();
+  let detail = response.ok ? "" : await response.text();
 
-  if (response.status === 404) {
+  if (isMissingBucket(response.status, detail)) {
+    // 첫 백업이다. 버킷을 만들고 한 번만 다시 시도한다
     await createPrivateBucket(url, key);
     response = await put();
+    detail = response.ok ? "" : await response.text();
   }
 
   if (!response.ok) {
-    throw new Error(
-      `백업 업로드 실패: ${response.status} ${(await response.text()).slice(0, 200)}`,
-    );
+    throw new Error(`백업 업로드 실패: ${response.status} ${detail.slice(0, 200)}`);
   }
 
   return { path, bytes: bytes.byteLength };
