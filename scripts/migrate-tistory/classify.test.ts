@@ -56,8 +56,8 @@ describe("classify — dev", () => {
 });
 
 describe("classify — 이관하지 않는 것", () => {
-  it("카테고리가 비면 서식·임시 글이다", () => {
-    expect(classify("")).toEqual({ kind: "review", reason: "카테고리 없음(서식·임시 글)" });
+  it("카테고리가 비면 규칙으로 못 가른다 — overrides가 글 단위로 정한다", () => {
+    expect(classify("")).toEqual({ kind: "review", reason: "카테고리 없음" });
   });
 
   it("미사용 카테고리는 검토 큐다", () => {
