@@ -3,6 +3,7 @@ import { AnnotationBox } from "@/components/record/AnnotationBox";
 import { GroupTab } from "@/components/record/GroupTab";
 import { ScriptureBlock } from "@/components/record/ScriptureBlock";
 import type { PostContent } from "@/lib/content/schema";
+import { toScriptureVerses } from "@/lib/record/scriptureVerses";
 
 /**
  * F-03 큐티 상세 (02 §2.3 · 03 §5.2).
@@ -14,7 +15,11 @@ import type { PostContent } from "@/lib/content/schema";
 export function QtView({ content }: { content: Extract<PostContent, { kind: "QT" }> }) {
   return (
     <>
-      <ScriptureBlock reference={content.scriptureRef}>{content.scriptureBody}</ScriptureBlock>
+      {/* 절 번호는 조판 요소다(03 §5.2) — 본문 문자열을 절로 나눠 번호를 세운다 */}
+      <ScriptureBlock
+        reference={content.scriptureRef}
+        verses={toScriptureVerses(content.scriptureBody)}
+      />
 
       {content.annotations.length > 0 && (
         <AnnotationBox
