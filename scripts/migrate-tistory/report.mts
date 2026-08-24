@@ -10,6 +10,8 @@ import { convertPraise } from "@/scripts/migrate-tistory/convertPraise";
 import { convertQt } from "@/scripts/migrate-tistory/convertQt";
 import { convertSermon } from "@/scripts/migrate-tistory/convertSermon";
 import { ExtractError, extractPost } from "@/scripts/migrate-tistory/extract";
+import { collectImageSrcs } from "@/scripts/migrate-tistory/imageNodes";
+import { isRemoteSource, loadImage } from "@/scripts/migrate-tistory/imageSource";
 import { overrideFor } from "@/scripts/migrate-tistory/overrides";
 
 /**
@@ -58,6 +60,8 @@ type Row = {
   codeBlocks: number;
   iframes: number;
   convert: { ok: boolean; issues: string[]; notes: string[]; gate: string[] };
+  /** 변환 결과 안의 이미지 — 이관 대상이다(원본 HTML의 개수와 다를 수 있다) */
+  contentImages: string[];
 };
 
 type Skipped = { legacyId: number; file: string; title: string; reason: string };
@@ -112,6 +116,7 @@ function convertBody(type: RecordType, bodyHtml: string) {
     issues: parsed.ok ? [] : parsed.issues,
     notes: converted.notes,
     gate: converted.gate,
+    content: converted.content,
   };
 }
 
@@ -178,7 +183,58 @@ function praiseGate(content: ReturnType<typeof convertPraise>["content"]): strin
   return issues;
 }
 
-function main() {
+/**
+ * 이미지가 실제로 확보되는지 확인한다 — 올리지는 않는다.
+ *
+ * velog CDN 618개를 진짜로 내려받아 본다. "옮길 수 있다"를 적재 당일이 아니라 지금 알아야
+ * 하고(그날 velog가 죽어 있으면 그 65편이 그냥 깨진다), 형식·크기도 여기서 걸러진다.
+ */
+async function checkImages(rows: Row[], input: string) {
+  const jobs: { row: Row; src: string }[] = [];
+  for (const row of rows) {
+    for (const src of new Set(row.contentImages)) jobs.push({ row, src });
+  }
+
+  console.log(
+    `\n이미지 확인  ${jobs.length}개 (외부 ${jobs.filter((job) => isRemoteSource(job.src)).length}개는 실제로 내려받는다)`,
+  );
+
+  const failures: { file: string; reason: string; detail: string }[] = [];
+  let ok = 0;
+  const CONCURRENCY = 8;
+
+  for (let index = 0; index < jobs.length; index += CONCURRENCY) {
+    const batch = jobs.slice(index, index + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((job) => loadImage(job.src, join(input, String(job.row.legacyId)))),
+    );
+
+    for (const [offset, result] of results.entries()) {
+      if (result.ok) ok += 1;
+      else {
+        failures.push({
+          file: batch[offset].row.file,
+          reason: result.failure.reason,
+          detail: result.failure.detail,
+        });
+      }
+    }
+  }
+
+  console.log(`  확보 ${ok}개 · 실패 ${failures.length}개`);
+
+  if (failures.length > 0) {
+    printTally(
+      "  실패 사유",
+      group(failures, (failure) => failure.reason),
+    );
+    for (const failure of failures) {
+      console.log(`   · ${failure.file} — ${failure.reason}: ${failure.detail.slice(0, 90)}`);
+    }
+  }
+}
+
+async function main() {
   const args = process.argv.slice(2);
   const input = args.find((arg) => arg.startsWith("--input="))?.slice("--input=".length);
   const dryRun = args.includes("--dry-run");
@@ -232,6 +288,8 @@ function main() {
       continue;
     }
 
+    const converted = convertBody(classified.type, post.bodyHtml);
+
     rows.push({
       legacyId: post.legacyId,
       file: post.file,
@@ -245,7 +303,8 @@ function main() {
       tables: countIn(post.bodyHtml, /<table/g),
       codeBlocks: countIn(post.bodyHtml, /<pre/g),
       iframes: countIn(post.bodyHtml, /<iframe/g),
-      convert: convertBody(classified.type, post.bodyHtml),
+      convert: converted,
+      contentImages: collectImageSrcs(converted.content),
     });
   }
 
@@ -316,6 +375,8 @@ function main() {
     }
   }
 
+  if (args.includes("--check-images")) await checkImages(rows, input);
+
   console.log(`\n이관 대상  ${rows.length}편`);
 
   if (excluded.length > 0) {
@@ -339,4 +400,4 @@ function main() {
   }
 }
 
-main();
+await main();
