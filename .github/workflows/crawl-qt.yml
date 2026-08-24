@@ -1,0 +1,59 @@
+name: crawl qt
+
+# 365qt 오늘의 큐티 → QT 초안 (06 §1·§2·§7).
+#
+# 매일 한 번 돌리고 큐티가 없는 날은 SKIPPED로 흡수한다 — 요일별 크론을 두면 KST↔UTC
+# 요일 시프트에서 엣지가 생긴다(06 결정 로그 8).
+#
+# 이 워크플로우가 하는 일은 크롤링과 **보고**뿐이다. crawl_runs 기록과 Slack 알림은
+# 서버(/api/crawler/ingest)가 한다 — 러너에 DB·웹훅 자격증명을 두지 않는다.
+on:
+  schedule:
+    # UTC 21:00 = KST 06:00. 365qt는 자정 전에 다음 날치를 올려둔다
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "크롤할 KST 날짜 (YYYY-MM-DD). 비우면 오늘"
+        required: false
+      dry-run:
+        description: "파싱까지만 하고 보고하지 않는다"
+        type: boolean
+        default: false
+
+# 같은 날짜를 두 번 돌려도 runDate 멱등이라 안전하지만, 굳이 겹쳐 돌릴 이유는 없다
+concurrency:
+  group: crawl-qt
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # 파서가 jsdom을 쓰므로 devDependencies가 필요하다. prisma는 부르지 않는다 —
+      # 이 워크플로우에는 DB 자격증명이 없고, 있어서도 안 된다(06 §1.1)
+      - name: install
+        run: npm ci
+
+      # 마크업이 바뀐 날 파서 테스트가 먼저 붉어지면, 원인을 크롤 로그에서 찾지 않아도 된다
+      - name: parser fixtures
+        run: npx vitest run --project node scripts/crawler
+
+      - name: crawl
+        env:
+          QT365_ID: ${{ secrets.QT365_ID }}
+          QT365_PW: ${{ secrets.QT365_PW }}
+          INGEST_URL: ${{ secrets.INGEST_URL }}
+          CRAWLER_INGEST_TOKEN: ${{ secrets.CRAWLER_INGEST_TOKEN }}
+        run: |
+          npm run crawl -- \
+            ${{ inputs.dry-run && '--dry-run' || '' }} \
+            ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
