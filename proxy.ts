@@ -10,6 +10,7 @@ import {
   sitePrefixOf,
   siteRewritePath,
 } from "@/lib/site/resolveSite";
+import { optOutCookieDomain, STAT_OPT_OUT_COOKIE, STAT_OPT_OUT_MAX_AGE } from "@/lib/stats/optOut";
 
 /**
  * 3호스트 분기 (04 §1.3).
@@ -35,7 +36,20 @@ export async function proxy(request: NextRequest) {
     if (pathname === ADMIN_LOGIN_PATH || !pathname.startsWith("/admin")) return response;
 
     const isAdmin = await isAdminRequest(request, response);
-    if (isAdmin) return response;
+    if (isAdmin) {
+      // 관리자임이 확인된 **이 자리에서만** 통계 옵트아웃 쿠키를 심는다(05 §4.1).
+      // 공개 지면에서 세션을 확인하려 들면 지면 캐시가 무의미해진다 — 여기 한 번이면 족하다
+      response.cookies.set(STAT_OPT_OUT_COOKIE, "1", {
+        maxAge: STAT_OPT_OUT_MAX_AGE,
+        path: "/",
+        sameSite: "lax",
+        // httpOnly가 아니다. 비콘이 읽어야 하고, 값에 비밀이 없다(lib/stats/optOut 주석)
+        httpOnly: false,
+        secure: request.nextUrl.protocol === "https:",
+        domain: optOutCookieDomain(process.env.SITE_HOST_ROOT),
+      });
+      return response;
+    }
 
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = ADMIN_LOGIN_PATH;
