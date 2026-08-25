@@ -122,7 +122,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
               title="조회 추이"
               note={
                 unit === "day"
-                  ? `최근 ${days}일 · 막대에 올리면 그날의 수치가 나온다`
+                  ? `최근 ${days}일 · 막대에 올리면 그날의 수치가 나와요`
                   : unit === "week"
                     ? "최근 12주 · 일요일에 시작하는 주 기준"
                     : "최근 12개월"
@@ -140,7 +140,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             </Panel>
 
             {topPosts.length > 0 && (
-              <Panel title="많이 읽힌 글" note="제목을 누르면 그 글의 추이가 열린다">
+              <Panel title="많이 읽힌 글" note="제목을 누르면 그 글의 추이가 열려요">
                 <ol className="flex flex-col gap-2">
                   {topPosts.map((row, rank) => (
                     <li key={row.id} className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             <div className="grid gap-8 sm:grid-cols-2">
               <Panel
                 title="유입 경로"
-                note="검색이 늘면 그 주제를 더 쓸 신호다(00 §6.3). 사이트는 어디서 링크됐는지 볼 일이다"
+                note="검색이 늘면 그 주제를 더 쓸 신호예요. 사이트는 어디서 링크됐는지 볼 일이고요"
               >
                 {/* 티스토리 통계처럼 검색·사이트·직접을 먼저 갈라 보여준다 */}
                 <div className="mb-1 flex flex-wrap gap-x-4 gap-y-1 border-edge border-b pb-2 font-typewriter text-[10.5px]">
@@ -207,7 +207,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 ))}
               </Panel>
 
-              <Panel title="기기" note="모바일이 많으면 조판을 모바일 기준으로 본다">
+              <Panel title="기기" note="모바일이 많으면 조판을 모바일 기준으로 봐요">
                 {devices.map((row) => (
                   <StatBar
                     key={row.device}
@@ -225,7 +225,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             </div>
 
             <div className="grid gap-8 sm:grid-cols-2">
-              <Panel title="시간대 (KST)" note="발행·공유 시각을 정할 때 본다">
+              <Panel title="시간대 (KST)" note="발행·공유 시각을 정할 때 봐요">
                 <SimpleColumns
                   labelEvery={3}
                   points={hourly.map((row) => ({
@@ -237,7 +237,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 />
               </Panel>
 
-              <Panel title="요일" note="이 블로그의 한 주는 일요일(설교)에 시작한다">
+              <Panel title="요일" note="한 주는 일요일(설교)에 시작해요">
                 <SimpleColumns
                   points={weekdays.map((row) => ({
                     key: String(row.weekday),
@@ -250,10 +250,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             </div>
 
             {dwell.length > 0 && (
-              <Panel
-                title="체류 시간"
-                note="하한이다 — 창을 닫을 때 기록이 유실될 수 있어 오래 읽은 사람이 표본에서 빠진다"
-              >
+              <Panel title="체류 시간" note="창을 닫으면 기록이 빠져서 실제보다 짧게 나와요">
                 <ul className="flex flex-col gap-2">
                   {dwell.map((row) => (
                     <li key={row.id} className="flex items-baseline gap-3">
@@ -264,7 +261,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                         {formatSeconds(row.seconds)}
                       </span>
                       <span className="w-[52px] flex-none text-right font-typewriter text-[10px] text-faint">
-                        표본 {row.samples}
+                        {row.samples}번
                       </span>
                     </li>
                   ))}
@@ -272,10 +269,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
               </Panel>
             )}
 
-            <Panel
-              title="최근 흔적"
-              note="집계가 아니라 날것이다. 숫자가 작을 때는 이게 더 실감난다"
-            >
+            <Panel title="최근 흔적" note="방금 일어난 조회를 순서대로">
               <ul className="flex flex-col gap-1.5 font-typewriter text-[11px]">
                 {recent.map((event) => (
                   <li key={event.id} className="flex items-baseline gap-2.5">
@@ -294,7 +288,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                           : "w-[26px] flex-none text-faint"
                       }
                     >
-                      {event.eventType === "PAGEVIEW" ? "열람" : "이탈"}
+                      {event.eventType === "PAGEVIEW" ? "조회" : "이탈"}
                     </span>
                     <span className="min-w-0 flex-1 truncate">
                       {event.title ? (

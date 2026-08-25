@@ -78,7 +78,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
             <nav className="flex gap-3 font-typewriter text-[10.5px] text-faint">
               {post.slug && (
                 <Link href={publicPostPath(post.type, post.slug)} className="hover:text-ink">
-                  공개 지면 보기
+                  글 보기
                 </Link>
               )}
               <Link href={editorPath(post.type, post.id)} className="hover:text-ink">
@@ -94,7 +94,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
             label="평균 체류"
             // 초만 적으면 200초가 긴지 짧은지 감이 안 온다
             value={summary.avgSeconds === null ? "—" : formatSeconds(summary.avgSeconds)}
-            sub={summary.dwellSamples > 0 ? `표본 ${summary.dwellSamples}건` : "표본 없음"}
+            sub={summary.dwellSamples > 0 ? `${summary.dwellSamples}번 기준` : "아직 기록 없음"}
           />
           <TextTile
             label="마지막 조회"
@@ -125,8 +125,8 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
 
         {daily.length === 0 ? (
           <div className="border border-edge border-dashed bg-card px-5 py-8 text-center text-[13px] text-faint">
-            최근 {days}일 동안 조회가 없습니다.
-            {summary.firstSeen && " 그 전에는 읽혔습니다 — 기간을 늘려 보세요."}
+            최근 {days}일 동안 조회가 없어요.
+            {summary.firstSeen && " 그 전에는 읽혔어요."}
           </div>
         ) : (
           <Panel title={`일별 조회 · 최근 ${days}일`}>
@@ -143,7 +143,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
 
         <div className="grid gap-8 sm:grid-cols-2">
           {referrers.length > 0 && (
-            <Panel title="유입 경로" note="이 글의 통산 기준">
+            <Panel title="유입 경로" note="이 글이 쌓아온 전체 기준">
               {referrers.map((row) => (
                 <StatBar
                   key={row.host}

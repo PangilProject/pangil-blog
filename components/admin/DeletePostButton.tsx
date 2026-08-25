@@ -28,10 +28,10 @@ export function DeletePostButton({ postId, title }: { postId: string; title: str
       <button
         type="button"
         onClick={() => setIsConfirming(true)}
-        aria-label={`${label} 삭제`}
+        aria-label={`${label} 지우기`}
         className="font-typewriter text-[10.5px] text-faint hover:text-(--accent)"
       >
-        삭제
+        지우기
       </button>
     );
   }
@@ -61,7 +61,7 @@ export function DeletePostButton({ postId, title }: { postId: string; title: str
             router.refresh();
           })
         }
-        aria-label={`${label} 삭제 확인`}
+        aria-label={`${label} 지우기 확인`}
         className="text-(--accent) underline disabled:opacity-50"
       >
         {isPending ? "지우는 중…" : "지운다"}
@@ -73,7 +73,7 @@ export function DeletePostButton({ postId, title }: { postId: string; title: str
           setIsConfirming(false);
           setError(null);
         }}
-        aria-label={`${label} 삭제 취소`}
+        aria-label={`${label} 지우기 취소`}
         className="text-faint hover:text-ink"
       >
         취소

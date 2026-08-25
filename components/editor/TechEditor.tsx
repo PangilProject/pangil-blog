@@ -120,7 +120,7 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
   const onPublish = handleSubmit(async (values) => {
     const validated = TechPublishFormSchema.safeParse(values);
     if (!validated.success) {
-      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없습니다");
+      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없어요");
       return;
     }
 

@@ -46,7 +46,7 @@ describe("TodayCard — 상태별 문구와 도착지", () => {
 
     expect(screen.getByText("빈 템플릿으로 시작 →")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "/admin/write/qt");
-    expect(screen.getByText(/직접 적어도 오늘 기록은 남습니다/)).toBeInTheDocument();
+    expect(screen.getByText(/직접 적어도 오늘 기록은 남아요/)).toBeInTheDocument();
   });
 
   it("제목이 없는 초안도 카드가 비어 보이지 않는다", () => {
