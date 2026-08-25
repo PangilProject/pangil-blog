@@ -145,6 +145,21 @@ model StatEvent {
   @@index([site, occurredAt])
 }
 
+/// 거슬림 목록 (03 §3 · 프리모템 #3 · #10).
+///
+/// 개선 욕구를 코드가 아니라 목록으로 받는 장치다. "지금 고칠까"를 "적어두고 넘어가자"로
+/// 바꾸지 못하면 1인 프로젝트는 완벽주의로 멈춘다 — 그래서 이 테이블의 가치는 내용이 아니라
+/// **적는 행위가 값싸다는 사실**에 있다. 그래서 컬럼이 셋뿐이고, 우선순위·담당·기한이 없다.
+model Nit {
+  id        String    @id @default(cuid())
+  body      String
+  createdAt DateTime  @default(now())
+  /// 처리한 시각. 지우지 않고 남긴다 — 무엇이 거슬렸고 무엇을 실제로 고쳤는지가 이력이다
+  doneAt    DateTime?
+
+  @@index([doneAt, createdAt])
+}
+
 model Asset {
   id          String   @id @default(cuid())
   postId      String? // 업로드 시점 초안 미저장 가능 → nullable

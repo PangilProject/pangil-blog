@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { NitList } from "@/components/admin/NitList";
 import { TodayCard } from "@/components/admin/TodayCard";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
+import { countOpenNits, listOpenNits } from "@/lib/db/nits";
 import { listDrafts } from "@/lib/db/posts";
 import { findTodayCrawl, findTodayPosts } from "@/lib/db/today";
 import { formatKstDay, isSunday } from "@/lib/record/kst";
@@ -22,6 +24,9 @@ import {
  * 세 가지가 있다: ① 오늘의 작성 카드(요일 기반 상태 기계) ② 크롤러 상태 배지 + 수동 폴백
  * ③ 작성 중 초안 바로가기. 그 외에는 아무것도 두지 않는다 — 아침에 여는 화면이 복잡하면
  * 그게 곧 작성 마찰이다.
+ *
+ * M6에서 ④ 거슬림 목록(03 §3 · 프리모템 #3)이 **맨 끝에** 붙었다. 위쪽 질서는 그대로다 —
+ * 개선 욕구를 적을 곳이 없으면 그 욕구가 코드로 가고(프리모템 #10), 그건 작성 시간을 먹는다.
  *
  * 카드 회전은 ±1도 안에서 흩뿌린다(03 §5.1). 매번 다르면 화면이 흔들려 보이므로 고정값이다.
  */
@@ -41,10 +46,12 @@ export default async function AdminDashboardPage() {
   const now = new Date();
   const types = todayCardTypes(now);
 
-  const [todayPosts, crawl, drafts] = await Promise.all([
+  const [todayPosts, crawl, drafts, nits, nitTotal] = await Promise.all([
     findTodayPosts(types, now),
     findTodayCrawl(now),
     listDrafts(6),
+    listOpenNits(),
+    countOpenNits(),
   ]);
 
   const cardPostIds = new Set([...todayPosts.values()].map((post) => post.id));
@@ -120,6 +127,9 @@ export default async function AdminDashboardPage() {
             </ul>
           </section>
         )}
+
+        {/* 맨 끝이다 — 아침에 여는 화면의 위쪽은 오늘 쓸 글의 자리다(02 §3.1) */}
+        <NitList nits={nits} total={nitTotal} />
       </main>
     </div>
   );
