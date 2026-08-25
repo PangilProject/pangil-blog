@@ -25,20 +25,25 @@ const nextConfig: NextConfig = {
 
   images: {
     /**
-     * 업로드 이미지는 Supabase Storage에서 온다(04 §3.3). 호스트를 env에서 읽는 이유는
-     * dev·prod 프로젝트가 다른 주소를 쓰기 때문이다 — 하드코딩하면 한쪽에서 이미지가 막힌다.
+     * 업로드 이미지는 Supabase Storage에서 온다(04 §3.3).
+     *
+     * **호스트를 env에서 읽지 않는다.** 처음에는 `NEXT_PUBLIC_SUPABASE_URL`에서 뽑았는데,
+     * env가 없는 순간(설정 평가 시점·CI·env 빠진 배포)에는 패턴이 **빈 배열**이 되고 그러면
+     * 모든 업로드 이미지가 "hostname is not configured"로 죽는다. 실제로 그렇게 깨졌다.
+     * 설정값이 조용히 사라질 수 있는 구조가 문제였다.
+     *
+     * 그래서 와일드카드로 고정한다. 경로를 공개 오브젝트로 못박으므로 열리는 범위는
+     * "어떤 Supabase 프로젝트의 공개 파일"이고, dev·prod가 서로 다른 주소를 써도 같이 통한다.
      *
      * 마이그레이션·붙여넣기로 들어온 외부 이미지는 최적화 대상이 아니다(렌더러가 그대로 그린다).
      */
-    remotePatterns: process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? [
-          {
-            protocol: "https" as const,
-            hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ]
-      : [],
+    remotePatterns: [
+      {
+        protocol: "https" as const,
+        hostname: "**.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
 };
 
