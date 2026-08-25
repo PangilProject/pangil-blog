@@ -1,6 +1,7 @@
 "use server";
 
 import { updateTag } from "next/cache";
+import { headers } from "next/headers";
 
 import { withAdmin } from "@/lib/actions/withAdmin";
 import { DraftSchema, matchesPostType } from "@/lib/content/schema";
@@ -17,7 +18,9 @@ import {
 import { setPostTags } from "@/lib/db/tags";
 import type { RecordType } from "@/lib/record/callNumber";
 import { extractSearchText } from "@/lib/render/searchText";
-import { postRevalidationTags } from "@/lib/revalidate/tags";
+import { postRevalidationTags, siteOf } from "@/lib/revalidate/tags";
+import { submitToSearchEngines } from "@/lib/seo/submit";
+import { absolutePostUrl, absoluteUrl } from "@/lib/site/publicUrl";
 
 /**
  * 변경 Server Action (05 §3.2).
@@ -122,6 +125,7 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
   });
 
   await revalidatePost(post.id, post.type, post.categoryId);
+  await announce(post.type, published.slug);
 
   return {
     ok: true,
@@ -146,8 +150,30 @@ export const deletePost = withAdmin(async (_user, postId: string): Promise<Delet
   // 지워진 글의 지면도 갱신해야 한다 — 목록에 남아 있으면 404로 가는 링크가 된다
   await revalidatePost(deleted.id, deleted.type, deleted.categoryId);
 
+  // 삭제도 알린다. IndexNow는 사라진 페이지 통보를 규격에 포함한다 — 안 알리면 검색 결과에
+  // 404로 가는 링크가 한동안 남는다
+  if (deleted.slug) await announce(deleted.type, deleted.slug);
+
   return { ok: true };
 });
+
+/**
+ * 검색엔진 통보 (06 §8).
+ *
+ * 글 주소와 **지면 홈**을 함께 보낸다. 목록이 바뀐 것도 색인되어야 하고, 삭제된 글은 그 글
+ * 주소만 보내면 "없어졌다"만 알리고 "어디로 가야 하는지"는 못 알린다.
+ *
+ * 이 함수는 실패해도 조용하다(lib/seo/submit) — 발행은 이미 끝났다.
+ */
+async function announce(type: RecordType, slug: string) {
+  const host = (await headers()).get("host");
+  const site = siteOf(type);
+
+  await submitToSearchEngines(site, [
+    absolutePostUrl(type, slug, { host }),
+    absoluteUrl(site, `/${site}`, { host }),
+  ]);
+}
 
 /**
  * 무효화 (04 §1.2).
