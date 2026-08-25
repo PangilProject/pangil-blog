@@ -1,11 +1,12 @@
 import type { RecordType } from "@/lib/record/callNumber";
+import { backupKeyList, backupOf } from "@/scripts/migrate-tistory/backups";
 import { isRemoteSource, loadImage } from "@/scripts/migrate-tistory/imageSource";
 import { type PreparedPost, readBackup } from "@/scripts/migrate-tistory/pipeline";
 
 /**
  * 마이그레이션 dry-run 리포트 (05 §6.1 · AGENTS.md "dry-run이 기본").
  *
- *   npm run migrate -- --dry-run --input=<백업 폴더> [--check-images]
+ *   npm run migrate -- --dry-run --input=<백업 폴더> --source=<백업 키> [--check-images]
  *
  * 이 단계는 **DB를 건드리지 않는다.** 무엇이 어디로 갈지, 무엇이 사람 손을 필요로 하는지만
  * 보여준다. 판정과 변환은 적재기와 **같은 함수**(pipeline)가 한다 — dry-run에서 본 결과와
@@ -72,15 +73,26 @@ async function main() {
   const args = process.argv.slice(2);
   const input = args.find((arg) => arg.startsWith("--input="))?.slice("--input=".length);
 
-  if (!input || !args.includes("--dry-run")) {
-    console.error("사용법: npm run migrate -- --dry-run --input=<백업 폴더> [--check-images]");
-    console.error("적재는 별도 명령입니다: npm run migrate:load -- --input=<백업 폴더>");
+  // 백업이 둘이고 원본 글 ID가 겹친다. 어느 백업인지는 폴더 이름으로 짐작하지 않는다 —
+  // 틀리면 남의 글 판정을 이 백업에 씌운다(backups.ts)
+  const backup = backupOf(
+    args.find((arg) => arg.startsWith("--source="))?.slice("--source=".length),
+  );
+
+  if (!input || !backup || !args.includes("--dry-run")) {
+    console.error(
+      "사용법: npm run migrate -- --dry-run --input=<백업 폴더> --source=<백업 키> [--check-images]",
+    );
+    console.error(`  백업 키: ${backupKeyList()}`);
+    console.error(
+      "적재는 별도 명령입니다: npm run migrate:load -- --input=<백업 폴더> --source=<백업 키>",
+    );
     process.exitCode = 1;
     return;
   }
 
-  const { total, posts, excluded, review, failed } = readBackup(input);
-  console.log(`[migrate] ${input} — HTML ${total}편`);
+  const { total, posts, excluded, review, failed } = readBackup(input, backup);
+  console.log(`[migrate] ${input} — ${backup.label} · HTML ${total}편`);
 
   printTally(
     "사이트·타입",
