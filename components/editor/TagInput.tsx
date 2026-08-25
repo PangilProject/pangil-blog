@@ -55,7 +55,7 @@ export function TagInput({
           {tag}
           <button
             type="button"
-            aria-label={`태그 ${tag} 삭제`}
+            aria-label={`태그 ${tag} 지우기`}
             onClick={() => onChange(value.filter((current) => current !== tag))}
             className="text-faint hover:text-(--accent)"
           >

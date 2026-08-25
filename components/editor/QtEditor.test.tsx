@@ -95,7 +95,7 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
     renderEditor();
 
     await act(async () => {
-      screen.getByRole("button", { name: "주석 1 삭제" }).click();
+      screen.getByRole("button", { name: "주석 1 지우기" }).click();
     });
     expect(screen.queryByLabelText("주석 1 용어")).toBeNull();
 

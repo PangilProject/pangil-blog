@@ -256,10 +256,10 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
                     <button
                       type="button"
                       onClick={() => annotations.remove(index)}
-                      aria-label={`주석 ${index + 1} 삭제`}
+                      aria-label={`주석 ${index + 1} 지우기`}
                       className="font-typewriter text-[11px] text-faint hover:text-(--accent)"
                     >
-                      삭제
+                      지우기
                     </button>
                   </div>
                   <textarea
