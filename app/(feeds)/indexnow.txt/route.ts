@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 /**
  * IndexNow 키 파일 (06 §8).
  *
@@ -13,6 +15,11 @@
  * (lib/seo/indexNow.test.ts).
  */
 export async function GET() {
+  // 첫 줄이 `connection()`이다 — 이게 없으면 이 라우트가 빌드 시점에 프리렌더된다. 그러면
+  // 빌드 환경에 키가 없을 때 **404가 굳어버리고**, 그 뒤로 제출은 403만 받는다. 키는 env에
+  // 있는 값이므로 요청 시점에 읽는 것이 맞다(같은 이유로 /hub의 통산 장수도 이렇게 한다).
+  await connection();
+
   const key = process.env.INDEXNOW_KEY;
 
   // 키가 없으면 파일도 없어야 한다. 빈 파일을 200으로 주면 검색엔진이 "키 불일치"가 아니라
