@@ -4,7 +4,14 @@ import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { OgCard } from "@/lib/db/publicPosts";
-import { buildOgSvg, clamp, type OgFonts, rasterize, titleFontSize } from "@/lib/og/card";
+import {
+  buildOgSvg,
+  buildSiteOgSvg,
+  clamp,
+  type OgFonts,
+  rasterize,
+  titleFontSize,
+} from "@/lib/og/card";
 
 let fonts: OgFonts;
 
@@ -88,6 +95,32 @@ describe("buildOgSvg · rasterize", () => {
   it("청구기호·부제가 없어도 그려진다", async () => {
     const svg = await buildOgSvg(
       { ...card, callNumber: null, subtitle: null, publishedAt: null },
+      fonts,
+    );
+
+    expect(rasterize(svg).subarray(1, 4).toString("ascii")).toBe("PNG");
+  }, 30_000);
+});
+
+describe("buildSiteOgSvg", () => {
+  it("글이 없는 지면도 카드를 얻는다 — 목록·허브가 가장 먼저 공유되는 주소다", async () => {
+    const svg = await buildSiteOgSvg(
+      {
+        site: "faith",
+        name: "믿음의 기록",
+        description: "말씀과 설교, 찬양을 하루 한 장씩 남기는 묵상 기록.",
+        code: "F",
+        host: "faith.example",
+      },
+      fonts,
+    );
+
+    expect(rasterize(svg).subarray(1, 4).toString("ascii")).toBe("PNG");
+  }, 30_000);
+
+  it("소개가 없어도 그려진다 — 허브는 사람이 채우기 전까지 비어 있다", async () => {
+    const svg = await buildSiteOgSvg(
+      { site: "hub", name: "기록", description: null, code: "H", host: "example.com" },
       fonts,
     );
 

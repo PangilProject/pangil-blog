@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { siteBrand } from "@/lib/site/brand";
+import { absoluteUrl } from "@/lib/site/publicUrl";
 import type { SiteKey } from "@/lib/site/resolveSite";
 
 /**
@@ -13,6 +14,22 @@ import type { SiteKey } from "@/lib/site/resolveSite";
  * **openGraph는 깊게 병합되지 않는다.** 글 상세처럼 아래에서 openGraph를 다시 쓰는 지면은
  * 부모 값을 통째로 덮으므로, 공통 항목은 `openGraphBase`를 펴서 직접 얹어야 한다.
  */
+
+/**
+ * OG 이미지 한 장. **절대 URL로 적는다** — metadataBase는 루트 도메인 하나뿐이라, 도메인이
+ * 붙고 나면 dev 지면의 그림이 루트 호스트 주소로 적힌다. 그림은 제 지면 주소에 있어야 한다.
+ *
+ * host를 넘기지 않는 이유는 `generateMetadata`가 요청 헤더를 읽으면 지면 캐시가 깨지기
+ * 때문이다(ADR-003). env만으로 답이 나온다 — 도메인이 있으면 그 호스트, 없으면 SITE_URL.
+ */
+export function ogImage(site: SiteKey, path: string, alt: string) {
+  return [{ url: absoluteUrl(site, path, { host: null }), width: 1200, height: 630, alt }];
+}
+
+/** 지면 카드 — 글이 아닌 지면(목록·태그·허브)이 쓰는 기본 그림 */
+export function siteOgImage(site: SiteKey) {
+  return ogImage(site, `/api/og/site/${site}`, siteBrand(site).name);
+}
 
 /** 지면 어디서나 같은 OG 공통 항목. 병합에 기대지 않고 손으로 편다 */
 export function openGraphBase(site: SiteKey): { siteName: string; locale: string } {
@@ -32,6 +49,7 @@ export function siteLayoutMetadata(site: SiteKey): Metadata {
       type: "website",
       title: brand.name,
       description,
+      images: siteOgImage(site),
     },
     twitter: { card: "summary_large_image" },
   };

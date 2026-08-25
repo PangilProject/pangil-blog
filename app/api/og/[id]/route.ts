@@ -19,7 +19,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return new Response(new Uint8Array(png), {
     headers: {
       "content-type": "image/png",
-      "cache-control": "public, max-age=0, must-revalidate",
+      // 스크레이퍼는 링크가 공유될 때마다 찾아온다. must-revalidate로 두면 그때마다
+      // satori와 resvg가 다시 돈다 — 제목이 바뀌어야 바뀌는 그림인데도. 다만 무한정
+      // 두지는 않는다: CDN에 남은 응답은 발행 태그로 지워지지 않는다
+      "cache-control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
 }

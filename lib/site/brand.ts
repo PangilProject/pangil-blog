@@ -59,3 +59,6 @@ export function siteBrand(
 
   return { name: blogBrandName(site), description: BLOG_BRANDS[site].description };
 }
+
+/** 화면 번호 체계의 지면 코드 (02) — 카드에서 청구기호 자리에 선다 */
+export const SITE_CODE: Record<SiteKey, string> = { hub: "H", faith: "F", dev: "D" };
