@@ -24,6 +24,7 @@ export function PostDetail({ post }: { post: PublicPost }) {
 
   return (
     <RecordSheet
+      postId={post.id}
       type={post.type}
       callNumber={post.callNumber}
       publishedAt={publishedAt}

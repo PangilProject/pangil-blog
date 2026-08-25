@@ -1,3 +1,5 @@
+import { StatBeacon } from "@/components/public/StatBeacon";
+
 /**
  * H — 프로필 허브. 액센트는 faith와 공유하고, 카드 2장에서만 각자의 값을 쓴다(03 §2.1).
  *
@@ -9,6 +11,8 @@ export default function HubSiteLayout({ children }: LayoutProps<"/hub">) {
   return (
     <div data-site="hub" className="flex min-h-full flex-col">
       {children}
+      {/* UI가 없는 계측 아일랜드. 지면마다 놓지 않고 여기 한 번만 둔다(05 §4) */}
+      <StatBeacon site="hub" />
     </div>
   );
 }

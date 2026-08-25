@@ -23,6 +23,7 @@ export function RecordSheet({
   meta,
   children,
   className,
+  postId,
 }: {
   type: RecordType;
   callNumber: number | null;
@@ -35,9 +36,16 @@ export function RecordSheet({
   meta?: ReactNode;
   children: ReactNode;
   className?: string;
+  /**
+   * 이 지면이 보여주는 글의 id. 통계 비콘이 DOM에서 읽어 간다(05 §4) — 비콘을 레이아웃에
+   * 한 번만 두고도 글 단위로 셀 수 있게 하는 유일한 연결이다. 지면마다 비콘을 놓으면
+   * 언젠가 두 번 발화한다.
+   */
+  postId?: string;
 }) {
   return (
     <article
+      data-post-id={postId}
       className={cn(
         "relative mx-auto w-full max-w-measure border border-edge bg-card px-[7%] pt-9 pb-14 shadow-card",
         className,
