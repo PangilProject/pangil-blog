@@ -1,11 +1,13 @@
 import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
 import { SiteHeader } from "@/components/public/SiteHeader";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { postTag } from "@/lib/revalidate/tags";
-import { ogImage, openGraphBase } from "@/lib/site/metadata";
+import { articleJsonLd } from "@/lib/seo/jsonLd";
+import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
 
 /**
  * F-03 묵상 글 상세 (02 §2.3).
@@ -35,6 +37,19 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
 
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
+      <JsonLd
+        data={articleJsonLd({
+          site: "faith",
+          title: post.title,
+          description: post.excerpt,
+          path: `/faith/${slug}`,
+          publishedAt: post.publishedAt,
+          updatedAt: post.updatedAt,
+          imagePath: `/api/og/${post.id}`,
+          tags: post.tags,
+        })}
+      />
+
       <SiteHeader site="faith" />
 
       <PostDetail post={post} />
@@ -66,5 +81,6 @@ export async function generateMetadata({ params }: PageProps<"/faith/[slug]">) {
       images: ogImage("faith", `/api/og/${post.id}`, post.title),
     },
     twitter: { card: "summary_large_image" },
+    alternates: siteAlternates("faith", `/faith/${slug}`),
   };
 }

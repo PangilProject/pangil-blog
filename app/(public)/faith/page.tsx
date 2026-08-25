@@ -1,9 +1,12 @@
 import { connection } from "next/server";
 
+import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import type { RecordType } from "@/lib/record/callNumber";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { blogJsonLd } from "@/lib/seo/jsonLd";
+import { siteAlternates } from "@/lib/site/metadata";
 
 /**
  * F-01 묵상 블로그 홈 = 통합 목록 (02 §2.3).
@@ -59,22 +62,47 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
   };
 
   return (
-    <ListPageView
-      site="faith"
-      title={query ? `"${query}" 검색 결과` : "믿음의 기록"}
-      month={`${toKstDate(now).month}월`}
-      counts={counts}
-      tabs={TYPE_TABS.map((tab) => ({
-        label: tab.label,
-        href: tab.type ? `/faith?type=${tab.type}` : "/faith",
-        active: type === tab.type,
-      }))}
-      tabsLabel="묵상 타입 필터"
-      page={list}
-      hrefFor={hrefFor}
-      searchAction="/faith"
-      searchQuery={query}
-      emptyMessage={query ? "찾는 기록이 없어요" : "이 칸은 아직 비어 있어요"}
-    />
+    <>
+      <JsonLd data={blogJsonLd("faith", "/faith")} />
+
+      <ListPageView
+        site="faith"
+        title={query ? `"${query}" 검색 결과` : "믿음의 기록"}
+        month={`${toKstDate(now).month}월`}
+        counts={counts}
+        tabs={TYPE_TABS.map((tab) => ({
+          label: tab.label,
+          href: tab.type ? `/faith?type=${tab.type}` : "/faith",
+          active: type === tab.type,
+        }))}
+        tabsLabel="묵상 타입 필터"
+        page={list}
+        hrefFor={hrefFor}
+        searchAction="/faith"
+        searchQuery={query}
+        emptyMessage={query ? "찾는 기록이 없어요" : "이 칸은 아직 비어 있어요"}
+      />
+    </>
   );
+}
+
+/** dev 목록과 같은 규칙 — 검색은 색인하지 않고, 타입 필터·페이지는 자기 주소를 쓴다 */
+export async function generateMetadata({ searchParams }: PageProps<"/faith">) {
+  const params = await searchParams;
+  const query = typeof params.q === "string" ? params.q : undefined;
+
+  if (query) return { title: `"${query}" 검색 결과`, robots: { index: false, follow: true } };
+
+  const type = parseType(typeof params.type === "string" ? params.type : undefined);
+  const facets = new URLSearchParams();
+  if (type) facets.set("type", type);
+  if (typeof params.page === "string" && params.page !== "1") facets.set("page", params.page);
+
+  const label = TYPE_TABS.find((tab) => tab.type === type)?.label;
+  const suffix = facets.toString();
+
+  return {
+    ...(type && label ? { title: label } : {}),
+    alternates: siteAlternates("faith", suffix ? `/faith?${suffix}` : "/faith"),
+  };
 }

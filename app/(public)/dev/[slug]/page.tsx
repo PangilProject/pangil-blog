@@ -1,13 +1,15 @@
 import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
 import { SiteHeader } from "@/components/public/SiteHeader";
 import { Toc } from "@/components/public/Toc";
 import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { collectHeadings } from "@/lib/render/richText";
 import { postTag } from "@/lib/revalidate/tags";
-import { ogImage, openGraphBase } from "@/lib/site/metadata";
+import { articleJsonLd } from "@/lib/seo/jsonLd";
+import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
 
 /**
  * D-02 기술 글 상세 (02 §2.2) — SEO 주력 지면.
@@ -43,6 +45,19 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
 
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
+      <JsonLd
+        data={articleJsonLd({
+          site: "dev",
+          title: post.title,
+          description: post.excerpt,
+          path: `/dev/${slug}`,
+          publishedAt: post.publishedAt,
+          updatedAt: post.updatedAt,
+          imagePath: `/api/og/${post.id}`,
+          tags: post.tags,
+        })}
+      />
+
       <SiteHeader site="dev" />
 
       {/*
@@ -95,5 +110,6 @@ export async function generateMetadata({ params }: PageProps<"/dev/[slug]">) {
       images: ogImage("dev", `/api/og/${post.id}`, post.title),
     },
     twitter: { card: "summary_large_image" },
+    alternates: siteAlternates("dev", `/dev/${slug}`),
   };
 }

@@ -1,8 +1,11 @@
 import { connection } from "next/server";
 
+import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts, findUsedCategories } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { blogJsonLd } from "@/lib/seo/jsonLd";
+import { siteAlternates } from "@/lib/site/metadata";
 
 /**
  * D-01 기술 블로그 홈 = 글 목록 (02 §2.2).
@@ -44,25 +47,47 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
   };
 
   return (
-    <ListPageView
-      site="dev"
-      title={query ? `"${query}" 검색 결과` : "개발의 기록"}
-      month={`${toKstDate(now).month}월`}
-      counts={counts}
-      tabs={[
-        { label: "전체", href: "/dev", active: categorySlug === null },
-        ...categories.map((category) => ({
-          label: category.name,
-          href: `/dev?category=${category.slug}`,
-          active: categorySlug === category.slug,
-        })),
-      ]}
-      tabsLabel="카테고리 필터"
-      page={list}
-      hrefFor={hrefFor}
-      searchAction="/dev"
-      searchQuery={query}
-      emptyMessage={query ? "찾는 글이 없어요" : "이 칸은 아직 비어 있어요"}
-    />
+    <>
+      <JsonLd data={blogJsonLd("dev", "/dev")} />
+
+      <ListPageView
+        site="dev"
+        title={query ? `"${query}" 검색 결과` : "개발의 기록"}
+        month={`${toKstDate(now).month}월`}
+        counts={counts}
+        tabs={[
+          { label: "전체", href: "/dev", active: categorySlug === null },
+          ...categories.map((category) => ({
+            label: category.name,
+            href: `/dev?category=${category.slug}`,
+            active: categorySlug === category.slug,
+          })),
+        ]}
+        tabsLabel="카테고리 필터"
+        page={list}
+        hrefFor={hrefFor}
+        searchAction="/dev"
+        searchQuery={query}
+        emptyMessage={query ? "찾는 글이 없어요" : "이 칸은 아직 비어 있어요"}
+      />
+    </>
   );
+}
+
+/**
+ * 검색 결과는 색인 대상이 아니다 — 같은 글이 질의마다 다른 주소로 또 걸린다. 카테고리와
+ * 페이지는 각자 다른 목록이므로 자기 주소를 정규 주소로 삼는다.
+ */
+export async function generateMetadata({ searchParams }: PageProps<"/dev">) {
+  const params = await searchParams;
+  const query = typeof params.q === "string" ? params.q : undefined;
+
+  if (query) return { title: `"${query}" 검색 결과`, robots: { index: false, follow: true } };
+
+  const facets = new URLSearchParams();
+  if (typeof params.category === "string") facets.set("category", params.category);
+  if (typeof params.page === "string" && params.page !== "1") facets.set("page", params.page);
+
+  const suffix = facets.toString();
+  return { alternates: siteAlternates("dev", suffix ? `/dev?${suffix}` : "/dev") };
 }

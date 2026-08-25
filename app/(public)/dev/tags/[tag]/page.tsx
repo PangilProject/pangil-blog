@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { siteAlternates } from "@/lib/site/metadata";
 
 /**
  * 태그별 목록 (02 §2.2 D-03 · §2.3 F-04).
@@ -38,4 +39,16 @@ export default async function TagListPage({ params, searchParams }: PageProps<"/
       emptyMessage="이 태그의 기록이 아직 없어요"
     />
   );
+}
+
+/** 태그 지면은 제 이름을 가진다 — 목록 전부가 지면 이름 하나로 뜨면 검색 결과에서 구분되지 않는다 */
+export async function generateMetadata({ params, searchParams }: PageProps<"/dev/tags/[tag]">) {
+  const [{ tag }, query] = await Promise.all([params, searchParams]);
+  const name = decodeURIComponent(tag);
+  const page = typeof query.page === "string" && query.page !== "1" ? `?page=${query.page}` : "";
+
+  return {
+    title: `#${name}`,
+    alternates: siteAlternates("dev", `/dev/tags/${tag}${page}`),
+  };
 }
