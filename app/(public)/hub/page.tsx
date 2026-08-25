@@ -2,10 +2,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { JsonLd } from "@/components/public/JsonLd";
 import { RecordCard } from "@/components/record/RecordCard";
 import { Tape } from "@/components/record/Tape";
 import { countPublishedPosts } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
+import { personJsonLd } from "@/lib/seo/jsonLd";
+import { siteAlternates } from "@/lib/site/metadata";
 import { profileFromEnv } from "@/lib/site/profile";
 
 /**
@@ -22,11 +25,17 @@ import { profileFromEnv } from "@/lib/site/profile";
  * 무엇보다 **빌드가 DB에 의존해서는 안 된다** — DB가 흔들리는 순간 배포가 막힌다. 실제로 CI가
  * 그렇게 깨졌다(빌드에는 더미 DB URL만 있다).
  */
+export const metadata = { alternates: siteAlternates("hub", "/hub") };
+
 export default function HubPage() {
   const profile = profileFromEnv();
+  // 허브는 블로그가 아니라 사람이다. 이름이 비어 있으면 아무것도 적지 않는다
+  const person = personJsonLd();
 
   return (
     <main className="mx-auto flex w-full max-w-[760px] flex-col gap-9 px-[6%] py-16">
+      {person && <JsonLd data={person} />}
+
       <header className="flex flex-col gap-3">
         {profile.name && <h1 className="font-serif font-bold text-[26px]">{profile.name}</h1>}
         {profile.tagline && (

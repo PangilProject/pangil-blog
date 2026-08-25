@@ -36,6 +36,22 @@ export function openGraphBase(site: SiteKey): { siteName: string; locale: string
   return { siteName: siteBrand(site).name, locale: "ko_KR" };
 }
 
+/**
+ * 정규 URL. 지면 호스트가 붙으면 `/dev` 세그먼트가 사라진다(`lib/site/publicUrl`).
+ *
+ * **레이아웃에는 두지 않는다.** alternates는 아래로 상속되므로, 레이아웃에서 한 번 적으면
+ * 모든 글이 지면 홈을 정규 주소라고 말하게 된다. 지면마다 자기 주소를 적는다.
+ *
+ * RSS 링크를 함께 적는 이유는 병합이 얕기 때문이다 — canonical만 넣으면 루트가 깔아 둔
+ * alternates가 통째로 밀려 피드 링크가 사라진다.
+ */
+export function siteAlternates(site: SiteKey, path: string): Metadata["alternates"] {
+  return {
+    canonical: absoluteUrl(site, path, { host: null }),
+    types: { "application/rss+xml": "/rss.xml" },
+  };
+}
+
 export function siteLayoutMetadata(site: SiteKey): Metadata {
   const brand = siteBrand(site);
   const description = brand.description ?? undefined;
