@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
   const parsed = StatPayloadSchema.safeParse(body);
   if (!parsed.success) return NO_CONTENT;
 
+  // 내 사이트 안에서의 이동은 **유입이 아니다.** 목록에서 글로 들어가면 referrer가 우리
+  // 호스트로 오는데, 그걸 그대로 세면 유입 경로 1위가 언제나 내 도메인이 된다(실제로 그랬다).
+  // 어디서 왔는지는 이미 path·postId가 말해준다
+  const referrer = isSameHost(parsed.data.referrer, headers.get("origin"))
+    ? undefined
+    : parsed.data.referrer;
+
   const salt = process.env.STAT_SALT;
   if (!salt) {
     // 솔트 없이 해시하면 ip·ua를 평문으로 되짚을 수 있는 값이 테이블에 쌓인다.
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await recordStatEvent({
-      payload: parsed.data,
+      payload: { ...parsed.data, referrer },
       visitorHash: visitorHash({ salt, now: new Date(), ip, userAgent }),
       device: deviceOf(userAgent),
     });
@@ -69,4 +76,14 @@ export async function POST(request: NextRequest) {
   }
 
   return NO_CONTENT;
+}
+
+/** referrer가 이 사이트 자신인가. 둘 중 하나라도 URL이 아니면 판단하지 않는다 */
+function isSameHost(referrer: string | undefined, origin: string | null): boolean {
+  if (!referrer || !origin) return false;
+  try {
+    return new URL(referrer).host === new URL(origin).host;
+  } catch {
+    return false;
+  }
 }
