@@ -35,7 +35,7 @@ export function QtView({ content }: { content: Extract<PostContent, { kind: "QT"
         <section key={group.group} className="flex flex-col">
           <GroupTab>{group.group}</GroupTab>
 
-          <div className="flex flex-col gap-4 border border-edge bg-[#fffefa] px-[18px] py-4">
+          <div className="flex flex-col gap-4 border border-edge bg-surface-sheet px-[18px] py-4">
             {group.questions.map((question) => (
               <div key={question.label} className="flex flex-col gap-1.5">
                 <p className="flex gap-2 font-bold text-[14px] leading-[1.7]">

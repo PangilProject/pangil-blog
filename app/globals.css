@@ -38,6 +38,12 @@
   /* 비활성 칸막이 탭의 표면. 03 §2.1 표에는 없지만 프로토타입이 쓰는 값이라
      하드코딩 대신 토큰으로 둔다(활성 탭은 --card로 올라온다). */
   --surface-tab: #f3eee1;
+  /* 카드 안에 한 겹 더 놓이는 시트(QT 질문 패널·에디터 섹션). 카드보다 한 톤 밝다.
+     M6에 토큰으로 올렸다 — 하드코딩(#fffefa)이던 동안 다크에서 크림색으로 굳어 있었다. */
+  --surface-sheet: #fffefa;
+  /* --edge보다 한 단 진한 테두리(점선 주석 상자·천공). 값이 둘로 갈려 있던 것을
+     M6에 하나로 합쳤다 — 4~5단위 차이는 눈에 보이지 않고, 토큰이 둘이면 다크에서 둘 다 잊는다. */
+  --edge-strong: #dcd3c2;
 
   /* ── 타이포 역할 (03 §2.2) ──
      Pretendard는 app/fonts/pretendard.css의 @font-face(동적 서브셋)로, 나머지 3종은
@@ -101,8 +107,10 @@
   --accent: var(--accent-dev);
 }
 
-/* 다크 초안 (03 §2.1 "밤의 서고") — 실값 튜닝은 M6.
-   토글은 M3(next-themes)에서 붙이고, 여기서는 팔레트만 준비한다. */
+/* 다크 팔레트 (03 §2.1 "밤의 서고") — M6에서 실값 확정.
+   여기서 놓치기 쉬운 것은 색이 아니라 **빠진 항목**이다. 라이트에만 있는 토큰은 다크에서
+   라이트 값을 그대로 물려받아 조용히 크림색으로 남는다 — 질문 시트·주석 상자·카드 그림자가
+   실제로 그랬다. 새 표면 토큰을 추가할 때는 이 블록도 같이 채운다. */
 .dark {
   --paper: #201d18;
   --card: #262219;
@@ -113,10 +121,18 @@
   --accent-dev: #5b85bf;
   --line: #3a4550;
   --edge: #3a352b;
+  --edge-strong: #453f33;
   --postit: #6b6134;
   --crawl: #2b2620;
   --surface-hover: #322c23;
   --surface-tab: #2f2a21;
+  --surface-sheet: #2d2820;
+
+  /* 그림자도 갈아야 한다. 라이트 값의 첫 레이어가 크림색 실선(#e3ddcd)이라
+     어두운 배경 위에서는 카드 밑에 밝은 줄이 그어진다 — M6 실측에서 잡았다.
+     번짐은 더 진하게: 어두운 지면에서 옅은 그림자는 아예 보이지 않는다. */
+  --shadow-card: 0 1px 0 #2f2a21, 0 8px 18px rgb(0 0 0 / 45%);
+  --shadow-card-hover: 0 1px 0 #2f2a21, 0 16px 30px rgb(0 0 0 / 55%);
 }
 
 @theme inline {
@@ -127,6 +143,8 @@
   --color-ink-soft: var(--ink-soft);
   --color-faint: var(--faint);
   --color-site-accent: var(--accent);
+  --color-surface-sheet: var(--surface-sheet);
+  --color-edge-strong: var(--edge-strong);
   --color-accent-faith: var(--accent-faith);
   --color-accent-dev: var(--accent-dev);
   --color-ok: var(--ok);
