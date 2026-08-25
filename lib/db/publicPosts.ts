@@ -6,7 +6,8 @@ import type { PostContent } from "@/lib/content/schema";
 import { type ContentParseResult, parsePublishContent } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
-import { type PublicSite, postTag } from "@/lib/revalidate/tags";
+import { type PublicSite, postTag, siteOf } from "@/lib/revalidate/tags";
+import { blogBrandName } from "@/lib/site/brand";
 import { PostStatus, type PostType } from "@/prisma/generated/enums";
 
 /**
@@ -156,7 +157,7 @@ export async function findOgCard(id: string): Promise<OgCard | null> {
           row.publishedAt,
         )
       : null,
-    siteLabel: type === "TECH" ? "개발의 기록" : "믿음의 기록",
+    siteLabel: blogBrandName(siteOf(type)),
     typeLabel: OG_TYPE_LABELS[type],
   };
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import type { PublicSite } from "@/lib/revalidate/tags";
+import { brandLabel } from "@/lib/site/brand";
 
 /**
  * 공개 지면 상단 (프로토타입 `shead` · 02 §1).
@@ -10,15 +11,11 @@ import type { PublicSite } from "@/lib/revalidate/tags";
  * 여기 있다. 그 외에는 두지 않는다 — 지면의 주인은 글이다.
  *
  * 브랜드의 뒷글자만 액센트를 받는다(프로토타입 `.brand em`). 지면에 따라 색이 갈리는 것이
- * `--accent` 1축 오버라이드의 눈에 보이는 결과다(03 §2.1).
+ * `--accent` 1축 오버라이드의 눈에 보이는 결과다(03 §2.1). 표시명 자체는 `lib/site/brand`가
+ * 쥐고 있다 — 헤더·OG 카드·메타데이터가 같은 이름을 말해야 한다.
  */
-const LABELS: Record<PublicSite, { lead: string; accent: string }> = {
-  faith: { lead: "믿음의 ", accent: "기록" },
-  dev: { lead: "개발의 ", accent: "기록" },
-};
-
 export function SiteHeader({ site }: { site: PublicSite }) {
-  const label = LABELS[site];
+  const label = brandLabel(site);
   const home = `/${site}`;
 
   return (
