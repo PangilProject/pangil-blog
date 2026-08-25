@@ -6,6 +6,7 @@ import satori from "satori";
 import type { OgCard } from "@/lib/db/publicPosts";
 import { ACCENT, CARD, EDGE, FAINT, INK, INK_SOFT, PAPER } from "@/lib/og/palette";
 import { formatCallNumber } from "@/lib/record/callNumber";
+import type { SiteKey } from "@/lib/site/resolveSite";
 
 /**
  * OG 카드 그리기 (04 §3.5 · 03 §5.1) — 기록 카드를 1200×630으로 재조판한다.
@@ -167,4 +168,108 @@ export function rasterize(svg: string): Buffer {
 
 export async function renderOgCard(post: OgCard): Promise<Buffer> {
   return rasterize(await buildOgSvg(post, await loadFonts()));
+}
+
+/**
+ * 글이 아닌 지면(목록·태그·허브)의 카드.
+ *
+ * 글 카드와 같은 종이·같은 괘를 쓴다 — 공유된 링크만 보고도 같은 곳임을 알아야 한다.
+ * **장수 같은 DB 값을 넣지 않는다.** 허브 지면이 빌드에서 DB를 보지 않기로 한 것과 같은
+ * 이유이고(01 §3.3), 숫자가 들어가는 순간 이 그림에도 무효화 규칙이 필요해진다.
+ */
+export type SiteOgCard = {
+  site: SiteKey;
+  /** 지면 표시명 — "믿음의 기록" */
+  name: string;
+  description: string | null;
+  /** 지면 코드 H·F·D (02 화면 번호 체계). 글 카드의 청구기호 자리에 선다 */
+  code: string;
+  /** 카드 아래에 적는 주소. 도메인이 미확정이면 지금 서 있는 호스트다 */
+  host: string;
+};
+
+export async function buildSiteOgSvg(card: SiteOgCard, { serif, mono }: OgFonts): Promise<string> {
+  const accent = ACCENT[card.site];
+  const title = clamp(card.name, TITLE_MAX);
+  const description = card.description ? clamp(card.description, SUBTITLE_MAX) : null;
+
+  return satori(
+    <div style={{ display: "flex", width: "100%", height: "100%", background: PAPER, padding: 56 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          height: "100%",
+          background: CARD,
+          border: `1px solid ${EDGE}`,
+          borderTop: `6px solid ${accent}`,
+          padding: "44px 60px 40px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontFamily: MONO,
+            fontSize: 22,
+            color: accent,
+          }}
+        >
+          <span>{card.code}</span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            marginTop: 36,
+            fontFamily: SERIF,
+            fontSize: titleFontSize(title.length),
+            lineHeight: 1.35,
+            color: INK,
+          }}
+        >
+          {title}
+        </div>
+
+        {description && (
+          <div
+            style={{
+              display: "flex",
+              marginTop: 22,
+              fontFamily: SERIF,
+              fontSize: 26,
+              color: INK_SOFT,
+            }}
+          >
+            {description}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            marginTop: "auto",
+            fontFamily: MONO,
+            fontSize: 20,
+            color: FAINT,
+          }}
+        >
+          <span>{card.host}</span>
+        </div>
+      </div>
+    </div>,
+    {
+      width: WIDTH,
+      height: HEIGHT,
+      fonts: [
+        { name: SERIF, data: serif, style: "normal", weight: 700 },
+        { name: MONO, data: mono, style: "normal", weight: 400 },
+      ],
+    },
+  );
+}
+
+export async function renderSiteOgCard(card: SiteOgCard): Promise<Buffer> {
+  return rasterize(await buildSiteOgSvg(card, await loadFonts()));
 }
