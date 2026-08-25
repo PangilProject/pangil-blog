@@ -4,6 +4,7 @@ import { Resvg } from "@resvg/resvg-js";
 import satori from "satori";
 
 import type { OgCard } from "@/lib/db/publicPosts";
+import { ACCENT, CARD, EDGE, FAINT, INK, INK_SOFT, PAPER } from "@/lib/og/palette";
 import { formatCallNumber } from "@/lib/record/callNumber";
 
 /**
@@ -21,15 +22,6 @@ import { formatCallNumber } from "@/lib/record/callNumber";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
-
-const PAPER = "#F7F4EC";
-const CARD = "#FFFDF7";
-const INK = "#2B2823";
-const INK_SOFT = "#5A5348";
-const FAINT = "#8C8474";
-const EDGE = "#E4DCCB";
-/** 지면과 같은 액센트 1축(03 §2.1) — faith 인주 빨강, dev 감청 */
-const ACCENT = { faith: "#A8412F", dev: "#2F4A72" } as const;
 
 /**
  * 카드는 630px 안에 다 들어와야 한다. 넘치면 푸터를 덮는다 — 실제로 그랬다.

@@ -18,6 +18,7 @@
     "migrate": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/migrate-tistory/report.mts",
     "migrate:load": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/migrate-tistory/load.mts",
     "migrate:verify": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/migrate-tistory/verify.mts",
+    "icons": "node --import ./scripts/aliasHook.mts scripts/icons/build.mts",
     "crawl": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/crawler/run.mts",
     "test:watch": "vitest",
     "db:generate": "prisma generate",

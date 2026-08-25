@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { fontVariables } from "@/app/fonts/fonts";
 import { ThemeProvider } from "@/components/public/ThemeProvider";
+import { THEME_COLOR } from "@/lib/og/palette";
 import { BRAND_MARK } from "@/lib/site/brand";
 
 import "./globals.css";
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: BRAND_MARK,
   robots: { index: true, follow: true },
+  // 호스트를 보고 지면별로 답한다(app/manifest.webmanifest/route.ts)
+  manifest: "/manifest.webmanifest",
   // 지면별 피드다(app/(feeds)/rss.xml). 호스트가 지면을 가르므로 경로는 하나로 족하다
   alternates: { types: { "application/rss+xml": "/rss.xml" } },
 };
@@ -28,3 +31,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
+
+/**
+ * 주소창 색은 지면 배경을 따라간다 — 스크롤 끝에서 브라우저 크롬과 종이가 이어지도록.
+ * 다크 토글(next-themes)은 이 값을 바꾸지 못하므로 OS 설정 기준 두 벌을 준다.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLOR.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLOR.dark },
+  ],
+};
