@@ -223,6 +223,8 @@ export type DeletedPost = {
   type: RecordType;
   categoryId: string | null;
   callNumber: number | null;
+  /** 검색엔진에 "이 주소는 사라졌다"를 알리는 데 쓴다(06 §8). 초안이면 null */
+  slug: string | null;
 };
 
 /**
@@ -239,7 +241,7 @@ export type DeletedPost = {
 export async function deletePostRecord(id: string): Promise<DeletedPost | null> {
   const post = await prisma.post.findUnique({
     where: { id },
-    select: { id: true, type: true, categoryId: true, callNumber: true },
+    select: { id: true, type: true, categoryId: true, callNumber: true, slug: true },
   });
 
   if (!post) return null;
