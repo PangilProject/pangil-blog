@@ -96,13 +96,13 @@ describe("TechEditor — 태그 입력", () => {
       fireEvent.keyDown(screen.getByLabelText("태그"), { key: "Enter" });
     });
 
-    expect(screen.getByRole("button", { name: "태그 Prisma 삭제" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "태그 Prisma 지우기" })).toBeInTheDocument();
 
     await act(async () => {
-      screen.getByRole("button", { name: "태그 Prisma 삭제" }).click();
+      screen.getByRole("button", { name: "태그 Prisma 지우기" }).click();
     });
 
-    expect(screen.queryByRole("button", { name: "태그 Prisma 삭제" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "태그 Prisma 지우기" })).toBeNull();
   });
 
   it("같은 태그를 두 번 넣지 않는다", async () => {
@@ -113,7 +113,7 @@ describe("TechEditor — 태그 입력", () => {
       fireEvent.keyDown(screen.getByLabelText("태그"), { key: "Enter" });
     });
 
-    expect(screen.getAllByRole("button", { name: /태그 .* 삭제/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /태그 .* 지우기/ })).toHaveLength(1);
   });
 
   it("빈 칸에서 Backspace는 마지막 태그를 지운다", async () => {
@@ -123,7 +123,7 @@ describe("TechEditor — 태그 입력", () => {
       fireEvent.keyDown(screen.getByLabelText("태그"), { key: "Backspace" });
     });
 
-    expect(screen.queryByRole("button", { name: "태그 Next.js 삭제" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "태그 Next.js 지우기" })).toBeNull();
   });
 });
 

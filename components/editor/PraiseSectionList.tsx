@@ -289,7 +289,7 @@ function SortableSection({
             ↓
           </SectionButton>
           <SectionButton
-            label={`${name} 삭제`}
+            label={`${name} 지우기`}
             disabled={!canRemove}
             onClick={() => onRemove(index)}
           >
