@@ -45,9 +45,14 @@ const TEMPLATES = [
   662, // [회고] 월간 목표
 ];
 
-type Resolved = Classified;
+export type Resolved = Classified;
 
-const BY_LEGACY_ID = new Map<number, Resolved>([
+/**
+ * **첫 백업 전용이다.** 키가 원본 글 ID라, 두 번째 블로그에 그대로 적용하면 번호가 겹치는
+ * 남의 글을 학교 일지로 만들어 버린다(실제로 dry-run에서 그렇게 나왔다). 백업별로 어떤 표를
+ * 쓸지는 `backups.ts`가 정한다.
+ */
+export const FIRST_BACKUP_OVERRIDES = new Map<number, Resolved>([
   // faith — 카테고리를 빼먹고 올린 글들
   [519, { kind: "post", site: "faith", type: "QT", categorySlug: null }],
   // "주일 예배 설교"인데 티스토리에서 QT로 분류돼 있었다. 본문에 질문 4그룹이 없다
@@ -74,6 +79,25 @@ const BY_LEGACY_ID = new Map<number, Resolved>([
   ...TEMPLATES.map((id) => [id, { kind: "exclude", reason: "서식·빈 틀" }] as [number, Resolved]),
 ]);
 
-export function overrideFor(legacyId: number): Resolved | null {
-  return BY_LEGACY_ID.get(legacyId) ?? null;
+export function overrideFor(overrides: Map<number, Resolved>, legacyId: number): Resolved | null {
+  return overrides.get(legacyId) ?? null;
 }
+
+/**
+ * 두 번째 백업의 예외 (2026-08-25 dry-run에서 사람이 확인).
+ *
+ * 카테고리가 정리돼 있어 규칙이 거의 다 가른다. 남는 건 두 부류다 — 카테고리를 안 고른 5편과,
+ * 티스토리에서 QT로 잘못 분류해 둔 2편.
+ */
+export const SECOND_BACKUP_OVERRIDES = new Map<number, Resolved>([
+  // 본문이 빈 틀이다. "1. " 뒤에 말씀이 없고 제목 자리에 "ㅇㅇㅇ"이 남아 있다
+  [3, { kind: "exclude", reason: "서식·빈 틀" }], // 묵상
+  [4, { kind: "exclude", reason: "서식·빈 틀" }], // 찬양
+  [5, { kind: "exclude", reason: "서식·빈 틀" }], // 설교
+  // 카테고리를 빼먹었을 뿐 내용은 분명하다
+  [181, { kind: "post", site: "faith", type: "SERMON", categorySlug: null }], // 세이레 새벽기도회
+  [370, { kind: "post", site: "faith", type: "PRAISE", categorySlug: null }], // 마커스워십
+  // 티스토리에서 QT 칸에 넣어 두었지만 본문이 다르다
+  [50, { kind: "post", site: "faith", type: "SERMON", categorySlug: null }], // 주일 예배 설교
+  [348, { kind: "post", site: "faith", type: "PRAISE", categorySlug: null }], // 마커스워십
+]);

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { type PostContent, QT_GROUP_COUNT, QT_QUESTION_COUNT } from "@/lib/content/schema";
 import { parseDraftContent, parsePublishContent } from "@/lib/db/content";
 import type { RecordType } from "@/lib/record/callNumber";
+import type { Backup } from "@/scripts/migrate-tistory/backups";
 import { classify, type MigrationSite } from "@/scripts/migrate-tistory/classify";
 import { htmlToTiptapContent } from "@/scripts/migrate-tistory/convertHtml";
 import { convertPraise } from "@/scripts/migrate-tistory/convertPraise";
@@ -21,7 +22,10 @@ import { overrideFor } from "@/scripts/migrate-tistory/overrides";
  */
 
 export type PreparedPost = {
+  /** DB에 적히는 멱등 키 = 백업 오프셋 + 원본 글 ID */
   legacyId: number;
+  /** 백업 폴더의 번호. 리포트·`--only`가 이걸로 말한다 */
+  originalId: number;
   file: string;
   folder: string;
   title: string;
@@ -41,7 +45,7 @@ export type PreparedPost = {
   images: string[];
 };
 
-export type Skipped = { legacyId: number; file: string; title: string; reason: string };
+export type Skipped = { originalId: number; file: string; title: string; reason: string };
 
 export type Prepared = {
   total: number;
@@ -142,7 +146,7 @@ function validate(content: unknown, gate: string[]) {
   return parsed.ok ? [] : parsed.issues;
 }
 
-export function readBackup(input: string): Prepared {
+export function readBackup(input: string, backup: Backup): Prepared {
   const files = htmlFiles(input);
 
   const posts: PreparedPost[] = [];
@@ -163,12 +167,13 @@ export function readBackup(input: string): Prepared {
       continue;
     }
 
-    // 글 단위 예외가 규칙을 이긴다 — 카테고리를 안 고른 32편이 그렇다
-    const classified = overrideFor(post.legacyId) ?? classify(post.categoryPath);
+    // 글 단위 예외가 규칙을 이긴다 — 카테고리를 안 고른 32편이 그렇다.
+    // 표는 백업마다 다르다: 두 백업의 같은 번호는 서로 다른 글이다
+    const classified = overrideFor(backup.overrides, post.legacyId) ?? classify(post.categoryPath);
 
     if (classified.kind !== "post") {
       const row = {
-        legacyId: post.legacyId,
+        originalId: post.legacyId,
         file: post.file,
         title: post.title,
         reason: classified.reason,
@@ -183,7 +188,8 @@ export function readBackup(input: string): Prepared {
     const blockers = [...converted.gate, ...issues];
 
     posts.push({
-      legacyId: post.legacyId,
+      legacyId: backup.idOffset + post.legacyId,
+      originalId: post.legacyId,
       file: post.file,
       folder: file.folder,
       title: post.title,

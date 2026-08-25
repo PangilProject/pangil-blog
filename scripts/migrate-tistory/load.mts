@@ -8,6 +8,7 @@ import { extractSearchText } from "@/lib/render/searchText";
 import { publicImageUrl } from "@/lib/storage/images";
 import { CATEGORIES } from "@/prisma/categories.mts";
 import { PostStatus, type PostType, Site } from "@/prisma/generated/enums";
+import { backupKeyList, backupOf } from "@/scripts/migrate-tistory/backups";
 import { type ImageReplacement, rewriteImageSrcs } from "@/scripts/migrate-tistory/imageNodes";
 import { loadImage } from "@/scripts/migrate-tistory/imageSource";
 import { assignCallNumbers, deriveExcerpt } from "@/scripts/migrate-tistory/loadPlan";
@@ -16,7 +17,7 @@ import { type PreparedPost, readBackup } from "@/scripts/migrate-tistory/pipelin
 /**
  * 티스토리 적재 (05 §6.1 3·4단계 · §6.4).
  *
- *   npm run migrate:load -- --input=<백업 폴더> [--limit=N] [--only=105,106]
+ *   npm run migrate:load -- --input=<백업 폴더> --source=<백업 키> [--append] [--limit=N] [--only=105]
  *
  * 순서가 규칙이다. **타입별 원본 작성일 오름차순으로 청구기호를 소급 부여**한다(§6.4) —
  * 번호가 곧 이 기록물의 연대기이므로, 옮기는 순서가 아니라 쓴 순서를 따라야 한다.
@@ -193,13 +194,20 @@ async function main() {
     .split(",")
     .map(Number);
 
-  if (!input) {
-    console.error("사용법: npm run migrate:load -- --input=<백업 폴더> [--limit=N] [--only=105]");
+  const backup = backupOf(
+    args.find((arg) => arg.startsWith("--source="))?.slice("--source=".length),
+  );
+
+  if (!input || !backup) {
+    console.error(
+      "사용법: npm run migrate:load -- --input=<백업 폴더> --source=<백업 키> [--append] [--limit=N] [--only=105]",
+    );
+    console.error(`  백업 키: ${backupKeyList()}`);
     process.exitCode = 1;
     return;
   }
 
-  const { posts, review, failed } = readBackup(input);
+  const { posts, review, failed } = readBackup(input, backup);
 
   if (review.length > 0 || failed.length > 0) {
     // dry-run이 초록이 아니면 적재하지 않는다
@@ -237,7 +245,8 @@ async function main() {
   const categoryIds = await ensureCategories();
 
   const targets = posts
-    .filter((post) => (only ? only.includes(post.legacyId) : true))
+    // 리포트가 보여주는 번호는 폴더 번호다. 오프셋 붙은 값을 외우게 하지 않는다
+    .filter((post) => (only ? only.includes(post.originalId) : true))
     .slice(0, Number.isFinite(limit) && limit > 0 ? limit : undefined);
 
   console.log(`[load] ${targets.length}편을 적재합니다 (전체 ${posts.length}편)`);

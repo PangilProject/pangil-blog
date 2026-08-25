@@ -16,6 +16,7 @@ function post(
 ): PreparedPost {
   return {
     legacyId,
+    originalId: legacyId,
     file: `${legacyId}/x.html`,
     folder: `/backup/${legacyId}`,
     title: `글 ${legacyId}`,

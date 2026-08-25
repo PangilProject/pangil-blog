@@ -59,6 +59,18 @@ export function classify(categoryPath: string): Classified {
 
   const [top, sub = ""] = segments;
 
+  /**
+   * 두 번째 블로그는 묵상만 담으므로 `묵상/` 상위가 없다 — QT·설교가 최상위다(2026-08-25).
+   * 첫 블로그의 `묵상/QT`도 계속 받는다: 백업 둘을 같은 규칙으로 읽어야 한다.
+   */
+  if (top === "QT") return { kind: "post", site: "faith", type: "QT", categorySlug: null };
+  if (top === "설교") return { kind: "post", site: "faith", type: "SERMON", categorySlug: null };
+
+  // 세이레 특별새벽기도회 — 새벽예배 설교다(사용자 확인, 2026-08-25)
+  if (top.includes("세이레")) {
+    return { kind: "post", site: "faith", type: "SERMON", categorySlug: null };
+  }
+
   if (top === "묵상") {
     if (sub.includes("QT")) return { kind: "post", site: "faith", type: "QT", categorySlug: null };
     if (sub.includes("설교")) {

@@ -30,6 +30,19 @@ describe("classify — faith", () => {
   it("묵상 하위를 모르면 검토 큐다 — 추측해서 QT로 넣지 않는다", () => {
     expect(classify("?? 묵상")).toMatchObject({ kind: "review" });
   });
+
+  /** 두 번째 블로그(2025-09-21~)는 묵상만 담아서 QT·설교가 최상위다 */
+  it("QT·설교가 최상위여도 같은 곳으로 간다", () => {
+    expect(classify("? QT")).toMatchObject({ site: "faith", type: "QT" });
+    expect(classify("⛪️ 설교")).toMatchObject({ site: "faith", type: "SERMON" });
+  });
+
+  it("세이레 특별새벽기도회는 설교다 (사용자 확인, 2026-08-25)", () => {
+    expect(classify("다니엘세이레 특별새벽기도회")).toMatchObject({
+      site: "faith",
+      type: "SERMON",
+    });
+  });
 });
 
 describe("classify — dev", () => {
