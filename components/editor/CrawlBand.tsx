@@ -42,7 +42,7 @@ export function CrawlBand({
           <span>
             <b className="text-ink">가져오지 못했어요</b> · 빈 템플릿으로 시작합니다
           </span>
-          <span>본문과 질문을 직접 적어도 오늘 기록은 남습니다</span>
+          <span>본문과 질문을 직접 적어도 오늘 기록은 남아요</span>
         </>
       ) : (
         <>

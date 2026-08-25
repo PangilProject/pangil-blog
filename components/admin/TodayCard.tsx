@@ -28,7 +28,7 @@ const HINT_BY_STATE: Record<TodayCardState, string> = {
   "draft-ready": "말씀·질문이 채워져 있어요",
   writing: "쓰던 자리에서 이어집니다",
   published: "오늘 몫을 남겼어요",
-  "crawl-failed": "직접 적어도 오늘 기록은 남습니다",
+  "crawl-failed": "직접 적어도 오늘 기록은 남아요",
   empty: "여기서 시작하면 됩니다",
 };
 

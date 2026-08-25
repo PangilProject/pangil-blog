@@ -35,7 +35,7 @@ import {
 const CRAWL_LABELS = {
   SUCCESS: "정상",
   FAILED: "실패",
-  SKIPPED: "콘텐츠 없는 날",
+  SKIPPED: "큐티 없는 날",
 } as const;
 
 export default async function AdminDashboardPage() {

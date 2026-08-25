@@ -96,7 +96,7 @@ describe("CrawlBand — 가져온 것임을 표시", () => {
     render(<CrawlBand variant="failed" />);
 
     expect(screen.getByText(/가져오지 못했어요/)).toBeInTheDocument();
-    expect(screen.getByText(/직접 적어도 오늘 기록은 남습니다/)).toBeInTheDocument();
+    expect(screen.getByText(/직접 적어도 오늘 기록은 남아요/)).toBeInTheDocument();
   });
 });
 

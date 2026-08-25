@@ -120,7 +120,7 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
   const onPublish = handleSubmit(async (values) => {
     const validated = PraisePublishFormSchema.safeParse(values);
     if (!validated.success) {
-      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없습니다");
+      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없어요");
       return;
     }
 

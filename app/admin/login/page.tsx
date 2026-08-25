@@ -11,7 +11,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
         <h1 className="text-lg">관리자 로그인</h1>
         <p role="alert">
           Supabase 환경변수(NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)가 설정되지
-          않았습니다. .env.example을 참고해 채워 주세요.
+          않았어요. .env.example을 참고해 채워 주세요.
         </p>
       </main>
     );
@@ -47,7 +47,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
           로그인
         </button>
       </form>
-      {error ? <p role="alert">로그인하지 못했습니다. 이메일과 비밀번호를 확인해 주세요.</p> : null}
+      {error ? <p role="alert">로그인하지 못했어요. 이메일과 비밀번호를 확인해 주세요.</p> : null}
     </main>
   );
 }

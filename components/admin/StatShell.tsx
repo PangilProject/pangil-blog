@@ -152,11 +152,11 @@ export function TextTile({ label, value, sub }: { label: string; value: string; 
 export function EmptyState() {
   return (
     <div className="border border-edge border-dashed bg-card px-5 py-8 text-center">
-      <p className="text-[13.5px]">아직 조회가 기록되지 않았습니다.</p>
+      <p className="text-[13.5px]">아직 조회가 기록되지 않았어요.</p>
       <p className="mt-2 text-[12px] text-faint leading-[1.8]">
-        관리자로 로그인한 브라우저에서는 비콘이 발화하지 않습니다(내 방문 제외).
+        로그인한 브라우저에서는 내 방문을 세지 않아요.
         <br />
-        시크릿 창으로 공개 지면을 열어보면 확인할 수 있습니다.
+        시크릿 창으로 열어보면 확인할 수 있어요.
       </p>
     </div>
   );
