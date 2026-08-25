@@ -15,8 +15,18 @@ const root = new URL("../", import.meta.url);
 
 const CANDIDATES = ["", ".ts", ".tsx", "/index.ts"];
 
+/**
+ * `server-only`는 Next 빌드만 아는 표식이다(패키지가 아니다). 스크립트에서 서버 전용 모듈을
+ * 부르는 것은 정상이므로 — 스크립트 자체가 서버다 — 테스트와 같은 빈 스텁으로 돌린다.
+ */
+const SERVER_ONLY_STUB = new URL("../test/serverOnlyStub.ts", import.meta.url);
+
 registerHooks({
   resolve(specifier, context, next) {
+    if (specifier === "server-only") {
+      return { url: SERVER_ONLY_STUB.href, shortCircuit: true };
+    }
+
     if (!specifier.startsWith("@/")) return next(specifier, context);
 
     const base = new URL(specifier.slice(2), root);
