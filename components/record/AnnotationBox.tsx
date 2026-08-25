@@ -25,7 +25,7 @@ export function AnnotationBox({
   return (
     <div
       className={cn(
-        "border border-dashed border-[#dcc9b8] bg-[#fbf5ec] px-[17px] py-[15px]",
+        "border border-dashed border-edge-strong bg-crawl px-[17px] py-[15px]",
         "text-[13px] leading-[1.85] text-ink-soft",
         className,
       )}

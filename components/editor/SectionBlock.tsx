@@ -40,6 +40,11 @@ export type SectionBlockProps = {
   className?: string;
 };
 
+/**
+ * **이 컴포넌트는 공개 지면에도 쓰인다**(components/public/PraiseView). 그래서 색은 전부
+ * 토큰이어야 한다 — 하드코딩(#fffefa)이던 동안 찬양 상세의 가사 판이 다크모드에서 크림색으로
+ * 굳어 있었다. 관리 화면 컴포넌트라고 생각하고 라이트 값을 박으면 그 지면이 깨진다.
+ */
 export function SectionBlock({
   label,
   ordinal,
@@ -49,8 +54,8 @@ export function SectionBlock({
   className,
 }: SectionBlockProps) {
   return (
-    <section className={cn("group border border-edge bg-[#fffefa]", className)}>
-      <header className="flex items-center gap-2 border-b border-dashed border-[#ede5d3] px-3 py-[9px]">
+    <section className={cn("group border border-edge bg-surface-sheet", className)}>
+      <header className="flex items-center gap-2 border-b border-dashed border-edge px-3 py-[9px]">
         <span className="border border-edge bg-paper px-[7px] py-1 font-typewriter text-[11.5px]">
           {label}
         </span>
@@ -66,7 +71,7 @@ export function SectionBlock({
       <p
         className={cn(
           "min-h-[52px] whitespace-pre-line px-[13px] py-[11px] font-serif text-sm leading-body",
-          lyrics ? "text-ink" : "text-[#c4bcaa]",
+          lyrics ? "text-ink" : "text-faint",
         )}
       >
         {lyrics || emptyLabel}

@@ -9,7 +9,7 @@ export function Punch({ className }: { className?: string }) {
       aria-hidden
       className={cn(
         "pointer-events-none absolute bottom-[13px] left-1/2 size-[13px] -translate-x-1/2 rounded-full",
-        "border border-[#d8d2c2] bg-paper shadow-[inset_0_1px_2px_rgb(0_0_0_/_15%)]",
+        "border border-edge-strong bg-paper shadow-[inset_0_1px_2px_rgb(0_0_0_/_15%)]",
         className,
       )}
     />
