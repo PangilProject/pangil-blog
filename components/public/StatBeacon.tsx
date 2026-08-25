@@ -20,6 +20,16 @@ import { STAT_OPT_OUT_COOKIE } from "@/lib/stats/optOut";
 
 type StatBeaconProps = { site: SiteKey };
 
+/**
+ * 이보다 짧은 체류는 LEAVE를 보내지 않는다.
+ *
+ * 개발 모드의 React StrictMode가 effect를 mount→unmount→remount로 두 번 돌려 0ms LEAVE를
+ * 하나 만든다(프로덕션에서는 생기지 않는다). 하지만 바닥값을 두는 이유가 그것만은 아니다 —
+ * **0.2초 머문 기록은 어디서 생겨도 체류에 대해 아무것도 말해주지 않는다.** 방문 자체는
+ * PAGEVIEW가 이미 세었으므로, 여기서 버리는 것은 숫자 하나가 아니라 잡음이다.
+ */
+const MIN_DURATION_MS = 500;
+
 function hasOptedOut(): boolean {
   return document.cookie.split("; ").includes(`${STAT_OPT_OUT_COOKIE}=1`);
 }
@@ -66,13 +76,11 @@ export function StatBeacon({ site }: StatBeaconProps) {
     const leave = () => {
       if (sentLeave.current) return;
       sentLeave.current = true;
-      send({
-        site,
-        eventType: "LEAVE",
-        path,
-        postId,
-        durationMs: Date.now() - enteredAt,
-      });
+
+      const durationMs = Date.now() - enteredAt;
+      if (durationMs < MIN_DURATION_MS) return;
+
+      send({ site, eventType: "LEAVE", path, postId, durationMs });
     };
 
     /**
