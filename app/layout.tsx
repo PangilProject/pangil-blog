@@ -17,6 +17,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   // 호스트를 보고 지면별로 답한다(app/manifest.webmanifest/route.ts)
   manifest: "/manifest.webmanifest",
+  /**
+   * iOS 16.4 미만은 매니페스트의 `display`를 읽지 않는다 — 홈 화면에 담아도 브라우저 막대가
+   * 함께 뜬다. 이 낡은 신호가 그 기기에서 앱처럼 열리게 하는 유일한 방법이다.
+   *
+   * `statusBarStyle`은 기본값을 쓴다. `black-translucent`는 내용이 상태 바 아래로 올라와
+   * 지면 조판을 다시 봐야 한다.
+   */
+  appleWebApp: { capable: true, title: BRAND_MARK, statusBarStyle: "default" },
   // 지면별 피드다(app/(feeds)/rss.xml). 호스트가 지면을 가르므로 경로는 하나로 족하다
   alternates: { types: { "application/rss+xml": "/rss.xml" } },
 };

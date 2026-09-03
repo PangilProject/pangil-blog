@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { THEME_COLOR } from "@/lib/og/palette";
 import { BRAND_MARK, siteBrand } from "@/lib/site/brand";
-import { absoluteUrl } from "@/lib/site/publicUrl";
+import { absoluteUrl, siteBaseUrl } from "@/lib/site/publicUrl";
 import { resolveSite, siteHostsFromEnv } from "@/lib/site/resolveSite";
 
 /**
@@ -30,14 +30,26 @@ export async function GET(request: Request): Promise<Response> {
   // 도메인이 붙으면 지면 루트가 곧 "/"이고, 호스트가 하나면 `/dev` 같은 경로가 남는다
   const start = absoluteUrl(site, `/${site}`, { host });
 
+  /**
+   * scope는 **호스트 전체**다. start_url의 경로로 좁히면 안 된다 — iOS는 scope 밖 이동을
+   * 앱 안에서 처리하지 않고 브라우저 UI를 띄운 화면으로 넘긴다(홈 화면에 담은 뒤 허브에서
+   * "읽으러 가기"를 누르면 위아래로 Safari 막대가 나타났다. 실제로 그랬다).
+   *
+   * 도메인이 붙으면 호스트가 곧 지면이라 이 값이 자연히 면별로 갈린다. 지금처럼 호스트가
+   * 하나인 구간에서는 세 면이 한 앱 안에 있게 된다 — 그게 담은 사람이 기대하는 동작이다.
+   */
+  const scope = `${siteBaseUrl(site, { host })}/`;
+
   const manifest: MetadataRoute.Manifest = {
     name: brand.name,
     short_name: BRAND_MARK,
     ...(brand.description ? { description: brand.description } : {}),
     lang: "ko",
     start_url: start,
-    scope: start,
-    display: "minimal-ui",
+    scope,
+    // iOS에서 minimal-ui는 "브라우저 컨트롤을 최소로 **보여달라**"는 뜻이다. 앱처럼 뜨는
+    // 것을 원하면 standalone이어야 한다
+    display: "standalone",
     background_color: THEME_COLOR.light,
     theme_color: THEME_COLOR.light,
     icons: [192, 512].map((size) => ({
