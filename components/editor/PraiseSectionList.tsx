@@ -19,6 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
+import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
 import {
   Select,
   SelectContent,
@@ -299,7 +300,7 @@ function SortableSection({
       </header>
 
       {/* 가사에 서식이 없는 것은 의도다 — 타이핑이 곧 묵상이라 서식 고민을 끼워넣지 않는다 */}
-      <textarea
+      <AutoGrowTextarea
         value={section.lyrics}
         onChange={(event) => onLyricsChange(index, event.target.value)}
         onKeyDown={handleKeyDown}
@@ -307,7 +308,7 @@ function SortableSection({
         rows={3}
         placeholder="가사를 적어보세요"
         aria-label={`${name} 가사`}
-        className="w-full resize-y bg-transparent px-3.5 py-3 font-serif text-sm leading-body outline-none placeholder:text-[#c4bcaa]"
+        className="w-full bg-transparent px-3.5 py-3 font-serif text-sm leading-body outline-none placeholder:text-[#c4bcaa]"
       />
     </section>
   );

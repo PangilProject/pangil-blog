@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { type Control, Controller, useFieldArray, useForm } from "react-hook-form";
 
+import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { CrawlBand } from "@/components/editor/CrawlBand";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
@@ -224,12 +225,12 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
               className="mb-2 w-full border-edge border-b bg-transparent pb-1.5 font-typewriter text-[12.5px] text-(--accent) outline-none placeholder:text-faint"
             />
             {/* 기본 펼침 확정(02 §5.2) — 접어두면 매일 펼치는 동작이 붙는다 */}
-            <textarea
+            <AutoGrowTextarea
               {...register("scriptureBody")}
               placeholder="말씀 본문"
               aria-label="말씀 본문"
               rows={6}
-              className="w-full resize-y border border-edge bg-card px-3.5 py-3 font-serif text-sm leading-scripture outline-none placeholder:text-faint"
+              className="w-full border border-edge bg-card px-3.5 py-3 font-serif text-sm leading-scripture outline-none placeholder:text-faint"
             />
           </Field>
 
@@ -262,12 +263,12 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
                       지우기
                     </button>
                   </div>
-                  <textarea
+                  <AutoGrowTextarea
                     {...register(`annotations.${index}.body`)}
                     placeholder="풀이"
                     aria-label={`주석 ${index + 1} 풀이`}
                     rows={2}
-                    className="resize-y bg-transparent text-[13px] leading-[1.85] text-ink-soft outline-none placeholder:text-faint"
+                    className="bg-transparent text-[13px] leading-[1.85] text-ink-soft outline-none placeholder:text-faint"
                   />
                 </div>
               ))}
