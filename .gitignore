@@ -39,3 +39,6 @@ yarn-error.log*
 
 # vercel — 프로젝트 링크(projectId·orgId)와 CLI가 내려주는 토큰
 .vercel
+
+# docs — 설계 문서·ADR·리팩터 노트는 로컬에만 둔다
+/docs
