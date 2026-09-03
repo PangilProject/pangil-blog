@@ -93,6 +93,27 @@ export function PraiseSectionList({
     // 돌기 때문에 새 textarea가 이미 DOM에 있다
   }, [pendingFocus]);
 
+  /**
+   * 값을 가져올 수 있는 다른 섹션들. 후렴은 같은 가사가 여러 번 나오는데, 그때마다 다시
+   * 치는 것이 이 화면에서 제일 잦은 반복이었다.
+   *
+   * 참조가 아니라 **복사**다 — 참조를 두면 원본이 바뀔 때 따라가는 규칙, 원본을 지웠을 때의
+   * 규칙이 줄줄이 붙는데 저장 계약에는 그 참조를 둘 자리가 없다.
+   */
+  const sourcesFor = (index: number) =>
+    items
+      .map((item, at) => ({
+        index: at,
+        name: ordinals[at] ? `${item.value.label} ${ordinals[at]}` : item.value.label,
+        lyrics: item.value.lyrics,
+      }))
+      .filter(
+        (candidate) =>
+          candidate.index !== index &&
+          candidate.lyrics.trim() !== "" &&
+          !isBarOnlyLabel(items[candidate.index]?.value.label ?? ""),
+      );
+
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const from = items.findIndex((item) => item.key === active.id);
@@ -119,6 +140,7 @@ export function PraiseSectionList({
               index={index}
               section={item.value}
               ordinal={ordinals[index]}
+              sources={sourcesFor(index)}
               canRemove={items.length > 1}
               onLabelChange={onLabelChange}
               onLyricsChange={onLyricsChange}
@@ -157,6 +179,7 @@ function SortableSection({
   index,
   section,
   ordinal,
+  sources,
   canRemove,
   total,
   onLabelChange,
@@ -169,6 +192,7 @@ function SortableSection({
   index: number;
   section: PraiseSectionFormValue;
   ordinal?: number;
+  sources: { index: number; name: string; lyrics: string }[];
   canRemove: boolean;
   total: number;
   onLabelChange: (index: number, label: string) => void;
@@ -302,7 +326,7 @@ function SortableSection({
           <span className="font-typewriter text-[10.5px] text-faint">{ordinal}</span>
         )}
 
-        {isBarOnly && (
+        {isBarOnly ? (
           <span className="flex items-center gap-1">
             <input
               value={barCount}
@@ -316,6 +340,36 @@ function SortableSection({
             />
             <span className="font-typewriter text-[10.5px] text-faint">Bar</span>
           </span>
+        ) : (
+          sources.length > 0 && (
+            <Select
+              // 값을 들고 있지 않는다. 한 번 가져오면 끝인 동작이라, 고른 채로 남으면
+              // 원본과 이어져 있는 것처럼 보인다 — 실제로는 그 자리에 복사된 글자다
+              value=""
+              onValueChange={(value) => {
+                const picked = sources.find((source) => String(source.index) === value);
+                if (picked) onLyricsChange(index, picked.lyrics);
+              }}
+            >
+              <SelectTrigger
+                aria-label={`${name} 가사 불러오기`}
+                className="h-auto rounded-none border-edge bg-paper py-1 font-typewriter text-[11px] text-faint"
+              >
+                <SelectValue placeholder="불러오기" />
+              </SelectTrigger>
+              <SelectContent>
+                {sources.map((source) => (
+                  <SelectItem
+                    key={source.index}
+                    value={String(source.index)}
+                    className="font-typewriter text-[12px]"
+                  >
+                    {source.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
         )}
 
         <span className="ml-auto flex gap-1 opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100">
