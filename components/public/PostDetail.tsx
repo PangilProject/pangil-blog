@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PostAdminControls } from "@/components/public/PostAdminControls";
 import { PraiseView } from "@/components/public/PraiseView";
 import { QtView } from "@/components/public/QtView";
 import { RecordSheet } from "@/components/public/RecordSheet";
@@ -30,9 +31,22 @@ export function PostDetail({ post }: { post: PublicPost }) {
       publishedAt={publishedAt}
       title={post.title}
       subtitle={
-        post.categoryName ? (
-          <p className="font-typewriter text-[11px] text-faint">{post.categoryName}</p>
-        ) : null
+        // 제목 아래 줄: 왼쪽은 분류, 오른쪽은 관리 컨트롤(A-03b).
+        // faith는 이 자리에 분류가 없다(카테고리는 TECH 전용) — 그래도 줄은 놓는다
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          {post.categoryName ? (
+            <p className="font-typewriter text-[11px] text-faint">{post.categoryName}</p>
+          ) : (
+            <span />
+          )}
+
+          <PostAdminControls
+            slug={post.slug}
+            postId={post.id}
+            title={post.title}
+            listPath={post.type === "TECH" ? "/dev" : "/faith"}
+          />
+        </div>
       }
       meta={
         post.tags.length > 0 ? (
