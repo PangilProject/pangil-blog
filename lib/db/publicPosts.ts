@@ -6,7 +6,7 @@ import type { PostContent } from "@/lib/content/schema";
 import { type ContentParseResult, parsePublishContent } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
-import { type PublicSite, postTag, siteOf } from "@/lib/revalidate/tags";
+import { listTag, type PublicSite, postTag, siteOf } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
 import { PostStatus, type PostType } from "@/prisma/generated/enums";
 
@@ -28,6 +28,7 @@ export type PublicPost = {
   slug: string;
   callNumber: number | null;
   publishedAt: Date | null;
+  createdAt: Date;
   updatedAt: Date;
   excerpt: string | null;
   thumbnailUrl: string | null;
@@ -44,6 +45,8 @@ const DETAIL_SELECT = {
   slug: true,
   callNumber: true,
   publishedAt: true,
+  // 목록과 같은 동순위 규칙(publishedAt, createdAt)으로 이웃을 고르려면 필요하다
+  createdAt: true,
   updatedAt: true,
   excerpt: true,
   thumbnailUrl: true,
@@ -84,6 +87,7 @@ export async function findPublishedPostBySlug(
     slug: row.slug ?? slug,
     callNumber: row.callNumber,
     publishedAt: row.publishedAt,
+    createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     excerpt: row.excerpt,
     thumbnailUrl: row.thumbnailUrl,
@@ -92,6 +96,92 @@ export async function findPublishedPostBySlug(
     tags: row.tags.map((entry) => entry.tag.name),
     content: parsePublishContent(row.content),
   };
+}
+
+/**
+ * 이전글·다음글 (F-03).
+ *
+ * **어느 축의 앞뒤인지가 이 기능의 전부다.** 목록 상단 탭이 나누는 그 축을 쓴다 —
+ * faith는 타입(큐티·설교·찬양, 02 §5), dev는 카테고리(TECH 전용 분류, 02 §5.5).
+ * 그래서 설교를 읽던 사람은 설교로, FE 글을 읽던 사람은 FE로 이어진다.
+ *
+ * 축을 인자로 받는 이유는 faith에 언젠가 타입과 별개의 카테고리가 생길 수 있기 때문이다
+ * (A-08 카테고리 관리). 그때 이 함수가 아니라 부르는 쪽만 바뀐다.
+ *
+ * 들어온 문맥(검색·태그)은 쓰지 않는다. 정적으로 렌더되는 지면이라 어디서 왔는지를 알 수
+ * 없고, URL에 실어 보내면 그 조합마다 캐시가 갈라진다(04 §1.2).
+ *
+ * 동순위 규칙은 목록과 같다(publishedAt, createdAt). 같은 날 두 편을 올린 날이 있고,
+ * 규칙이 갈리면 목록에서 옆에 있던 글이 이전글에서는 건너뛰어진다.
+ */
+export type PostNeighbor = { title: string; slug: string; type: RecordType };
+
+export type NeighborAxis =
+  | { kind: "type"; type: RecordType }
+  | { kind: "category"; categorySlug: string }
+  /** 축이 없는 글(카테고리 없는 기술 글) — 지면 전체에서 잇는다 */
+  | { kind: "site" };
+
+export async function findNeighbors(
+  site: PublicSite,
+  axis: NeighborAxis,
+  current: { id: string; publishedAt: Date | null; createdAt: Date },
+): Promise<{ previous: PostNeighbor | null; next: PostNeighbor | null }> {
+  "use cache";
+
+  // 발행 시각이 없는 글은 이웃을 셀 기준이 없다. PUBLISHED에는 늘 있지만 타입은 null을 허용한다
+  if (!current.publishedAt) return { previous: null, next: null };
+
+  const published = current.publishedAt;
+
+  const axisWhere =
+    axis.kind === "type"
+      ? { type: axis.type as PostType }
+      : axis.kind === "category"
+        ? { category: { slug: axis.categorySlug } }
+        : { type: { in: TYPES_BY_SITE[site] } };
+
+  const base = {
+    status: PostStatus.PUBLISHED,
+    type: { in: TYPES_BY_SITE[site] },
+    id: { not: current.id },
+    ...axisWhere,
+  };
+
+  const select = { title: true, slug: true, type: true } as const;
+
+  const [previous, next] = await Promise.all([
+    prisma.post.findFirst({
+      where: {
+        ...base,
+        OR: [
+          { publishedAt: { lt: published } },
+          { publishedAt: published, createdAt: { lt: current.createdAt } },
+        ],
+      },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      select,
+    }),
+    prisma.post.findFirst({
+      where: {
+        ...base,
+        OR: [
+          { publishedAt: { gt: published } },
+          { publishedAt: published, createdAt: { gt: current.createdAt } },
+        ],
+      },
+      orderBy: [{ publishedAt: "asc" }, { createdAt: "asc" }],
+      select,
+    }),
+  ]);
+
+  // 새 글이 발행되면 이 지면의 목록 태그가 만료된다 — 이웃도 그때 함께 다시 계산된다
+  cacheTag(postTag(current.id), listTag(site));
+
+  const toNeighbor = (row: typeof previous): PostNeighbor | null =>
+    row?.slug ? { title: row.title, slug: row.slug, type: row.type as RecordType } : null;
+
+  return { previous: toNeighbor(previous), next: toNeighbor(next) };
 }
 
 export type OgCard = {

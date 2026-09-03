@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
+import { PostNeighbors } from "@/components/public/PostNeighbors";
 import { SiteHeader } from "@/components/public/SiteHeader";
-import { findPublishedPostBySlug } from "@/lib/db/publicPosts";
-import { postTag } from "@/lib/revalidate/tags";
+import { findNeighbors, findPublishedPostBySlug } from "@/lib/db/publicPosts";
+import { TYPE_LABELS } from "@/lib/record/axis";
+import { listTag, postTag } from "@/lib/revalidate/tags";
 import { articleJsonLd } from "@/lib/seo/jsonLd";
 import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
 
@@ -33,7 +35,12 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
 
   // 이 지면의 캐시 항목에도 태그를 명시한다. 안쪽 조회에만 붙이면 조회 결과는 새로 읽히는데
   // 이미 만들어진 HTML이 그대로 남는다 — 언어를 고쳐도 지면이 안 바뀌던 이유다
-  cacheTag(postTag(post.id));
+  // listTag도 함께 붙인다 — 이전글·다음글은 **다른 글이 발행되면** 바뀐다. 글 자신의 태그만
+  // 붙이면 이웃이 낡은 채로 남는다. 대가는 새 글 하나가 그 지면 상세 캐시를 만료시키는
+  // 것이고, 다시 만들어지는 건 실제로 방문된 지면뿐이다
+  cacheTag(postTag(post.id), listTag("faith"));
+
+  const neighbors = await findNeighbors("faith", { kind: "type", type: post.type }, post);
 
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
@@ -53,6 +60,12 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
       <SiteHeader site="faith" />
 
       <PostDetail post={post} />
+
+      <PostNeighbors
+        previous={neighbors.previous}
+        next={neighbors.next}
+        axisLabel={TYPE_LABELS[post.type]}
+      />
     </main>
   );
 }
