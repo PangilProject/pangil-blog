@@ -24,6 +24,11 @@ export type SermonFormValues = {
   scriptureBody: string;
   body: RichTextValue;
   summary: RichTextValue;
+  /**
+   * 태그는 content가 아니라 태그 테이블에 산다(05 §1.4). 지면은 글 타입에서 나오므로
+   * faith 글의 태그는 faith 지면에 쌓인다 — 여기서 지면을 들고 다니지 않는다.
+   */
+  tags: string[];
 };
 
 export const EMPTY_SERMON_FORM: SermonFormValues = {
@@ -32,6 +37,7 @@ export const EMPTY_SERMON_FORM: SermonFormValues = {
   scriptureBody: "",
   body: EMPTY_RICH_TEXT,
   summary: EMPTY_RICH_TEXT,
+  tags: [],
 };
 
 /** 자동 저장용 — 무엇이든 저장한다(04 §2.2). 빈 요약은 넣지 않는다 */
@@ -73,8 +79,12 @@ export function toPublishContent(values: SermonFormValues): PostContent {
 }
 
 /** 저장된 content를 폼 값으로 되돌린다 (이어쓰기 진입) */
-export function fromDraftContent(content: DraftContent | null, title: string): SermonFormValues {
-  if (content?.kind !== "SERMON") return { ...EMPTY_SERMON_FORM, title };
+export function fromDraftContent(
+  content: DraftContent | null,
+  title: string,
+  tags: string[] = [],
+): SermonFormValues {
+  if (content?.kind !== "SERMON") return { ...EMPTY_SERMON_FORM, title, tags };
 
   return {
     title,
@@ -82,5 +92,6 @@ export function fromDraftContent(content: DraftContent | null, title: string): S
     scriptureBody: content.scriptureBody ?? "",
     body: (content.body ?? EMPTY_TIPTAP_DOC) as RichTextValue,
     summary: (content.summary ?? EMPTY_TIPTAP_DOC) as RichTextValue,
+    tags,
   };
 }

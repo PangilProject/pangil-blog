@@ -38,6 +38,11 @@ export type PraiseFormValues = {
   sections: PraiseSectionFormValue[];
   /** "묵상과 기도" — 가사 묵상 문단과 기도문을 한 영역에 쓴다(명칭 확정, 02 §5.4) */
   meditationAndPrayer: RichTextValue;
+  /**
+   * 태그는 content가 아니라 태그 테이블에 산다(05 §1.4). 지면은 글 타입에서 나오므로
+   * faith 글의 태그는 faith 지면에 쌓인다 — 여기서 지면을 들고 다니지 않는다.
+   */
+  tags: string[];
 };
 
 export const DEFAULT_SECTION_LABEL = "Verse";
@@ -100,6 +105,7 @@ export function emptyPraiseForm(): PraiseFormValues {
     // 빈 화면을 주지 않는다. 첫 섹션은 늘 놓여 있다
     sections: [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
     meditationAndPrayer: EMPTY_RICH_TEXT,
+    tags: [],
   };
 }
 
@@ -186,8 +192,12 @@ export function toPublishContent(values: PraiseFormValues): PostContent {
 }
 
 /** 저장된 content를 폼 값으로 되돌린다 (이어쓰기 진입) */
-export function fromDraftContent(content: DraftContent | null, title: string): PraiseFormValues {
-  if (content?.kind !== "PRAISE") return { ...emptyPraiseForm(), title };
+export function fromDraftContent(
+  content: DraftContent | null,
+  title: string,
+  tags: string[] = [],
+): PraiseFormValues {
+  if (content?.kind !== "PRAISE") return { ...emptyPraiseForm(), title, tags };
 
   const sections = (content.sections ?? []).map((section, index) => ({
     // 저장된 id가 없으면 자리 번호로 채운다 — 재정렬 키가 없으면 드래그가 엉킨다
@@ -204,5 +214,6 @@ export function fromDraftContent(content: DraftContent | null, title: string): P
         ? sections
         : [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
     meditationAndPrayer: (content.meditationAndPrayer ?? EMPTY_TIPTAP_DOC) as RichTextValue,
+    tags,
   };
 }

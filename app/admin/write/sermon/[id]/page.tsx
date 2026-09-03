@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
-import { findEditablePost } from "@/lib/db/posts";
+import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/sermonForm";
 
 /**
@@ -16,10 +16,16 @@ export default async function EditSermonPage({ params }: PageProps<"/admin/write
 
   if (post?.type !== "SERMON") notFound();
 
+  const tags = await findPostTagNames(post.id);
+
   return (
     <SermonEditor
       postId={post.id}
-      initialValues={fromDraftContent(post.content.ok ? post.content.content : null, post.title)}
+      initialValues={fromDraftContent(
+        post.content.ok ? post.content.content : null,
+        post.title,
+        tags,
+      )}
     />
   );
 }

@@ -31,6 +31,7 @@ function filled(): PraiseFormValues {
       { id: "c", label: "Verse", lyrics: "" },
     ],
     meditationAndPrayer: doc("기다림을 배웁니다"),
+    tags: [],
   };
 }
 

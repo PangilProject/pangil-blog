@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { QtEditor } from "@/components/editor/QtEditor";
-import { findEditablePost } from "@/lib/db/posts";
+import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/qtForm";
 
 /**
@@ -16,10 +16,16 @@ export default async function EditQtPage({ params }: PageProps<"/admin/write/qt/
 
   if (post?.type !== "QT") notFound();
 
+  const tags = await findPostTagNames(post.id);
+
   return (
     <QtEditor
       postId={post.id}
-      initialValues={fromDraftContent(post.content.ok ? post.content.content : null, post.title)}
+      initialValues={fromDraftContent(
+        post.content.ok ? post.content.content : null,
+        post.title,
+        tags,
+      )}
     />
   );
 }
