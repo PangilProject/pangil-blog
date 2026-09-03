@@ -43,6 +43,41 @@ export type PraiseFormValues = {
 export const DEFAULT_SECTION_LABEL = "Verse";
 
 /**
+ * 가사가 없는 라벨 (02 §5.4의 "16 Bar" 같은 연주 구간).
+ *
+ * 여기에 가사 칸을 주면 늘 빈 칸이 남는다. 대신 마디 수만 받고, 저장은 기존 lyrics 문자열에
+ * `"4 Bar"`로 싣는다 — 필드를 새로 파면 저장 계약·공개 지면·이관 컨버터가 함께 흔들리는데,
+ * 얻는 것은 문자열 하나를 숫자로 두는 것뿐이다. 라벨을 Verse로 되돌리면 적어둔 값이
+ * 그대로 가사 칸의 글자로 남는다 — 잃는 게 없다.
+ */
+export const BAR_ONLY_LABELS = ["Intro", "Interlude", "Outro"] as const;
+
+export function isBarOnlyLabel(label: string): boolean {
+  return BAR_ONLY_LABELS.some((candidate) => candidate === label);
+}
+
+const BAR_PATTERN = /^(\d+)\s*bar$/i;
+
+/**
+ * 마디 수 읽기. 빈 값은 "", 마디 표기는 숫자만, **그 밖의 글자는 null**이다.
+ *
+ * null이 중요하다 — 이관해 온 Intro에 연주 메모가 문장으로 적혀 있을 수 있고, 그걸 숫자
+ * 칸에 끼우면 화면에 안 보이는 채로 다음 타이핑에 지워진다. null이면 가사 칸을 그대로 쓴다.
+ */
+export function parseBarCount(lyrics: string): string | null {
+  const trimmed = lyrics.trim();
+  if (trimmed === "") return "";
+  const matched = BAR_PATTERN.exec(trimmed);
+  return matched ? (matched[1] ?? "") : null;
+}
+
+/** 숫자만 남겨 저장 문자열로. 0은 마디가 아니므로 빈 값과 같이 다룬다 */
+export function formatBarCount(count: string): string {
+  const digits = count.replace(/\D/g, "").replace(/^0+/, "");
+  return digits === "" ? "" : `${digits} Bar`;
+}
+
+/**
  * 새 섹션. id는 배열 안에서만 유일하면 된다(React key · dnd-kit).
  *
  * nanoid는 브라우저에서 섹션을 더할 때만 쓴다. **서버 프리렌더에서는 난수를 쓸 수 없다**

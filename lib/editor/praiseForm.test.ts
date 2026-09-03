@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import { DraftSchema, PublishSchema } from "@/lib/content/schema";
 import {
   emptyPraiseForm,
+  formatBarCount,
   fromDraftContent,
+  isBarOnlyLabel,
   newSection,
   type PraiseFormValues,
   PraisePublishFormSchema,
+  parseBarCount,
   sectionOrdinals,
   toDraftContent,
   toPublishContent,
@@ -150,5 +153,29 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
 
     expect(form.sections).toHaveLength(1);
     expect(form.youtubeUrl).toBe("");
+  });
+});
+
+describe("마디 수 — 가사가 없는 섹션 (Intro·Interlude·Outro)", () => {
+  it("연주 구간 라벨만 마디 수 칸을 연다", () => {
+    expect(isBarOnlyLabel("Intro")).toBe(true);
+    expect(isBarOnlyLabel("Outro")).toBe(true);
+    expect(isBarOnlyLabel("Chorus")).toBe(false);
+  });
+
+  it("저장은 기존 가사 문자열에 실린다 — 필드를 새로 파지 않는다", () => {
+    expect(formatBarCount("4")).toBe("4 Bar");
+    expect(parseBarCount("4 Bar")).toBe("4");
+    expect(parseBarCount("16bar")).toBe("16");
+  });
+
+  it("빈 값은 빈 값이다 — 0은 마디가 아니다", () => {
+    expect(formatBarCount("")).toBe("");
+    expect(formatBarCount("0")).toBe("");
+    expect(parseBarCount("")).toBe("");
+  });
+
+  it("마디 표기가 아닌 글자는 null이다 — 이관해 온 연주 메모를 숫자 칸에 끼우지 않는다", () => {
+    expect(parseBarCount("기타 솔로")).toBeNull();
   });
 });
