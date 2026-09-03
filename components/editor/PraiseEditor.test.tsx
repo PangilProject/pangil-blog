@@ -37,6 +37,7 @@ function filled(): PraiseFormValues {
       type: "doc",
       content: [{ type: "paragraph", content: [{ type: "text", text: "기다림을 배웁니다" }] }],
     },
+    tags: [],
   };
 }
 

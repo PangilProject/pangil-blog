@@ -216,6 +216,7 @@ describe("SermonEditor — 발행", () => {
           scriptureBody: "너는 가서",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
           summary: { type: "doc", content: [] },
+          tags: [],
         }}
       />,
     );
@@ -240,6 +241,7 @@ describe("SermonEditor — 발행", () => {
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
           summary: { type: "doc", content: [] },
+          tags: [],
         }}
       />,
     );

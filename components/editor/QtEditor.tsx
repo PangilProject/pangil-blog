@@ -13,6 +13,7 @@ import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { TagInput } from "@/components/editor/TagInput";
 import { ToolbarDock } from "@/components/editor/ToolbarDock";
 import { GroupTab } from "@/components/record/GroupTab";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
         type: "QT",
         title: values.title,
         content: toDraftContent(values),
+        tags: values.tags,
       });
 
       if (!result.ok) {
@@ -326,6 +328,17 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
               아직 답을 안 쓴 질문 {emptyAnswers}개 · 그대로 발행해도 됩니다
             </p>
           )}
+
+          {/* 태그는 다 쓰고 나서 붙인다 — 그래서 맨 아래다. 쓰는 도중에 눈에 걸리면
+              거기서 손이 멈춘다(에디터 불변식: 방해 요소 제로) */}
+          <div className="flex flex-col gap-2">
+            <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">태그</span>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => <TagInput value={field.value} onChange={field.onChange} />}
+            />
+          </div>
 
           {publishError && (
             <p role="alert" className="font-typewriter text-[11.5px] text-(--accent)">

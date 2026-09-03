@@ -48,6 +48,11 @@ export type QtFormValues = {
   annotations: QtAnnotationFormValue[];
   questionGroups: QtQuestionGroupFormValue[];
   summary: RichTextValue;
+  /**
+   * 태그는 content가 아니라 태그 테이블에 산다(05 §1.4). 지면은 글 타입에서 나오므로
+   * faith 글의 태그는 faith 지면에 쌓인다 — 여기서 지면을 들고 다니지 않는다.
+   */
+  tags: string[];
 };
 
 /**
@@ -75,6 +80,7 @@ export function emptyQtForm(): QtFormValues {
     annotations: [],
     questionGroups: emptyQtGroups(),
     summary: EMPTY_RICH_TEXT,
+    tags: [],
   };
 }
 
@@ -151,8 +157,12 @@ export function toPublishContent(values: QtFormValues): PostContent {
  * 질문 그룹이 비어 있으면 프리셋으로 채운다 — 크롤링이 실패한 초안을 열었을 때 빈 화면이
  * 아니라 적을 자리가 보여야 한다(06 §7 수동 폴백).
  */
-export function fromDraftContent(content: DraftContent | null, title: string): QtFormValues {
-  if (content?.kind !== "QT") return { ...emptyQtForm(), title };
+export function fromDraftContent(
+  content: DraftContent | null,
+  title: string,
+  tags: string[] = [],
+): QtFormValues {
+  if (content?.kind !== "QT") return { ...emptyQtForm(), title, tags };
 
   const groups = (content.questionGroups ?? []).map((group) => ({
     group: group.group ?? "",
@@ -174,5 +184,6 @@ export function fromDraftContent(content: DraftContent | null, title: string): Q
     })),
     questionGroups: groups.length > 0 ? groups : emptyQtGroups(),
     summary: (content.summary ?? EMPTY_TIPTAP_DOC) as RichTextValue,
+    tags,
   };
 }

@@ -20,6 +20,7 @@ const filled = {
   scriptureBody: "너는 가서 기쁨으로",
   body: doc("설교 속기"),
   summary: EMPTY_TIPTAP_DOC,
+  tags: [],
 };
 
 describe("toDraftContent — 자동 저장", () => {
