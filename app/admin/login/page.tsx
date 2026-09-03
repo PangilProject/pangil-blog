@@ -3,6 +3,13 @@ import { safeNextPath } from "@/lib/auth/nextPath";
 import { hasSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
 
 // A-00 로그인. 화면 조판은 M1 디자인 시스템에서 입힌다.
+
+/**
+ * 이 지면은 `searchParams`를 읽는다 — 요청이 있어야 무엇을 그릴지 정해진다. 그래서 즉시
+ * 전환용 껍데기를 미리 만들 수 없고, Next가 개발 중에 그 사실을 인사이트로 알린다.
+ * 공개 목록도 같은 이유로 같은 선언을 갖고 있다(04 ADR-003).
+ */
+export const instant = false;
 export default async function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
   const { error, next: intended } = await searchParams;
   const next = safeNextPath(typeof intended === "string" ? intended : null);
