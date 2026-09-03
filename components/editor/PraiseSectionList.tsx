@@ -30,7 +30,13 @@ import {
 import { PRAISE_SECTION_LABELS } from "@/lib/content/schema";
 import { isComposing } from "@/lib/editor/ime";
 import type { PraiseSectionFormValue } from "@/lib/editor/praiseForm";
-import { sectionOrdinals } from "@/lib/editor/praiseForm";
+import {
+  DEFAULT_SECTION_LABEL,
+  formatBarCount,
+  isBarOnlyLabel,
+  parseBarCount,
+  sectionOrdinals,
+} from "@/lib/editor/praiseForm";
 import { cn } from "@/lib/utils";
 
 /**
@@ -77,7 +83,8 @@ export function PraiseSectionList({
   // 새 섹션이 생기면 그 가사 칸으로 커서를 옮긴다 — 손이 마우스로 가지 않아야 한다
   useEffect(() => {
     if (pendingFocus === null) return;
-    const target = listRef.current?.querySelector<HTMLTextAreaElement>(
+    // textarea일 수도, 마디 수 입력일 수도 있다 — 섹션마다 입력 칸은 하나뿐이다
+    const target = listRef.current?.querySelector<HTMLElement>(
       `[data-lyrics-index="${pendingFocus}"]`,
     );
     target?.focus();
@@ -178,6 +185,27 @@ function SortableSection({
   const [isCustom, setIsCustom] = useState(!isKnownLabel);
   const name = ordinal ? `${section.label} ${ordinal}` : section.label;
 
+  // 마디 수 칸은 연주 구간 라벨이면서, 적힌 값이 마디 표기일 때만 연다.
+  // 문장이 적혀 있으면(이관해 온 연주 메모) 가사 칸을 그대로 둔다 — 안 보이는 글자를 만들지 않는다
+  const barCount = parseBarCount(section.lyrics);
+  const isBarOnly = isBarOnlyLabel(section.label) && barCount !== null;
+
+  const handleBarKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (isComposing(event)) return;
+
+    // 연주 구간 다음에 또 연주 구간이 오는 일은 드물다 — 새 섹션은 기본 라벨로 연다
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onAppendAfter(index, DEFAULT_SECTION_LABEL);
+      return;
+    }
+
+    if (event.key === "Backspace" && event.currentTarget.value === "" && canRemove) {
+      event.preventDefault();
+      onRemove(index);
+    }
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     const target = event.currentTarget;
 
@@ -274,6 +302,22 @@ function SortableSection({
           <span className="font-typewriter text-[10.5px] text-faint">{ordinal}</span>
         )}
 
+        {isBarOnly && (
+          <span className="flex items-center gap-1">
+            <input
+              value={barCount}
+              onChange={(event) => onLyricsChange(index, formatBarCount(event.target.value))}
+              onKeyDown={handleBarKeyDown}
+              data-lyrics-index={index}
+              inputMode="numeric"
+              placeholder="0"
+              aria-label={`${name} 마디 수`}
+              className="w-10 border border-edge bg-paper px-1.5 py-1 text-center font-typewriter text-[11.5px] outline-none placeholder:text-faint"
+            />
+            <span className="font-typewriter text-[10.5px] text-faint">Bar</span>
+          </span>
+        )}
+
         <span className="ml-auto flex gap-1 opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100">
           <SectionButton
             label={`${name} 위로`}
@@ -300,16 +344,18 @@ function SortableSection({
       </header>
 
       {/* 가사에 서식이 없는 것은 의도다 — 타이핑이 곧 묵상이라 서식 고민을 끼워넣지 않는다 */}
-      <AutoGrowTextarea
-        value={section.lyrics}
-        onChange={(event) => onLyricsChange(index, event.target.value)}
-        onKeyDown={handleKeyDown}
-        data-lyrics-index={index}
-        rows={3}
-        placeholder="가사를 적어보세요"
-        aria-label={`${name} 가사`}
-        className="w-full bg-transparent px-3.5 py-3 font-serif text-sm leading-body outline-none placeholder:text-[#c4bcaa]"
-      />
+      {!isBarOnly && (
+        <AutoGrowTextarea
+          value={section.lyrics}
+          onChange={(event) => onLyricsChange(index, event.target.value)}
+          onKeyDown={handleKeyDown}
+          data-lyrics-index={index}
+          rows={3}
+          placeholder="가사를 적어보세요"
+          aria-label={`${name} 가사`}
+          className="w-full bg-transparent px-3.5 py-3 font-serif text-sm leading-body outline-none placeholder:text-[#c4bcaa]"
+        />
+      )}
     </section>
   );
 }
