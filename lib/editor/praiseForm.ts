@@ -2,7 +2,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import type { DraftContent, PostContent } from "@/lib/content/schema";
-import { EMPTY_TIPTAP_DOC, PRAISE_SECTION_LABELS } from "@/lib/content/schema";
+import { PRAISE_SECTION_LABELS, praiseMeditationBlocks } from "@/lib/content/schema";
 import {
   EMPTY_RICH_TEXT,
   isEmptyDoc,
@@ -32,12 +32,21 @@ export type PraiseSectionFormValue = {
   lyrics: string;
 };
 
+/**
+ * "묵상과 기도"의 한 덩이. id는 섹션과 같은 이유로 있다 — 블록을 지웠을 때 남은 편집기가
+ * 자리 번호로 묶여 있으면 엉뚱한 글을 들고 있게 된다(React key).
+ */
+export type PraiseMeditationBlockFormValue = {
+  id: string;
+  doc: RichTextValue;
+};
+
 export type PraiseFormValues = {
   title: string;
   youtubeUrl: string;
   sections: PraiseSectionFormValue[];
-  /** "묵상과 기도" — 가사 묵상 문단과 기도문을 한 영역에 쓴다(명칭 확정, 02 §5.4) */
-  meditationAndPrayer: RichTextValue;
+  /** "묵상과 기도" — 묵상과 기도를 끊어 쓰는 블록 목록이다(명칭 확정, 02 §5.4) */
+  meditationBlocks: PraiseMeditationBlockFormValue[];
   /**
    * 태그는 content가 아니라 태그 테이블에 산다(05 §1.4). 지면은 글 타입에서 나오므로
    * faith 글의 태그는 faith 지면에 쌓인다 — 여기서 지면을 들고 다니지 않는다.
@@ -98,13 +107,23 @@ export function sectionIdAt(index: number): string {
   return `section-${index + 1}`;
 }
 
+/** 묵상 블록도 같은 규칙이다 — 저장값에는 id가 없고, 폼 안에서만 쓴다 */
+export function meditationBlockIdAt(index: number): string {
+  return `meditation-${index + 1}`;
+}
+
+export function newMeditationBlock(): PraiseMeditationBlockFormValue {
+  return { id: nanoid(), doc: EMPTY_RICH_TEXT };
+}
+
 export function emptyPraiseForm(): PraiseFormValues {
   return {
     title: "",
     youtubeUrl: "",
     // 빈 화면을 주지 않는다. 첫 섹션은 늘 놓여 있다
     sections: [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
-    meditationAndPrayer: EMPTY_RICH_TEXT,
+    // 빈 화면을 주지 않는다. 첫 블록은 늘 놓여 있다 — 가사 섹션과 같다
+    meditationBlocks: [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
     tags: [],
   };
 }
@@ -141,6 +160,16 @@ function fromContentLabel(label: unknown): string {
   return DEFAULT_SECTION_LABEL;
 }
 
+/**
+ * 묵상 블록 → 저장값. 빈 블록은 떨군다 — 엔터 두 번에 생긴 빈 칸이 지면에 빈 자리로
+ * 나가면 안 된다. 하나도 남지 않으면 빈 배열이고, 그건 발행 게이트가 막는다.
+ */
+function toContentMeditation(values: PraiseFormValues) {
+  return values.meditationBlocks
+    .filter((block) => !isEmptyDoc(block.doc))
+    .map((block) => toTiptapDoc(block.doc));
+}
+
 function toContentSections(values: PraiseFormValues) {
   return values.sections.map((section) => ({
     id: section.id,
@@ -162,7 +191,7 @@ export function toDraftContent(values: PraiseFormValues): DraftContent {
     kind: "PRAISE",
     ...(url === "" ? {} : { youtubeUrl: url }),
     sections: toContentSections(values),
-    meditationAndPrayer: toTiptapDoc(values.meditationAndPrayer),
+    meditationAndPrayer: toContentMeditation(values),
   };
 }
 
@@ -176,10 +205,9 @@ export const PraisePublishFormSchema = z.object({
   sections: z
     .array(z.object({ id: z.string(), label: z.string(), lyrics: z.string() }))
     .min(1, "가사 섹션이 하나는 있어야 해요"),
-  meditationAndPrayer: z.custom<RichTextValue>(
-    (value) => !isEmptyDoc(value as RichTextValue),
-    "묵상과 기도를 적어주세요",
-  ),
+  meditationBlocks: z
+    .array(z.object({ id: z.string(), doc: z.custom<RichTextValue>() }))
+    .refine((blocks) => blocks.some((block) => !isEmptyDoc(block.doc)), "묵상과 기도를 적어주세요"),
 });
 
 export function toPublishContent(values: PraiseFormValues): PostContent {
@@ -187,7 +215,7 @@ export function toPublishContent(values: PraiseFormValues): PostContent {
     kind: "PRAISE",
     youtubeUrl: values.youtubeUrl.trim(),
     sections: toContentSections(values),
-    meditationAndPrayer: toTiptapDoc(values.meditationAndPrayer),
+    meditationAndPrayer: toContentMeditation(values),
   };
 }
 
@@ -206,6 +234,11 @@ export function fromDraftContent(
     lyrics: section.lyrics ?? "",
   }));
 
+  const blocks = praiseMeditationBlocks(content.meditationAndPrayer).map((doc, index) => ({
+    id: meditationBlockIdAt(index),
+    doc: doc as RichTextValue,
+  }));
+
   return {
     title,
     youtubeUrl: content.youtubeUrl ?? "",
@@ -213,7 +246,9 @@ export function fromDraftContent(
       sections.length > 0
         ? sections
         : [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
-    meditationAndPrayer: (content.meditationAndPrayer ?? EMPTY_TIPTAP_DOC) as RichTextValue,
+    // 문서 하나로 저장된 옛 글은 블록 하나로 열린다(praiseMeditationBlocks)
+    meditationBlocks:
+      blocks.length > 0 ? blocks : [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
     tags,
   };
 }

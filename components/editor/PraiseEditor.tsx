@@ -18,6 +18,7 @@ import { publishPost, upsertDraft } from "@/lib/actions/posts";
 import { suggestTitleFromYouTube } from "@/lib/actions/praise";
 import {
   emptyPraiseForm,
+  newMeditationBlock,
   newSection,
   type PraiseFormValues,
   PraisePublishFormSchema,
@@ -58,6 +59,22 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
   const { control, register, setValue, watch, handleSubmit, getValues } = form;
 
   const sections = useFieldArray({ control, name: "sections" });
+  const meditation = useFieldArray({ control, name: "meditationBlocks" });
+  /**
+   * 새 블록·삭제 뒤에 커서를 옮길 자리. 가사 섹션과 같은 방식이다 — 새로 붙은 편집기는
+   * 이 effect가 도는 시점에 이미 DOM에 있다.
+   */
+  const [pendingBlockFocus, setPendingBlockFocus] = useState<number | null>(null);
+  const meditationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (pendingBlockFocus === null) return;
+    const target = meditationRef.current?.querySelector<HTMLElement>(
+      `[data-meditation-block="${pendingBlockFocus}"] [contenteditable="true"]`,
+    );
+    target?.focus();
+    setPendingBlockFocus(null);
+  }, [pendingBlockFocus]);
   // 가사·라벨을 화면에 그리려면 값을 구독해야 한다. useFieldArray의 fields는 순서만 알려준다
   const watchedSections = watch("sections");
   const youtubeUrl = watch("youtubeUrl");
@@ -258,26 +275,63 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div ref={meditationRef} className="flex flex-col gap-2">
             <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
-              묵상과 기도
+              묵상과 기도 · 엔터 2회로 다음 블록
             </span>
-            <Controller
-              control={control}
-              name="meditationAndPrayer"
-              render={({ field }) => (
-                <div className="border border-edge">
-                  <RichTextField
-                    ariaLabel="묵상과 기도"
-                    variant="slim"
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="가사를 묵상하며 떠오른 것과 기도를 적어보세요"
-                    contentClassName="min-h-[200px] px-4 py-3"
-                  />
-                </div>
-              )}
-            />
+
+            {meditation.fields.map((field, index) => (
+              <div
+                key={field.id}
+                data-meditation-block={index}
+                className="border border-edge bg-card"
+              >
+                <Controller
+                  control={control}
+                  name={`meditationBlocks.${index}.doc`}
+                  render={({ field: block }) => (
+                    <RichTextField
+                      ariaLabel={
+                        meditation.fields.length > 1 ? `묵상과 기도 ${index + 1}` : "묵상과 기도"
+                      }
+                      variant="slim"
+                      value={block.value}
+                      onChange={block.onChange}
+                      placeholder={
+                        index === 0 ? "가사를 묵상하며 떠오른 것과 기도를 적어보세요" : undefined
+                      }
+                      // 첫 블록만 넉넉히 연다. 이어지는 블록까지 크게 열면 화면이 빈 칸으로 찬다
+                      contentClassName={
+                        index === 0 ? "min-h-[200px] px-4 py-3" : "min-h-[80px] px-4 py-3"
+                      }
+                      blockEditing={{
+                        onSplit: () => {
+                          meditation.insert(index + 1, newMeditationBlock());
+                          setPendingBlockFocus(index + 1);
+                        },
+                        onRemove: () => {
+                          // 마지막 하나는 남긴다 — 블록 0개는 발행 불가 상태다
+                          if (meditation.fields.length <= 1) return;
+                          meditation.remove(index);
+                          setPendingBlockFocus(Math.max(index - 1, 0));
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => {
+                meditation.append(newMeditationBlock());
+                setPendingBlockFocus(meditation.fields.length);
+              }}
+              className="self-start border border-edge px-2.5 py-1 font-typewriter text-[11px] text-faint hover:text-ink"
+            >
+              + 블록
+            </button>
           </div>
 
           {/* 태그는 다 쓰고 나서 붙인다 — 그래서 맨 아래다. 쓰는 도중에 눈에 걸리면

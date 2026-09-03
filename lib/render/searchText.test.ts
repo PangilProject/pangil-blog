@@ -110,6 +110,18 @@ describe("extractSearchText — 05 §4A", () => {
     expect(text).toContain("가사를 묵상하며");
   });
 
+  it("묵상이 블록 여러 개여도 전부 담는다 — 뒤쪽 블록으로도 글을 찾는다", () => {
+    const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
+      kind: "PRAISE",
+      youtubeUrl: "https://youtu.be/x",
+      sections: [{ id: "a", label: "Verse", lyrics: "내 마음의 노래를" }],
+      meditationAndPrayer: [doc("가사를 묵상하며"), doc("오늘도 지키소서")],
+    });
+
+    expect(text).toContain("가사를 묵상하며");
+    expect(text).toContain("오늘도 지키소서");
+  });
+
   it("기술 글은 제목과 본문을 담는다", () => {
     const text = extractSearchText("티스토리를 떠나며", {
       kind: "TECH",

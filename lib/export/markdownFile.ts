@@ -1,4 +1,4 @@
-import type { PostContent } from "@/lib/content/schema";
+import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
 import type { ExportPost } from "@/lib/db/publicPosts";
 import { formatCallNumber } from "@/lib/record/callNumber";
 import { tiptapToMarkdown } from "@/lib/render/markdown";
@@ -91,7 +91,11 @@ function body(content: PostContent): string {
         if (section.lyrics) parts.push(section.lyrics);
       }
 
-      const meditation = tiptapToMarkdown(content.meditationAndPrayer);
+      // 블록 사이는 빈 줄로 끊는다 — 마크다운에서 문단이 갈리는 유일한 표시다
+      const meditation = praiseMeditationBlocks(content.meditationAndPrayer)
+        .map((block) => tiptapToMarkdown(block))
+        .filter((text) => text !== "")
+        .join("\n\n");
       if (meditation) parts.push("## 묵상과 기도", meditation);
 
       return parts.join("\n\n");

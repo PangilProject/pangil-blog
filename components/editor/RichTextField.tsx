@@ -7,11 +7,12 @@ import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { CodeBlockNodeView } from "@/components/editor/CodeBlockNodeView";
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
+import { BlockSplitOnDoubleEnter } from "@/lib/editor/blockSplit";
 import { CodeBlockFenceOnEnter } from "@/lib/editor/codeBlockFence";
 import { CodeHighlight } from "@/lib/editor/codeHighlight";
 import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
@@ -51,6 +52,11 @@ export type RichTextFieldProps = {
    */
   contentClassName?: string;
   className?: string;
+  /**
+   * 이 칸이 블록 목록의 한 칸일 때의 키보드 계약(찬양 묵상). 넘기지 않으면 Enter·Backspace는
+   * 평범한 리치 텍스트 그대로다 — 다른 세 에디터의 동작을 건드리지 않는다.
+   */
+  blockEditing?: { onSplit: () => void; onRemove: () => void };
 };
 
 export function RichTextField({
@@ -63,8 +69,16 @@ export function RichTextField({
   autoFocus = false,
   contentClassName,
   className,
+  blockEditing,
 }: RichTextFieldProps) {
   const { setEditor, notifyChange } = useEditorFocus();
+
+  /**
+   * 확장은 편집기를 만들 때 한 번만 읽힌다. 콜백을 그대로 넘기면 그 순간의 클로저가 굳어
+   * 블록이 늘어난 뒤에는 옛 자리를 가리킨다 — ref로 늘 최신 것을 부른다.
+   */
+  const blockEditingRef = useRef(blockEditing);
+  blockEditingRef.current = blockEditing;
 
   const editor = useEditor({
     // SSR에서 즉시 렌더하면 하이드레이션이 어긋난다
@@ -78,6 +92,14 @@ export function RichTextField({
         codeBlock: false,
       }),
       HeadingWithShiftedShortcuts.configure({ levels: variant === "slim" ? [3] : [2, 3] }),
+      ...(blockEditing
+        ? [
+            BlockSplitOnDoubleEnter.configure({
+              onSplit: () => blockEditingRef.current?.onSplit(),
+              onRemove: () => blockEditingRef.current?.onRemove(),
+            }),
+          ]
+        : []),
       // 빈 칸이 6개 놓이는 QT 답변에서는 자리 안내가 없으면 화면이 고장난 것처럼 보인다
       // (02 §5.2 필드 6의 placeholder 문구). 실제 그리기는 .record-prose가 한다
       ...(placeholder ? [Placeholder.configure({ placeholder })] : []),

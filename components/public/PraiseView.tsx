@@ -1,7 +1,7 @@
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { RichTextBody } from "@/components/public/RichTextBody";
 import { YouTubeLite } from "@/components/public/YouTubeLite";
-import type { PostContent } from "@/lib/content/schema";
+import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
 import { parseYouTubeId } from "@/lib/praise/youtube";
 
 /**
@@ -58,7 +58,15 @@ export function PraiseView({
 
       <section className="border-edge border-t pt-5">
         <h2 className="mb-2 font-serif font-bold text-[15px]">묵상과 기도</h2>
-        <RichTextBody doc={content.meditationAndPrayer} />
+        {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
+            구분선을 그으면 없는 절이 생긴다 */}
+        <div className="flex flex-col gap-4">
+          {praiseMeditationBlocks(content.meditationAndPrayer).map((block, index) => (
+            // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
+            // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
+            <RichTextBody key={index} doc={block} />
+          ))}
+        </div>
       </section>
     </>
   );

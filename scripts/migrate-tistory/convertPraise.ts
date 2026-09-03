@@ -151,7 +151,7 @@ export function convertPraise(bodyHtml: string): PraiseConversion {
       kind: "PRAISE",
       ...(youtubeUrl ? { youtubeUrl } : {}),
       sections,
-      meditationAndPrayer: toDoc(meditation),
+      meditationAndPrayer: [toDoc(meditation)],
     },
     notes,
   };

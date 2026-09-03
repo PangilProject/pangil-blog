@@ -14,7 +14,7 @@ import {
   toDraftContent,
   toPublishContent,
 } from "@/lib/editor/praiseForm";
-import type { RichTextValue } from "@/lib/editor/richText";
+import { type RichTextValue, toTiptapDoc } from "@/lib/editor/richText";
 
 const doc = (text: string): RichTextValue => ({
   type: "doc",
@@ -30,7 +30,7 @@ function filled(): PraiseFormValues {
       { id: "b", label: "Chorus", lyrics: "내가 주를 찬양하리" },
       { id: "c", label: "Verse", lyrics: "" },
     ],
-    meditationAndPrayer: doc("기다림을 배웁니다"),
+    meditationBlocks: [{ id: "m1", doc: doc("기다림을 배웁니다") }],
     tags: [],
   };
 }
@@ -86,11 +86,23 @@ describe("발행 게이트", () => {
   it("묵상과 기도가 비면 막는다 — 이 글의 본문이다", () => {
     const result = PraisePublishFormSchema.safeParse({
       ...filled(),
-      meditationAndPrayer: { type: "doc", content: [] },
+      meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] } }],
     });
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe("묵상과 기도를 적어주세요");
+  });
+
+  it("블록이 여러 개여도 하나만 적혀 있으면 통과한다 — 빈 블록은 저장에서 떨어진다", () => {
+    const result = PraisePublishFormSchema.safeParse({
+      ...filled(),
+      meditationBlocks: [
+        { id: "m1", doc: doc("기다림을 배웁니다") },
+        { id: "m2", doc: { type: "doc", content: [] } },
+      ],
+    });
+
+    expect(result.success).toBe(true);
   });
 
   it("가사가 빈 섹션은 막지 않는다 — 연주 메모만 있는 섹션이 있다", () => {
@@ -178,5 +190,53 @@ describe("마디 수 — 가사가 없는 섹션 (Intro·Interlude·Outro)", () 
 
   it("마디 표기가 아닌 글자는 null이다 — 이관해 온 연주 메모를 숫자 칸에 끼우지 않는다", () => {
     expect(parseBarCount("기타 솔로")).toBeNull();
+  });
+});
+
+describe("묵상과 기도 — 블록 목록 (02 §5.4)", () => {
+  it("저장은 늘 배열이다. 빈 블록은 떨군다", () => {
+    const content = toPublishContent({
+      ...filled(),
+      meditationBlocks: [
+        { id: "m1", doc: doc("기다림을 배웁니다") },
+        { id: "m2", doc: { type: "doc", content: [] } },
+        { id: "m3", doc: doc("오늘도 지키소서") },
+      ],
+    });
+
+    if (content.kind !== "PRAISE") throw new Error("PRAISE가 아니다");
+    expect(content.meditationAndPrayer).toHaveLength(2);
+    expect(PublishSchema.safeParse(content).success).toBe(true);
+  });
+
+  it("문서 하나로 저장된 옛 글은 블록 하나로 열린다", () => {
+    const form = fromDraftContent(
+      { kind: "PRAISE", meditationAndPrayer: toTiptapDoc(doc("옛 글의 묵상")) },
+      "제목",
+    );
+
+    expect(form.meditationBlocks).toHaveLength(1);
+    expect(form.meditationBlocks[0]?.doc).toEqual(doc("옛 글의 묵상"));
+  });
+
+  it("묵상이 없는 초안도 첫 블록이 놓인 채 열린다", () => {
+    expect(fromDraftContent({ kind: "PRAISE" }, "제목").meditationBlocks).toHaveLength(1);
+  });
+
+  it("블록 배열은 다시 읽어도 그대로다 — 왕복이 값을 바꾸지 않는다", () => {
+    const saved = toDraftContent({
+      ...filled(),
+      meditationBlocks: [
+        { id: "m1", doc: doc("첫 덩이") },
+        { id: "m2", doc: doc("둘째 덩이") },
+      ],
+    });
+
+    const form = fromDraftContent(saved, "제목");
+
+    expect(form.meditationBlocks.map((block) => block.doc)).toEqual([
+      doc("첫 덩이"),
+      doc("둘째 덩이"),
+    ]);
   });
 });
