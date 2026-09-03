@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
@@ -197,12 +198,12 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
               aria-label="말씀 범위"
               className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[12.5px] text-(--accent) outline-none placeholder:text-faint"
             />
-            <textarea
+            <AutoGrowTextarea
               {...register("scriptureBody")}
               placeholder="말씀 본문"
               aria-label="말씀 본문"
               rows={4}
-              className="resize-y border border-edge bg-paper px-3 py-2 font-serif text-sm leading-scripture outline-none placeholder:text-faint"
+              className="border border-edge bg-paper px-3 py-2 font-serif text-sm leading-scripture outline-none placeholder:text-faint"
             />
           </div>
 
