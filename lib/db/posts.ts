@@ -69,6 +69,19 @@ export async function findEditablePost(id: string): Promise<EditablePost | null>
   return row ? toEditablePost(row) : null;
 }
 
+/**
+ * slug로 글을 찾는다 — 공개 지면에서 에디터로 넘어오는 길에만 쓴다(A-03).
+ *
+ * 상태를 가리지 않는다. 내려둔 글(PRIVATE)을 고치러 오는 것도 같은 길이고, slug는
+ * 발행 시점에 확정되므로 초안에는 아직 없다(05 §1.4).
+ */
+export async function findPostIdBySlug(
+  slug: string,
+): Promise<{ id: string; type: RecordType } | null> {
+  const row = await prisma.post.findUnique({ where: { slug }, select: { id: true, type: true } });
+  return row ? { id: row.id, type: row.type as RecordType } : null;
+}
+
 /** A-02 초안함 (02 §2.4) — 최근 수정 순 */
 export async function listDrafts(limit = 50) {
   const rows = await prisma.post.findMany({
@@ -81,7 +94,6 @@ export async function listDrafts(limit = 50) {
   return rows.map((row) => ({ ...row, type: row.type as RecordType }));
 }
 
-/** A-03 글 관리 (02 §2.4) — 상태 무관 최신순 */
 /** A-03 글 관리 한 페이지 (02 §2.4). 초안함과 달리 749편을 다룬다 */
 export const ADMIN_PAGE_SIZE = 20;
 
