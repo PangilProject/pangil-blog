@@ -1,8 +1,8 @@
 import { ListHeader } from "@/components/public/ListHeader";
-import { Pagination } from "@/components/public/Pagination";
 import { PostList } from "@/components/public/PostList";
 import { SiteHeader } from "@/components/public/SiteHeader";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
+import { Pagination } from "@/components/record/Pagination";
 import type { ListPage, RecordCounts } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
 
