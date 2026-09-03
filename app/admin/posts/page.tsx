@@ -9,6 +9,7 @@ import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { listCategories } from "@/lib/db/categories";
 import { listAdminPosts } from "@/lib/db/posts";
+import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import { formatCallNumber, type RecordType } from "@/lib/record/callNumber";
 import { editorPath } from "@/lib/record/todayCard";
 
@@ -24,12 +25,10 @@ import { editorPath } from "@/lib/record/todayCard";
  * 초안은 여기 없다. 초안함(A-02)이 "이어서 쓸 것"이라는 다른 질문에 답한다.
  */
 
+// 축 정의는 lib/record/axis 하나다 — 공개 목록·상세와 같은 것을 본다
 const TYPE_TABS: { label: string; type: RecordType | null }[] = [
   { label: "전체", type: null },
-  { label: "큐티", type: "QT" },
-  { label: "설교", type: "SERMON" },
-  { label: "찬양", type: "PRAISE" },
-  { label: "기술", type: "TECH" },
+  ...[...FAITH_TYPES, "TECH" as const].map((type) => ({ label: TYPE_LABELS[type], type })),
 ];
 
 function parseType(value: unknown): RecordType | null {

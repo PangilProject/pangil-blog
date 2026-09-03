@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
+import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import type { RecordType } from "@/lib/record/callNumber";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
 import { blogJsonLd } from "@/lib/seo/jsonLd";
@@ -23,11 +24,10 @@ import { siteAlternates } from "@/lib/site/metadata";
  */
 export const instant = false;
 
+// 축 정의는 lib/record/axis 하나다 — 목록·상세·글 관리가 같은 것을 본다
 const TYPE_TABS: { label: string; type: RecordType | null }[] = [
   { label: "전체", type: null },
-  { label: "큐티", type: "QT" },
-  { label: "설교", type: "SERMON" },
-  { label: "찬양", type: "PRAISE" },
+  ...FAITH_TYPES.map((type) => ({ label: TYPE_LABELS[type], type })),
 ];
 
 function parseType(value: string | undefined): RecordType | null {
