@@ -1,4 +1,4 @@
-import type { PostContent } from "@/lib/content/schema";
+import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
 import { normalizeWhitespace, tiptapToPlainText } from "@/lib/render/plainText";
 
 /**
@@ -49,7 +49,9 @@ export function extractSearchText(title: string, content: PostContent): string {
         parts.push(section.lyrics);
       }
 
-      parts.push(tiptapToPlainText(content.meditationAndPrayer));
+      for (const block of praiseMeditationBlocks(content.meditationAndPrayer)) {
+        parts.push(tiptapToPlainText(block));
+      }
       break;
     }
 

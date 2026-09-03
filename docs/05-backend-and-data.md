@@ -222,7 +222,8 @@ const PraiseContent = z.object({
     ]).or(z.object({ custom: z.string() })), // 직접 입력 허용 (02 §5.4)
     lyrics: z.string().default(""),          // 빈 섹션 허용 ("16 Bar" 연주 메모)
   })),
-  meditationAndPrayer: TiptapDoc,            // 가사 묵상 + 기도문 단일 영역 (02 §5.4)
+  meditationAndPrayer: TiptapDoc[],          // 묵상·기도 블록 목록 (02 §5.4). 쓰기는 늘 배열,
+                                             // 읽기는 TiptapDoc도 받는다(옛 글) — 분기는 praiseMeditationBlocks 한 곳
 });
 
 const TechContent = z.object({

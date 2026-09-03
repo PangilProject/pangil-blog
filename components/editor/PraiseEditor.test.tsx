@@ -33,10 +33,15 @@ function filled(): PraiseFormValues {
       { id: "a", label: "Verse", lyrics: "주님의 시간에" },
       { id: "b", label: "Chorus", lyrics: "찬양하리" },
     ],
-    meditationAndPrayer: {
-      type: "doc",
-      content: [{ type: "paragraph", content: [{ type: "text", text: "기다림을 배웁니다" }] }],
-    },
+    meditationBlocks: [
+      {
+        id: "m1",
+        doc: {
+          type: "doc",
+          content: [{ type: "paragraph", content: [{ type: "text", text: "기다림을 배웁니다" }] }],
+        },
+      },
+    ],
     tags: [],
   };
 }
@@ -225,7 +230,10 @@ describe("PraiseEditor — 발행", () => {
 
   it("묵상과 기도가 비면 막는다", async () => {
     renderEditor({
-      initialValues: { ...filled(), meditationAndPrayer: { type: "doc", content: [] } },
+      initialValues: {
+        ...filled(),
+        meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] } }],
+      },
     });
 
     await act(async () => {

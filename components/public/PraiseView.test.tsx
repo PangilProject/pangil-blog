@@ -41,6 +41,23 @@ describe("PraiseView", () => {
     expect(screen.getByText("우리 함께 손잡고 가세")).toBeInTheDocument();
   });
 
+  it("묵상 블록 수만큼 본문을 그린다 — 끊어 쓴 자리가 지면에도 남는다", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          meditationAndPrayer: [
+            { type: "doc", content: [] },
+            { type: "doc", content: [] },
+          ],
+        }}
+        title="손잡고 함께 가세"
+      />,
+    );
+
+    expect(screen.getAllByTestId("body")).toHaveLength(2);
+  });
+
   it("영상은 클릭 전 썸네일이다", () => {
     const { container } = render(<PraiseView content={content} title="손잡고 함께 가세" />);
 

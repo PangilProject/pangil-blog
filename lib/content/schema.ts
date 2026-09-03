@@ -90,11 +90,29 @@ const PraiseSectionSchema = z.object({
   lyrics: z.string().default(""), // 빈 섹션 허용 — 연주 메모만 있는 섹션이 있다
 });
 
+/**
+ * "묵상과 기도" (02 §5.4).
+ *
+ * 블록 여러 개다 — 묵상 한 덩이, 기도 한 덩이처럼 끊어 쓰는 글이라 한 칸에 몰아 두면
+ * 어디서 끊겼는지가 저장값에 남지 않는다. **읽기만 두 갈래고 쓰기는 늘 배열이다**:
+ * 이미 발행된 글이 문서 하나로 저장돼 있어서 그것도 읽어야 한다. 분기를 펴는 곳은
+ * praiseMeditationBlocks 한 곳뿐이다 — 읽는 쪽마다 풀면 규칙이 네 곳에 생긴다.
+ */
+const PraiseMeditationSchema = z.union([TiptapDocSchema, z.array(TiptapDocSchema)]);
+
+export type PraiseMeditation = z.infer<typeof PraiseMeditationSchema>;
+
+/** 저장값을 블록 배열로 편다. 옛 글(문서 하나)은 블록 하나짜리로 읽힌다 */
+export function praiseMeditationBlocks(value: PraiseMeditation | undefined | null): TiptapDoc[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 const PraiseContentSchema = z.object({
   kind: z.literal("PRAISE"),
   youtubeUrl: z.url(),
   sections: z.array(PraiseSectionSchema),
-  meditationAndPrayer: TiptapDocSchema, // 가사 묵상 + 기도문 단일 영역
+  meditationAndPrayer: PraiseMeditationSchema,
 });
 
 const TechContentSchema = z.object({
