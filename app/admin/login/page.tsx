@@ -1,9 +1,11 @@
 import { signIn } from "@/lib/actions/auth";
+import { safeNextPath } from "@/lib/auth/nextPath";
 import { hasSupabaseAuthEnv } from "@/lib/auth/supabaseEnv";
 
 // A-00 로그인. 화면 조판은 M1 디자인 시스템에서 입힌다.
 export default async function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
-  const { error } = await searchParams;
+  const { error, next: intended } = await searchParams;
+  const next = safeNextPath(typeof intended === "string" ? intended : null);
 
   if (!hasSupabaseAuthEnv()) {
     return (
@@ -21,6 +23,8 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
     <main className="mx-auto flex w-full max-w-sm flex-col gap-4 p-8">
       <h1 className="text-lg">관리자 로그인</h1>
       <form action={signIn} className="flex flex-col gap-3">
+        {/* 로그인 뒤 가려던 글의 에디터로 보낸다. 값은 서버에서 다시 검사한다 */}
+        {next && <input type="hidden" name="next" value={next} />}
         <label className="flex flex-col gap-1" htmlFor="email">
           이메일
           <input

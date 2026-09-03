@@ -14,8 +14,20 @@ import { deletePost } from "@/lib/actions/posts";
  *
  * 확인 상태는 다른 곳을 누르거나(blur) 실패하면 풀린다 — 켜둔 채로 남겨두면 다음 클릭이
  * 곧 삭제가 된다.
+ *
+ * 지운 뒤 갈 곳은 부르는 쪽이 정한다. 목록에서는 그 자리에 남아 다시 읽으면 되지만,
+ * **공개 상세에서 지우면 그 지면 자체가 없어진다** — 404를 보여주지 않고 목록으로 보낸다.
  */
-export function DeletePostButton({ postId, title }: { postId: string; title: string }) {
+export function DeletePostButton({
+  postId,
+  title,
+  afterDelete,
+}: {
+  postId: string;
+  title: string;
+  /** 지운 뒤 이동할 경로. 없으면 그 자리를 다시 읽는다 */
+  afterDelete?: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isConfirming, setIsConfirming] = useState(false);
@@ -57,6 +69,12 @@ export function DeletePostButton({ postId, title }: { postId: string; title: str
             }
 
             setIsConfirming(false);
+
+            if (afterDelete) {
+              router.push(afterDelete);
+              return;
+            }
+
             // 서버 컴포넌트 목록을 다시 읽는다 — 지운 글이 화면에 남아 있으면 안 된다
             router.refresh();
           })

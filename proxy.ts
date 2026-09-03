@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
+import { ADMIN_UI_COOKIE, ADMIN_UI_MAX_AGE } from "@/lib/auth/adminUiHint";
+import { safeNextPath } from "@/lib/auth/nextPath";
 import { isAdminRequest } from "@/lib/auth/supabaseMiddleware";
 import {
   isInternalPath,
@@ -39,6 +41,17 @@ export async function proxy(request: NextRequest) {
     if (isAdmin) {
       // 관리자임이 확인된 **이 자리에서만** 통계 옵트아웃 쿠키를 심는다(05 §4.1).
       // 공개 지면에서 세션을 확인하려 들면 지면 캐시가 무의미해진다 — 여기 한 번이면 족하다
+      // 공개 지면의 관리 컨트롤을 보이게 하는 힌트. 서버는 이 값을 신뢰하지 않는다
+      // (lib/auth/adminUiHint) — 보이기만 하고 동작은 세션·withAdmin이 막는다
+      response.cookies.set(ADMIN_UI_COOKIE, "1", {
+        maxAge: ADMIN_UI_MAX_AGE,
+        path: "/",
+        sameSite: "lax",
+        httpOnly: false,
+        secure: request.nextUrl.protocol === "https:",
+        domain: optOutCookieDomain(process.env.SITE_HOST_ROOT),
+      });
+
       response.cookies.set(STAT_OPT_OUT_COOKIE, "1", {
         maxAge: STAT_OPT_OUT_MAX_AGE,
         path: "/",
@@ -51,9 +64,13 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
+    // 가려던 곳을 로그인 왕복 동안 들고 간다 — 공개 지면의 `수정`을 누른 사람은 로그인 뒤
+    // 그 글의 에디터에 도착해야 한다. 값의 검사는 받는 쪽 한 곳에서 한다(lib/auth/nextPath)
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = ADMIN_LOGIN_PATH;
     loginUrl.search = "";
+    const intended = safeNextPath(`${pathname}${request.nextUrl.search}`);
+    if (intended) loginUrl.searchParams.set("next", intended);
     return NextResponse.redirect(loginUrl);
   }
 
