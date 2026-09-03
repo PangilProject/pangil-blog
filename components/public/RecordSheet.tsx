@@ -60,11 +60,12 @@ export function RecordSheet({
           {publishedAt && <time className="text-faint">{publishedAt}</time>}
         </div>
 
+        {/* 분류·관리 컨트롤이 제목 위에 온다 — 제목이 본문에 가장 가까이 붙는다 */}
+        {subtitle}
+
         <h1 className="font-serif font-bold text-[clamp(20px,3.4vw,26px)] leading-[1.55]">
           {title}
         </h1>
-
-        {subtitle}
       </header>
 
       <div className="mt-7 flex flex-col gap-6">{children}</div>
