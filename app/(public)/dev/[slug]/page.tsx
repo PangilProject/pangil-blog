@@ -6,6 +6,8 @@ import { PostDetail } from "@/components/public/PostDetail";
 import { PostNeighbors } from "@/components/public/PostNeighbors";
 import { SiteHeader } from "@/components/public/SiteHeader";
 import { Toc } from "@/components/public/Toc";
+import { DividerTabs } from "@/components/record/DividerTabs";
+import { findUsedCategories } from "@/lib/db/publicLists";
 import { findNeighbors, findPublishedPostBySlug } from "@/lib/db/publicPosts";
 import { collectHeadings } from "@/lib/render/richText";
 import { listTag, postTag } from "@/lib/revalidate/tags";
@@ -43,11 +45,14 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
 
   // 이 지면의 축은 카테고리다(02 §5.5). 카테고리 없는 이관 글은 지면 전체에서 잇는다 —
   // 적재기가 티스토리 카테고리 없는 글을 null로 넣는다(05 §6)
-  const neighbors = await findNeighbors(
-    "dev",
-    post.categorySlug ? { kind: "category", categorySlug: post.categorySlug } : { kind: "site" },
-    post,
-  );
+  const [neighbors, categories] = await Promise.all([
+    findNeighbors(
+      "dev",
+      post.categorySlug ? { kind: "category", categorySlug: post.categorySlug } : { kind: "site" },
+      post,
+    ),
+    findUsedCategories(),
+  ]);
 
   // 목차는 본문 밖 우측 여백에 서므로(04 §3.4) 지면 바깥에서 제목을 훑는다
   const headings =
@@ -78,6 +83,20 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
       */}
       <div className="mx-auto flex w-full max-w-[calc(var(--container-measure)+15rem)] flex-col lg:flex-row lg:items-start lg:gap-10">
         <div className="order-2 flex min-w-0 flex-1 flex-col gap-8 lg:order-1">
+          {/* 목록이 쓰는 그 칸막이 탭이다(03 §3). 상세에서도 다른 카테고리로 한 번에 가고,
+              지금 읽는 글의 카테고리가 활성으로 보인다 */}
+          <DividerTabs
+            items={[
+              { label: "전체", href: "/dev", active: false },
+              ...categories.map((category) => ({
+                label: category.name,
+                href: `/dev?category=${category.slug}`,
+                active: category.slug === post.categorySlug,
+              })),
+            ]}
+            label="카테고리"
+          />
+
           <PostDetail post={post} />
 
           <PostNeighbors
