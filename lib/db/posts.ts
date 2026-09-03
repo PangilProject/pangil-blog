@@ -82,22 +82,68 @@ export async function listDrafts(limit = 50) {
 }
 
 /** A-03 글 관리 (02 §2.4) — 상태 무관 최신순 */
-export async function listAdminPosts(limit = 100) {
-  const rows = await prisma.post.findMany({
-    orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
-    take: limit,
-    select: {
-      id: true,
-      type: true,
-      status: true,
-      title: true,
-      callNumber: true,
-      publishedAt: true,
-      updatedAt: true,
-    },
-  });
+/** A-03 글 관리 한 페이지 (02 §2.4). 초안함과 달리 749편을 다룬다 */
+export const ADMIN_PAGE_SIZE = 20;
 
-  return rows.map((row) => ({ ...row, type: row.type as RecordType }));
+export type AdminPostQuery = {
+  /** 타입 축 — faith의 분류는 타입이다(02 §5) */
+  type?: RecordType | null;
+  /** 카테고리 축 — TECH 전용 분류다(02 §5.5) */
+  categorySlug?: string | null;
+  page?: number;
+};
+
+/**
+ * A-03 글 관리 목록 (02 §2.4).
+ *
+ * **초안은 넣지 않는다.** 초안은 초안함(A-02)이 맡고, 그쪽은 "이어서 쓸 것"이라는 다른
+ * 질문에 답한다. 한 목록이 두 질문에 답하면 749편 사이에서 오늘 쓰던 초안을 찾게 된다.
+ *
+ * PRIVATE은 남긴다 — 발행했다가 내린 글이고, 여기서 빠지면 어디에서도 보이지 않는다.
+ */
+export async function listAdminPosts({
+  type = null,
+  categorySlug = null,
+  page = 1,
+}: AdminPostQuery = {}) {
+  const current = Math.max(Math.trunc(page) || 1, 1);
+
+  const where = {
+    status: { not: PostStatus.DRAFT },
+    ...(type ? { type: type as PostType } : {}),
+    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+      skip: (current - 1) * ADMIN_PAGE_SIZE,
+      take: ADMIN_PAGE_SIZE,
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        title: true,
+        callNumber: true,
+        publishedAt: true,
+        updatedAt: true,
+        category: { select: { name: true } },
+      },
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  return {
+    posts: rows.map((row) => ({
+      ...row,
+      type: row.type as RecordType,
+      categoryName: row.category?.name ?? null,
+    })),
+    page: current,
+    pageCount: Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE)),
+    total,
+  };
 }
 
 export type CreateDraftInput = {
