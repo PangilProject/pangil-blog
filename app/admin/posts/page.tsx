@@ -52,10 +52,11 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
   // 카테고리는 기술 축 안에서만 뜻이 있다 — 타입을 바꾸면 함께 떨어진다
   const categorySlug =
     type === "TECH" && typeof params.category === "string" ? params.category : null;
+  const query = typeof params.q === "string" ? params.q : undefined;
   const page = Number(typeof params.page === "string" ? params.page : 1) || 1;
 
   const [list, categories] = await Promise.all([
-    listAdminPosts({ type, categorySlug, page }),
+    listAdminPosts({ type, categorySlug, query, page }),
     type === "TECH" ? listCategories() : Promise.resolve([]),
   ]);
 
@@ -66,10 +67,12 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
 
     if (nextType) search.set("type", nextType);
     if (nextType === "TECH" && nextCategory) search.set("category", nextCategory);
+    // 검색어는 축을 바꿔도 남는다 — "이 말이 든 글을 타입별로 훑는" 것이 실제 사용이다
+    if (query) search.set("q", query);
     if (next.page && next.page > 1) search.set("page", String(next.page));
 
-    const query = search.toString();
-    return query === "" ? "/admin/posts" : `/admin/posts?${query}`;
+    const suffix = search.toString();
+    return suffix === "" ? "/admin/posts" : `/admin/posts?${suffix}`;
   };
 
   const typeTabs: DividerTabItem[] = TYPE_TABS.map((tab) => ({
@@ -104,6 +107,26 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
           </p>
         </div>
 
+        {/* 검색은 폼 하나다 — 공개 목록과 같은 문법이고, 이 화면에도 JS를 늘리지 않는다.
+            필터는 유지한다: 폼이 감춘 값으로 함께 보낸다 */}
+        <form action="/admin/posts" className="flex items-center gap-2 border-edge border-b pb-1.5">
+          {type && <input type="hidden" name="type" value={type} />}
+          {type === "TECH" && categorySlug && (
+            <input type="hidden" name="category" value={categorySlug} />
+          )}
+          <input
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder="제목·내용 검색"
+            aria-label="검색어"
+            className="min-w-0 flex-1 bg-transparent font-typewriter text-[12px] outline-none placeholder:text-faint"
+          />
+          <button type="submit" className="font-typewriter text-[11px] text-faint hover:text-ink">
+            찾기
+          </button>
+        </form>
+
         <div className="flex flex-col gap-2">
           <DividerTabs items={typeTabs} label="글 타입 필터" />
           {type === "TECH" && categories.length > 0 && (
@@ -112,7 +135,9 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
         </div>
 
         {list.posts.length === 0 ? (
-          <p className="text-sm text-ink-soft">이 조건에 맞는 글이 없어요.</p>
+          <p className="text-sm text-ink-soft">
+            {query ? `"${query}" 결과가 없어요.` : "이 조건에 맞는 글이 없어요."}
+          </p>
         ) : (
           <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
             {list.posts.map((post) => (
