@@ -30,6 +30,19 @@ export type PublishGate = {
   };
 };
 
+/**
+ * 발행이 막힌 사유를 사람 말로 (03 §7.3 — 구현 용어는 화면에 쓰지 않는다).
+ *
+ * 전에는 `발행하지 못했어요 (invalid-content)`처럼 서버의 사유 코드를 괄호에 그대로 달았다.
+ * 영문 코드는 무엇을 고쳐야 하는지 알려주지 않는다 — 그게 화면 문구의 일이다.
+ */
+const PUBLISH_FAILURE: Record<string, string> = {
+  "not-found": "이 글을 찾지 못했어요. 목록에서 다시 열어주세요",
+  // 화면 게이트를 지나고도 여기서 막히는 것은 저장된 내용이 아직 덜 채워졌을 때다
+  "invalid-content": "아직 덜 채운 칸이 있어요. 저장을 기다린 뒤 다시 눌러주세요",
+  "type-mismatch": "글 종류가 맞지 않아요. 이 글은 목록에서 확인해 주세요",
+};
+
 export type PublishFlowOptions<TValues> = {
   type: RecordType;
   gate: PublishGate;
@@ -76,7 +89,9 @@ export function usePublishFlow<TValues>({
         const result = await publishPost(target);
 
         if (!result.ok) {
-          setError(`발행하지 못했어요 (${result.reason})`);
+          setError(
+            PUBLISH_FAILURE[result.reason] ?? "발행하지 못했어요. 잠시 후 다시 시도해 주세요",
+          );
         } else {
           clearMirror();
           // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라

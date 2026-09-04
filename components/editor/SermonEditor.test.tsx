@@ -141,7 +141,7 @@ describe("SermonEditor — 자동 저장 배선", () => {
     });
 
     // 저장 실패 사유(SaveErrorNote)도 같은 자리에 서므로 문구로 집는다
-    expect(screen.getByText("로컬 저장됨 · 동기화 대기")).toBeInTheDocument();
+    expect(screen.getByText("로컬 저장됨 · 서버 저장 대기")).toBeInTheDocument();
     // 사유도 함께 남는다 — "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
     expect(screen.getByText("offline")).toBeInTheDocument();
     expect(window.localStorage.getItem("draft:SERMON:post-1")).toContain("예배당에서");
@@ -333,7 +333,9 @@ describe("SermonEditor — 발행", () => {
     });
 
     expect(push).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("invalid-content");
+    // 사유 코드가 아니라 무엇을 해야 하는지를 보여준다(03 §7.3)
+    expect(screen.getByRole("alert")).toHaveTextContent("아직 덜 채운 칸이 있어요");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("invalid-content");
   });
 });
 

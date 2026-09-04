@@ -102,7 +102,7 @@ function RawFallback({ raw }: { raw: unknown }) {
   return (
     <div className="record-prose">
       <p className="font-typewriter text-[11px] text-(--accent)">
-        이 기록은 조판을 복원하지 못했어요. 원문을 그대로 보여드립니다.
+        이 글은 서식을 불러오지 못했어요. 내용은 그대로 보여드려요.
       </p>
       {text.map((paragraph, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: 폴백 원문에는 안정적인 키가 없다
