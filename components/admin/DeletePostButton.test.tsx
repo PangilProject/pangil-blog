@@ -37,13 +37,13 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
 
     expect(deletePost).not.toHaveBeenCalled();
     // 무엇을 지우는지가 확인 화면에 있어야 한다 — 목록에서는 어느 줄을 눌렀는지 흐려진다
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("이 글을 지울까요? 되돌릴 수 없어요.")).toBeInTheDocument();
+    expect(screen.getByText("이 글을 삭제할까요? 되돌릴 수 없어요.")).toBeInTheDocument();
     expect(screen.getByText("테스트입니다")).toBeInTheDocument();
   });
 
@@ -51,7 +51,7 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
 
     expect(screen.getByRole("button", { name: "취소" })).toHaveFocus();
@@ -61,7 +61,7 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
     await act(async () => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
@@ -75,10 +75,10 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
     await act(async () => {
-      screen.getByRole("button", { name: "지운다" }).click();
+      screen.getByRole("button", { name: "삭제" }).click();
     });
 
     expect(deletePost).toHaveBeenCalledWith("post-1");
@@ -89,14 +89,14 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
     await act(async () => {
       screen.getByRole("button", { name: "취소" }).click();
     });
 
     expect(deletePost).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "테스트입니다 지우기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "테스트입니다 삭제" })).toBeInTheDocument();
   });
 
   it("이미 지워진 글이면 사유를 남기고 목록을 다시 읽지 않는다", async () => {
@@ -104,14 +104,14 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
     await act(async () => {
-      screen.getByRole("button", { name: "지운다" }).click();
+      screen.getByRole("button", { name: "삭제" }).click();
     });
 
     // 모달을 닫지 않는다 — 닫으면 무엇이 잘못됐는지가 함께 사라진다
-    expect(screen.getByRole("alert")).toHaveTextContent("이미 지워졌어요");
+    expect(screen.getByRole("alert")).toHaveTextContent("이미 삭제된 글이에요");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(refresh).not.toHaveBeenCalled();
   });
@@ -120,10 +120,10 @@ describe("DeletePostButton", () => {
     render(<DeletePostButton postId="post-1" title="테스트입니다" afterDelete="/dev" />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 지우기" }).click();
+      screen.getByRole("button", { name: "테스트입니다 삭제" }).click();
     });
     await act(async () => {
-      screen.getByRole("button", { name: "지운다" }).click();
+      screen.getByRole("button", { name: "삭제" }).click();
     });
 
     expect(push).toHaveBeenCalledWith("/dev");
@@ -133,6 +133,6 @@ describe("DeletePostButton", () => {
   it("제목이 없는 초안도 버튼 이름이 비지 않는다", () => {
     render(<DeletePostButton postId="post-1" title="   " />);
 
-    expect(screen.getByRole("button", { name: "제목 없음 지우기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "제목 없음 삭제" })).toBeInTheDocument();
   });
 });
