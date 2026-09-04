@@ -31,7 +31,7 @@ export function RecoveryBanner({
         복원
       </Button>
       <Button size="sm" onClick={onDismiss}>
-        서버 버전 유지
+        서버 내용 그대로 두기
       </Button>
     </div>
   );
