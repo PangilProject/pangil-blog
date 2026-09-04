@@ -116,6 +116,8 @@ export type AdminPostQuery = {
   type?: RecordType | null;
   /** 카테고리 축 — TECH 전용 분류다(02 §5.5) */
   categorySlug?: string | null;
+  /** 제목·본문 검색어. 공개 검색과 같은 경로다(§4A) */
+  query?: string | null;
   page?: number;
 };
 
@@ -130,14 +132,29 @@ export type AdminPostQuery = {
 export async function listAdminPosts({
   type = null,
   categorySlug = null,
+  query = null,
   page = 1,
 }: AdminPostQuery = {}) {
   const current = Math.max(Math.trunc(page) || 1, 1);
+  const search = query?.trim();
 
   const where = {
     status: { not: PostStatus.DRAFT },
     ...(type ? { type: type as PostType } : {}),
     ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+    /**
+     * 공개 검색과 같은 통로를 쓴다 — `searchText`는 발행 시 채워지는 평문이고 pg_trgm GIN
+     * 인덱스가 이 ILIKE를 받는다(05 §4A). 제목만 보면 "그 XSS 글"처럼 본문에만 있는 말로는
+     * 못 찾는다. 제목을 함께 보는 이유는 이관 글 중 searchText가 빈 것이 있을 수 있어서다.
+     */
+    ...(search
+      ? {
+          OR: [
+            { searchText: { contains: search, mode: "insensitive" as const } },
+            { title: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
   };
 
   const [rows, total] = await Promise.all([
