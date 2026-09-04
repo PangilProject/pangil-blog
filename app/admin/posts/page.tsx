@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
 import { DeletePostButton } from "@/components/admin/DeletePostButton";
+import { VisibilityButton } from "@/components/admin/VisibilityButton";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
 import { Pagination } from "@/components/record/Pagination";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -135,6 +136,11 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
                 {post.status === "PRIVATE" && (
                   <span className="font-typewriter text-[10.5px] text-(--accent)">비공개</span>
                 )}
+                <VisibilityButton
+                  postId={post.id}
+                  title={post.title}
+                  isPublished={post.status === "PUBLISHED"}
+                />
                 <DeletePostButton postId={post.id} title={post.title} />
               </li>
             ))}
