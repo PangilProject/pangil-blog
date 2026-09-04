@@ -355,7 +355,7 @@ describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("저장 안 된 내용이 있어요");
     expect(screen.getByRole("button", { name: "복원" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "서버 버전 유지" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "서버 내용 그대로 두기" })).toBeInTheDocument();
   });
 
   it("복원을 누르면 로컬 값이 폼에 들어온다", async () => {

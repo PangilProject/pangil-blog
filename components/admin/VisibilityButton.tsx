@@ -30,7 +30,7 @@ export function VisibilityButton({
   const [error, setError] = useState<string | null>(null);
 
   const label = title.trim() || "제목 없음";
-  const action = isPublished ? "비공개로" : "공개로";
+  const action = isPublished ? "비공개로 전환" : "공개로 전환";
 
   if (error) {
     return (
@@ -54,8 +54,14 @@ export function VisibilityButton({
           const result = isPublished ? await unpublishPost(postId) : await publishPost(postId);
 
           if (!result.ok) {
-            // 재공개가 막히는 사유는 대개 content다. 조용히 실패하면 왜 안 바뀌는지 모른다
-            setError(result.reason === "not-found" ? "이미 지워졌어요" : "바꾸지 못했어요");
+            // 재공개가 막히는 사유는 대개 내용이다. 한 문구로 덮으면 손쓸 방법이 없다
+            setError(
+              result.reason === "not-found"
+                ? "이미 삭제된 글이에요"
+                : isPublished
+                  ? "비공개로 바꾸지 못했어요"
+                  : "내용이 덜 채워져 공개할 수 없어요",
+            );
             return;
           }
 

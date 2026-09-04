@@ -37,7 +37,7 @@ describe("VisibilityButton", () => {
     render(<VisibilityButton postId="post-1" title="테스트입니다" isPublished />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 비공개로" }).click();
+      screen.getByRole("button", { name: "테스트입니다 비공개로 전환" }).click();
     });
 
     expect(unpublishPost).toHaveBeenCalledWith("post-1");
@@ -49,7 +49,7 @@ describe("VisibilityButton", () => {
     render(<VisibilityButton postId="post-1" title="테스트입니다" isPublished={false} />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 공개로" }).click();
+      screen.getByRole("button", { name: "테스트입니다 공개로 전환" }).click();
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
@@ -61,16 +61,16 @@ describe("VisibilityButton", () => {
     render(<VisibilityButton postId="post-1" title="테스트입니다" isPublished={false} />);
 
     await act(async () => {
-      screen.getByRole("button", { name: "테스트입니다 공개로" }).click();
+      screen.getByRole("button", { name: "테스트입니다 공개로 전환" }).click();
     });
 
     expect(refresh).not.toHaveBeenCalled();
-    expect(screen.getByText("바꾸지 못했어요")).toBeInTheDocument();
+    expect(screen.getByText("내용이 덜 채워져 공개할 수 없어요")).toBeInTheDocument();
   });
 
   it("제목이 없어도 버튼 이름이 비지 않는다", () => {
     render(<VisibilityButton postId="post-1" title="   " isPublished />);
 
-    expect(screen.getByRole("button", { name: "제목 없음 비공개로" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "제목 없음 비공개로 전환" })).toBeInTheDocument();
   });
 });

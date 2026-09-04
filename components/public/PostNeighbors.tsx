@@ -25,11 +25,14 @@ export function PostNeighbors({
   if (!previous && !next) return null;
 
   return (
-    <nav aria-label="이전글 다음글" className="grid gap-4 border-edge border-t pt-5 sm:grid-cols-2">
+    <nav
+      aria-label="이전 글 다음 글"
+      className="grid gap-4 border-edge border-t pt-5 sm:grid-cols-2"
+    >
       {previous ? (
         <Link href={publicPostPath(previous.type, previous.slug)} rel="prev" className="group">
           <span className="block font-typewriter text-[10.5px] text-faint">
-            ← {axisLabel} · 이전
+            ← {axisLabel} · 이전 글
           </span>
           <span className="mt-1 block font-serif text-sm text-ink-soft group-hover:text-ink">
             {previous.title}
@@ -46,7 +49,7 @@ export function PostNeighbors({
           className="group sm:text-right"
         >
           <span className="block font-typewriter text-[10.5px] text-faint">
-            {axisLabel} · 다음 →
+            {axisLabel} · 다음 글 →
           </span>
           <span className="mt-1 block font-serif text-sm text-ink-soft group-hover:text-ink">
             {next.title}
