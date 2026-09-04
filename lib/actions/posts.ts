@@ -14,6 +14,7 @@ import {
   findPostTagNames,
   publishPostRecord,
   saveDraft,
+  unpublishPostRecord,
 } from "@/lib/db/posts";
 import { setPostTags } from "@/lib/db/tags";
 import type { RecordType } from "@/lib/record/callNumber";
@@ -21,6 +22,7 @@ import { extractSearchText } from "@/lib/render/searchText";
 import { postRevalidationTags, siteOf } from "@/lib/revalidate/tags";
 import { submitToSearchEngines } from "@/lib/seo/submit";
 import { absolutePostUrl, absoluteUrl } from "@/lib/site/publicUrl";
+import { PostStatus } from "@/prisma/generated/enums";
 
 /**
  * 변경 Server Action (05 §3.2).
@@ -119,7 +121,9 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
     content: parsed.content,
     existingCallNumber: post.callNumber,
     existingSlug: post.slug,
-    existingPublishedAt: null,
+    // 최초 발행 시각을 넘긴다. 비공개로 내렸다가 다시 공개할 때 이 값이 없으면 발행일이
+    // 오늘로 밀려, 옛 글이 목록 맨 위로 올라온다(05 §5 — 번호와 날짜는 이력이다)
+    existingPublishedAt: post.publishedAt,
     // 검색용 평문은 발행 시 채운다(05 §4A)
     searchText: extractSearchText(post.title, parsed.content),
   });
@@ -134,6 +138,42 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
     callNumber: published.callNumber,
   };
 });
+
+export type UnpublishPostResult =
+  | { ok: true }
+  | { ok: false; reason: "not-found" | "not-published" };
+
+/**
+ * 발행 취소 — 비공개로 내린다 (02 §2.4 A-03 · 04 §1.2).
+ *
+ * **PRIVATE은 공개 지면에서 없는 것과 같다**(조회 함수가 PUBLISHED만 본다). 404를 주고
+ * 410은 쓰지 않는다 — 다시 공개할 글이기 때문이다.
+ *
+ * 청구기호·slug·최초 발행 시각은 그대로 둔다. 번호와 날짜는 카운트가 아니라 이력이고
+ * (05 §5), 다시 공개할 때 같은 주소로 돌아와야 한다.
+ *
+ * **다시 공개하는 경로는 여기가 아니라 `publishPost`다.** status를 PUBLISHED로 바꾸는 길은
+ * 발행 게이트 하나여야 한다(05 §3.4) — 여기서 되돌리면 스키마를 통과하지 않은 content가
+ * 공개될 수 있다.
+ */
+export const unpublishPost = withAdmin(
+  async (_user, postId: string): Promise<UnpublishPostResult> => {
+    const post = await findEditablePost(postId);
+    if (!post) return { ok: false, reason: "not-found" };
+
+    // 초안은 내릴 것이 없다. 이 경로가 초안을 건드리면 초안함과 글 관리가 서로 다른 말을 한다
+    if (post.status !== PostStatus.PUBLISHED) return { ok: false, reason: "not-published" };
+
+    await unpublishPostRecord(postId);
+    await revalidatePost(post.id, post.type, post.categoryId);
+
+    // 검색엔진에도 알린다. 안 알리면 검색 결과에 404로 가는 링크가 한동안 남는다 —
+    // 삭제와 같은 이유다
+    if (post.slug) await announce(post.type, post.slug);
+
+    return { ok: true };
+  },
+);
 
 export type DeletePostResult = { ok: true } | { ok: false; reason: "not-found" };
 

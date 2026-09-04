@@ -26,6 +26,8 @@ export type EditablePost = {
   categoryId: string | null;
   excerpt: string | null;
   thumbnailUrl: string | null;
+  /** 최초 발행 시각. 재공개가 이 값을 밀면 목록에서 옛 글이 맨 위로 올라온다(05 §5) */
+  publishedAt: Date | null;
   updatedAt: Date;
   content: ContentParseResult<DraftContent>;
 };
@@ -40,6 +42,7 @@ const EDITABLE_SELECT = {
   categoryId: true,
   excerpt: true,
   thumbnailUrl: true,
+  publishedAt: true,
   updatedAt: true,
   content: true,
 } as const;
@@ -54,6 +57,7 @@ function toEditablePost(row: {
   categoryId: string | null;
   excerpt: string | null;
   thumbnailUrl: string | null;
+  publishedAt: Date | null;
   updatedAt: Date;
   content: unknown;
 }): EditablePost {
@@ -92,6 +96,16 @@ export async function listDrafts(limit = 50) {
   });
 
   return rows.map((row) => ({ ...row, type: row.type as RecordType }));
+}
+
+/**
+ * 비공개로 내린다 (05 §3.4의 반대 방향).
+ *
+ * status만 바꾼다. 청구기호·slug·publishedAt·searchText는 손대지 않는다 — 다시 공개할 때
+ * 같은 주소·같은 번호·같은 날짜로 돌아와야 한다.
+ */
+export async function unpublishPostRecord(id: string): Promise<void> {
+  await prisma.post.update({ where: { id }, data: { status: PostStatus.PRIVATE } });
 }
 
 /** A-03 글 관리 한 페이지 (02 §2.4). 초안함과 달리 749편을 다룬다 */
