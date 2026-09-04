@@ -61,7 +61,7 @@ export function NitList({ nits, total }: { nits: Nit[]; total: number }) {
 
       {hidden > 0 && (
         <p className="font-typewriter text-[10.5px] text-faint">
-          {hidden}개는 접어 뒀습니다 — 위에서부터 하나씩 고치면 따라 올라옵니다
+          {hidden}개는 접어 뒀어요 — 위에서부터 하나씩 고치면 따라 올라와요
         </p>
       )}
     </section>

@@ -73,7 +73,7 @@ export default async function AdminDashboardPage() {
                 크롤러 <b className="text-ink">{CRAWL_LABELS[crawl.status]}</b>
               </>
             ) : (
-              "크롤러 대기 · 아직 오늘 수집 없음"
+              "아직 오늘 큐티를 못 가져왔어요"
             )}
           </p>
         </div>

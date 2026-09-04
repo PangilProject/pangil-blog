@@ -141,7 +141,7 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
             </Button>
           </>
         }
-        toolbar={<ConnectedEditorToolbar variant="slim" hint="# - > 로 바로 서식이 됩니다" />}
+        toolbar={<ConnectedEditorToolbar variant="slim" hint="# - > 로 바로 서식이 돼요" />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner

@@ -156,7 +156,7 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
         }
         toolbar={
           <ToolbarDock>
-            <ConnectedEditorToolbar hint="# - > 로 바로 서식이 됩니다" />
+            <ConnectedEditorToolbar hint="# - > 로 바로 서식이 돼요" />
           </ToolbarDock>
         }
         banner={
@@ -304,7 +304,7 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
           */}
           {emptyAnswers > 0 && (
             <p role="status" className="font-typewriter text-[11px] text-faint">
-              아직 답을 안 쓴 질문 {emptyAnswers}개 · 그대로 발행해도 됩니다
+              아직 답을 안 쓴 질문 {emptyAnswers}개 · 그대로 발행해도 돼요
             </p>
           )}
 

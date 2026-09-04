@@ -117,7 +117,7 @@ export default function DesignGalleryPage() {
             title="이 칸은 아직 비어 있어요"
             meta="빈 필터"
           />
-          <RecordCard variant="today" title="오늘의 QT" subtitle="초안이 도착했습니다" meta="월~토">
+          <RecordCard variant="today" title="오늘의 QT" subtitle="초안이 도착했어요" meta="월~토">
             <Tape />
             <StateStamp kind="draft-arrived" />
             <Punch />
@@ -170,7 +170,7 @@ export default function DesignGalleryPage() {
 
       <Section title="에디터 셸" note="동작은 M2. 여기서는 표면과 상태 표현만">
         <div className="border border-edge bg-card">
-          <EditorToolbar hint="마크다운 단축 입력도 됩니다" />
+          <EditorToolbar hint="마크다운 단축 입력도 돼요" />
           <div className="flex flex-wrap items-center gap-4 px-4 py-3">
             <SaveIndicator state="idle" />
             <SaveIndicator state="saving" />

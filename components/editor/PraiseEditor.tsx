@@ -187,7 +187,7 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
             </Button>
           </>
         }
-        toolbar={<ConnectedEditorToolbar variant="slim" hint="서식은 묵상과 기도에 적용됩니다" />}
+        toolbar={<ConnectedEditorToolbar variant="slim" hint="서식은 묵상과 기도에 적용돼요" />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner

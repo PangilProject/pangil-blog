@@ -85,7 +85,7 @@ export type EditorToolbarProps = {
   activeCommands?: ToolbarCommand[];
   onBlockStyleChange?: (style: BlockStyle) => void;
   onCommand?: (command: ToolbarCommand) => void;
-  /** 우측 힌트 — "마크다운 단축 입력도 됩니다" 등 */
+  /** 우측 힌트 — "마크다운 단축 입력도 돼요" 등 */
   hint?: string;
   className?: string;
 };

@@ -94,7 +94,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
             label="평균 체류"
             // 초만 적으면 200초가 긴지 짧은지 감이 안 온다
             value={summary.avgSeconds === null ? "—" : formatSeconds(summary.avgSeconds)}
-            sub={summary.dwellSamples > 0 ? `${summary.dwellSamples}번 기준` : "아직 기록 없음"}
+            sub={summary.dwellSamples > 0 ? `${summary.dwellSamples}번 기준` : "아직 기록이 없어요"}
           />
           <TextTile
             label="마지막 조회"
