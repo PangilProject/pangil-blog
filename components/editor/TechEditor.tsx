@@ -254,7 +254,7 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
               />
               <input
                 {...register("thumbnailUrl")}
-                placeholder="썸네일 주소 (업로드는 M3)"
+                placeholder="썸네일 주소 (본문에 붙여넣은 이미지 주소도 됩니다)"
                 aria-label="썸네일 주소"
                 inputMode="url"
                 className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[11.5px] outline-none placeholder:text-faint"

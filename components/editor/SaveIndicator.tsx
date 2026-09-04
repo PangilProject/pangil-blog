@@ -17,7 +17,8 @@ export type SaveState = "idle" | "typing" | "saving" | "saved" | "offline-pendin
 /**
  * 저장 상태 기계(04 §2.2)의 상태를 화면 상태(03 §6.2)로 옮긴다.
  *
- * 기계의 "retrying"은 화면에서 "동기화 대기"다 — 재시도 중이라는 내부 사정이 아니라
+ * 기계의 "retrying"은 화면에서 "서버 저장 대기"다 — `동기화`는 구현 용어이므로 쓰지 않는다
+ * (03 §7.3). 재시도 중이라는 내부 사정이 아니라
  * "아직 서버에 못 올렸다"는 사실을 보여주는 게 작성자에게 필요한 정보다.
  */
 export function toSaveState(state: AutosaveState): SaveState {
@@ -39,13 +40,13 @@ const LABEL_BY_STATE: Record<SaveState, string> = {
   typing: "입력 중",
   saving: "저장 중…",
   saved: "저장됨",
-  "offline-pending": "동기화 대기",
+  "offline-pending": "서버 저장 대기",
 };
 
 /** 설교는 로컬 우선이라 같은 상태도 다르게 말한다 — 실패가 아니라 정상 동작이다 */
 const SERMON_LABEL_OVERRIDES: Partial<Record<SaveState, string>> = {
   saved: "로컬 저장됨",
-  "offline-pending": "로컬 저장됨 · 동기화 대기",
+  "offline-pending": "로컬 저장됨 · 서버 저장 대기",
 };
 
 export type SaveIndicatorProps = {

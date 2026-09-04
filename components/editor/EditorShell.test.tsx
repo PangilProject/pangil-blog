@@ -71,7 +71,7 @@ describe("SaveIndicator — 04 §2.2 상태 표시", () => {
 
   it("설교는 같은 상태를 로컬 우선 어법으로 말한다 — 동기화 실패는 실패가 아니다", () => {
     const { rerender } = render(<SaveIndicator state="offline-pending" variant="sermon" />);
-    expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨 · 동기화 대기");
+    expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨 · 서버 저장 대기");
 
     rerender(<SaveIndicator state="saved" variant="sermon" />);
     expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨");
@@ -152,7 +152,7 @@ describe("SectionBlock — 찬양 섹션", () => {
 });
 
 describe("toSaveState — 기계 상태 → 화면 상태", () => {
-  it("retrying은 화면에서 동기화 대기다 — 내부 사정이 아니라 사실을 보여준다", () => {
+  it("retrying은 화면에서 서버 저장 대기다 — 내부 사정이 아니라 사실을 보여준다", () => {
     expect(toSaveState("retrying")).toBe("offline-pending");
   });
 
