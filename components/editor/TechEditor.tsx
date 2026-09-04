@@ -163,7 +163,7 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
             </Button>
           </>
         }
-        toolbar={<ConnectedEditorToolbar hint="마크다운을 붙여넣으면 그 자리에서 서식이 됩니다" />}
+        toolbar={<ConnectedEditorToolbar hint="마크다운을 붙여넣으면 그 자리에서 서식이 돼요" />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner
@@ -254,7 +254,7 @@ export function TechEditor({ postId, initialValues, categories }: TechEditorProp
               />
               <input
                 {...register("thumbnailUrl")}
-                placeholder="썸네일 주소 (본문에 붙여넣은 이미지 주소도 됩니다)"
+                placeholder="썸네일 주소 (본문에 붙여넣은 이미지 주소도 돼요)"
                 aria-label="썸네일 주소"
                 inputMode="url"
                 className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[11.5px] outline-none placeholder:text-faint"

@@ -131,7 +131,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 unit === "day"
                   ? `최근 ${days}일 · 막대에 올리면 그날의 수치가 나와요`
                   : unit === "week"
-                    ? "최근 12주 · 일요일에 시작하는 주 기준"
+                    ? "최근 12주"
                     : "최근 12개월"
               }
               action={
@@ -244,7 +244,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 />
               </Panel>
 
-              <Panel title="요일" note="한 주는 일요일(설교)에 시작해요">
+              <Panel title="요일" note="한 주는 설교를 쓰는 일요일에 시작해요">
                 <SimpleColumns
                   points={weekdays.map((row) => ({
                     key: String(row.weekday),
@@ -295,7 +295,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                           : "w-[26px] flex-none text-faint"
                       }
                     >
-                      {event.eventType === "PAGEVIEW" ? "조회" : "이탈"}
+                      {event.eventType === "PAGEVIEW" ? "조회" : "떠남"}
                     </span>
                     <span className="min-w-0 flex-1 truncate">
                       {event.title ? (

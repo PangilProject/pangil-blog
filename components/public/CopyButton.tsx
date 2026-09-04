@@ -28,7 +28,7 @@ export function CopyButton({ code }: { code: string }) {
       aria-label="코드 복사"
       className="font-typewriter text-[10.5px] text-[#8B8474] transition-colors duration-150 hover:text-[#F3EFE4]"
     >
-      {state === "copied" ? "복사됨" : state === "failed" ? "복사 실패" : "복사"}
+      {state === "copied" ? "복사됨" : state === "failed" ? "복사 안 됨" : "복사"}
     </button>
   );
 }

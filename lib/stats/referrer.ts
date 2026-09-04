@@ -9,7 +9,7 @@
  * 위해서다. 어디서 왔는지는 호스트로 충분하고, 검색어는 어차피 대부분 넘어오지 않는다.
  */
 
-export const DIRECT = "직접 방문";
+export const DIRECT = "직접";
 export const UNKNOWN = "알 수 없음";
 
 export function referrerHost(referrer: string | null | undefined): string {
