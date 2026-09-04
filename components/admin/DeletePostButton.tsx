@@ -10,8 +10,8 @@ import { deletePost } from "@/lib/actions/posts";
  * 글 삭제 버튼 (02 §2.4 A-03 · 02 §3.4).
  *
  * **확인을 모달로 받는다.** 삭제는 되돌릴 수 없어서 두 번 물어야 하는데(02 §3.4), 버튼이
- * 스스로 "정말 지울까요?"로 바뀌는 방식은 목록에서 줄이 흔들리고 어느 글에 대한 확인인지가
- * 흐렸다. 모달은 지울 글의 제목을 함께 보여준다.
+ * 스스로 "정말 삭제할까요?"로 바뀌는 방식은 목록에서 줄이 흔들리고 어느 글에 대한 확인인지가
+ * 흐렸다. 모달은 삭제할 글의 제목을 함께 보여준다.
  *
  * 모달은 의존성 없이 만든 것이다(components/record/ConfirmDialog) — 공개 상세에도 이 버튼이
  * 서므로, 라이브러리를 들이면 그게 읽는 사람의 번들에 들어간다.
@@ -46,18 +46,18 @@ export function DeletePostButton({
       <button
         type="button"
         onClick={() => setIsConfirming(true)}
-        aria-label={`${label} 지우기`}
+        aria-label={`${label} 삭제`}
         className="font-typewriter text-[10.5px] text-faint hover:text-(--accent)"
       >
-        지우기
+        삭제
       </button>
 
       {isConfirming && (
         <ConfirmDialog
           title={label}
-          message="이 글을 지울까요? 되돌릴 수 없어요."
-          confirmLabel="지운다"
-          pendingLabel="지우는 중…"
+          message="이 글을 삭제할까요? 되돌릴 수 없어요."
+          confirmLabel="삭제"
+          pendingLabel="삭제 중…"
           isPending={isPending}
           error={error}
           onCancel={close}
@@ -67,7 +67,9 @@ export function DeletePostButton({
 
               if (!result.ok) {
                 // 모달을 닫지 않는다 — 닫으면 무엇이 잘못됐는지가 함께 사라진다
-                setError(result.reason === "not-found" ? "이미 지워졌어요" : "지우지 못했어요");
+                setError(
+                  result.reason === "not-found" ? "이미 삭제된 글이에요" : "삭제하지 못했어요",
+                );
                 return;
               }
 

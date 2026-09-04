@@ -30,7 +30,7 @@ describe("TagInput — 한글 조합 (IME)", () => {
       pressEnter({ composing: true });
     });
 
-    expect(screen.queryByRole("button", { name: /태그 .* 지우기/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /태그 .* 삭제/ })).toBeNull();
     expect(screen.getByLabelText("태그")).toHaveValue("안녕하세요");
   });
 
@@ -43,7 +43,7 @@ describe("TagInput — 한글 조합 (IME)", () => {
       pressEnter();
     });
 
-    expect(screen.getByRole("button", { name: "태그 안녕하세요 지우기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "태그 안녕하세요 삭제" })).toBeInTheDocument();
     expect(screen.getByLabelText("태그")).toHaveValue("");
   });
 
@@ -57,6 +57,6 @@ describe("TagInput — 한글 조합 (IME)", () => {
       fireEvent.keyDown(screen.getByLabelText("태그"), { key: "Backspace", isComposing: true });
     });
 
-    expect(screen.getByRole("button", { name: "태그 Prisma 지우기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "태그 Prisma 삭제" })).toBeInTheDocument();
   });
 });

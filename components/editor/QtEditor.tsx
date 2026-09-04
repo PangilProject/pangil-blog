@@ -238,10 +238,10 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
                     <button
                       type="button"
                       onClick={() => annotations.remove(index)}
-                      aria-label={`주석 ${index + 1} 지우기`}
+                      aria-label={`주석 ${index + 1} 삭제`}
                       className="font-typewriter text-[11px] text-faint hover:text-(--accent)"
                     >
-                      지우기
+                      삭제
                     </button>
                   </div>
                   <AutoGrowTextarea
