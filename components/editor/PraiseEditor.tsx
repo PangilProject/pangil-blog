@@ -14,7 +14,7 @@ import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
-import { publishPost, upsertDraft } from "@/lib/actions/posts";
+import { upsertDraft } from "@/lib/actions/posts";
 import { suggestTitleFromYouTube } from "@/lib/actions/praise";
 import {
   emptyPraiseForm,
@@ -25,8 +25,8 @@ import {
   toDraftContent,
 } from "@/lib/editor/praiseForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { usePublishFlow } from "@/lib/editor/usePublishFlow";
 import { parseYouTubeId, youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/praise/youtube";
-import { publicPostPath } from "@/lib/record/paths";
 
 /**
  * A-06 찬양 에디터 (02 §5.4 · 04 §2.5).
@@ -52,8 +52,6 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
    * 이 클로저에 보이지 않아 "아직 저장되지 않았어요"로 막힌다 — 방금 저장에 성공했는데도.
    */
   const idRef = useRef(postId);
-  const [publishError, setPublishError] = useState<string | null>(null);
-  const [isPublishing, setIsPublishing] = useState(false);
 
   const form = useForm<PraiseFormValues>({ defaultValues: initialValues ?? emptyPraiseForm() });
   const { control, register, setValue, watch, handleSubmit, getValues } = form;
@@ -136,39 +134,20 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
     };
   }, [videoId, getValues, setValue]);
 
-  const onPublish = handleSubmit(async (values) => {
-    const validated = PraisePublishFormSchema.safeParse(values);
-    if (!validated.success) {
-      setPublishError(validated.error.issues[0]?.message ?? "발행할 수 없어요");
-      return;
-    }
-
-    setPublishError(null);
-    setIsPublishing(true);
-
-    try {
-      await autosave.flush();
-
-      const target = idRef.current;
-      if (!target) {
-        setPublishError("아직 저장되지 않았어요. 잠시 후 다시 시도해 주세요");
-        return;
-      }
-
-      const result = await publishPost(target);
-      if (!result.ok) {
-        setPublishError(`발행하지 못했어요 (${result.reason})`);
-        return;
-      }
-
-      autosave.clearMirror();
-      // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라
-      // 발행 결과의 slug에서 나온다 — 방금 만들어진 주소라 여기서만 알 수 있다
-      router.push(publicPostPath("PRAISE", result.slug));
-    } finally {
-      setIsPublishing(false);
-    }
+  const {
+    isPublishing,
+    error: publishError,
+    publish,
+  } = usePublishFlow<PraiseFormValues>({
+    type: "PRAISE",
+    gate: PraisePublishFormSchema,
+    flush: autosave.flush,
+    clearMirror: autosave.clearMirror,
+    // 상태가 아니라 ref다 — 첫 저장이 이 클릭 안에서 끝나는 경우가 있다
+    currentId: () => idRef.current,
   });
+
+  const onPublish = handleSubmit(publish);
 
   const items = sections.fields.map((field, index) => ({
     key: field.id,
@@ -204,7 +183,7 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
               disabled={isPublishing}
               onClick={() => void onPublish()}
             >
-              발행
+              {isPublishing ? "발행 중…" : "발행"}
             </Button>
           </>
         }

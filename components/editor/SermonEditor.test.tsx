@@ -229,6 +229,88 @@ describe("SermonEditor — 발행", () => {
     expect(push).toHaveBeenCalledWith("/faith/sr-1");
   });
 
+  /**
+   * 누른 뒤가 보여야 한다. 전에는 버튼이 `disabled`만 되고 글자는 `발행`으로 남았고,
+   * 이동이 끝나기 전에 상태를 되돌려서 "눌렀는데 아무 일도 안 일어났다"로 보였다.
+   */
+  it("발행하는 동안 버튼이 그 사실을 말한다 — 이동이 끝날 때까지", async () => {
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={{
+          title: "제목",
+          scriptureRef: "전도서",
+          scriptureBody: "본문",
+          body: { type: "doc", content: [{ type: "text", text: "속기" }] },
+          summary: { type: "doc", content: [] },
+          tags: [],
+        }}
+      />,
+    );
+
+    await act(async () => {
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    // 이동이 시작된 뒤에도 `발행`으로 돌아오지 않는다 — 화면이 바뀌면 이 에디터는 사라진다
+    expect(push).toHaveBeenCalledWith("/faith/sr-1");
+    expect(screen.getByRole("button", { name: "발행 중…" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "발행" })).toBeNull();
+  });
+
+  it("발행에 실패하면 다시 시도할 수 있게 되돌린다", async () => {
+    publishPost.mockResolvedValue({ ok: false, reason: "invalid-content" });
+
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={{
+          title: "제목",
+          scriptureRef: "전도서",
+          scriptureBody: "본문",
+          body: { type: "doc", content: [{ type: "text", text: "속기" }] },
+          summary: { type: "doc", content: [] },
+          tags: [],
+        }}
+      />,
+    );
+
+    await act(async () => {
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    expect(screen.getByRole("button", { name: "발행" })).not.toBeDisabled();
+  });
+
+  it("발행이 예외로 터져도 버튼이 잠긴 채 남지 않는다 — 삼키면 다시 시도할 길이 없다", async () => {
+    publishPost.mockRejectedValue(new Error("network"));
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={{
+          title: "제목",
+          scriptureRef: "전도서",
+          scriptureBody: "본문",
+          body: { type: "doc", content: [{ type: "text", text: "속기" }] },
+          summary: { type: "doc", content: [] },
+          tags: [],
+        }}
+      />,
+    );
+
+    await act(async () => {
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "발행" })).not.toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("발행하지 못했어요");
+
+    logged.mockRestore();
+  });
+
   it("발행이 실패하면 이동하지 않고 사유를 남긴다", async () => {
     publishPost.mockResolvedValue({ ok: false, reason: "invalid-content" });
 
