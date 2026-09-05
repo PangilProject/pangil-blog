@@ -5,8 +5,10 @@ import { padCallNumber, type RecordType } from "@/lib/record/callNumber";
  *
  * **모든 타입이 번호로 간다.** 제목은 주소에 들어가지 않는다.
  *
- * - 묵상 3타입: `{qt|sr|pr}-{callNumber}`
- * - TECH: 청구기호를 화면에 적는 그대로 — `0072`
+ * 청구기호를 **화면에 적는 그대로** 쓴다(03 §6.3).
+ *
+ * - 묵상 3타입: `{qt|sr|pr}-{자리 채운 callNumber}` — `qt-0204`
+ * - TECH: `{자리 채운 callNumber}` — `0072`
  *
  * TECH는 원래 제목 kebab이었다(2026-09-05 개편). 실물에서 그게 무엇을 만들었는지 세어 보고
  * 접었다 — 발행된 514편 중 **61편이 숫자만 남았고**(`2947`은 백준 문제 번호, `260405`는
@@ -23,6 +25,9 @@ import { padCallNumber, type RecordType } from "@/lib/record/callNumber";
  *
  * 중복 시 `-2`, `-3` … — 번호는 타입별로 유일하므로 이제 걸릴 일이 없지만, 옛 slug가 남은
  * 자리를 비켜 가는 그물로 둔다.
+ *
+ * 묵상 slug도 같은 날 자리수를 맞췄다. `qt-204`인데 화면에는 `QT-0204`로 적히고 있었다 —
+ * 같은 번호가 두 모양으로 적히면 그중 하나는 언젠가 틀린 것으로 읽힌다.
  *
  * slug는 발행 시 확정되고 DRAFT는 null이다(05 §1.4). 구 URL 보존 의무는 없다 — 아직 최종
  * 도메인 전이라(07 §4) 어차피 주소가 통째로 바뀐다.
@@ -55,11 +60,9 @@ export type DeriveSlugInput = {
 
 /** 중복 확인 전의 기본 slug */
 export function deriveSlug({ type, callNumber }: DeriveSlugInput): string {
-  if (type !== "TECH") {
-    return `${FAITH_SLUG_PREFIX[type]}-${callNumber}`;
-  }
+  const number = padCallNumber(callNumber);
 
-  return padCallNumber(callNumber);
+  return type === "TECH" ? number : `${FAITH_SLUG_PREFIX[type]}-${number}`;
 }
 
 /**
