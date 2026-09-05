@@ -3,6 +3,7 @@ import "server-only";
 import { cacheTag } from "next/cache";
 
 import { prisma } from "@/lib/db/prisma";
+import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import type { RecordType } from "@/lib/record/callNumber";
 import {
   type ListQuery,
@@ -192,17 +193,55 @@ export async function findFeedItems(site: PublicSite, limit?: number): Promise<F
   }));
 }
 
-/** dev 카테고리 필터에 쓸 목록 — 글이 있는 카테고리만 (빈 칸막이를 만들지 않는다) */
-export async function findUsedCategories(): Promise<{ name: string; slug: string }[]> {
+export type AxisCount = {
+  /** faith는 타입 코드(`QT`), dev는 카테고리 주소(`frontend`) */
+  key: string;
+  name: string;
+  count: number;
+};
+
+/**
+ * 사이드바의 분류 목록 (03 §5.1 사이드바 · 02 §5).
+ *
+ * **지면마다 축이 다르다**(lib/record/axis): faith는 타입, dev는 카테고리 행. 그래서 조회도
+ * 갈리지만 화면이 받는 모양은 하나여야 한다 — 사이드바를 두 벌로 두면 그중 하나만 낡는다.
+ *
+ * faith의 셋은 **글이 없어도 남긴다.** 그건 데이터가 아니라 이 지면의 구성이라, 찬양을 한
+ * 주 쉬었다고 칸이 사라지면 목록의 뼈대가 흔들린다. dev의 카테고리는 반대다 — 행이므로
+ * 비어 있으면 그냥 아직 안 쓴 분류이고, 빈 칸막이는 "이 칸은 아직 비어 있어요"를 부르는
+ * 자리만 만든다.
+ */
+export async function findAxisCounts(site: PublicSite): Promise<AxisCount[]> {
   "use cache";
 
-  cacheTag(listTag("dev"));
+  cacheTag(listTag(site));
 
-  const rows = await prisma.category.findMany({
-    where: { posts: { some: { status: PostStatus.PUBLISHED } } },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { name: true, slug: true },
+  if (site === "dev") {
+    const rows = await prisma.category.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: {
+        name: true,
+        slug: true,
+        _count: { select: { posts: { where: { status: PostStatus.PUBLISHED } } } },
+      },
+    });
+
+    return rows
+      .map((row) => ({ key: row.slug, name: row.name, count: row._count.posts }))
+      .filter((row) => row.count > 0);
+  }
+
+  const rows = await prisma.post.groupBy({
+    by: ["type"],
+    where: { status: PostStatus.PUBLISHED, type: { in: TYPES_BY_SITE.faith } },
+    _count: { _all: true },
   });
 
-  return rows;
+  const byType = new Map(rows.map((row) => [row.type as RecordType, row._count._all]));
+
+  return FAITH_TYPES.map((type) => ({
+    key: type,
+    name: TYPE_LABELS[type],
+    count: byType.get(type) ?? 0,
+  }));
 }

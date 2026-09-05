@@ -306,7 +306,7 @@ export async function findAllTimeTotals(): Promise<AllTimeTotals> {
   return rows[0] ?? { views: 0, days: 0 };
 }
 
-export type VisitorTotals = { today: number; total: number };
+export type VisitorTotals = { today: number; yesterday: number; total: number };
 
 /**
  * 공개 지면 푸터의 방문자 수 (05 §4.2).
@@ -314,6 +314,9 @@ export type VisitorTotals = { today: number; total: number };
  * **누적은 "순방문자의 누적"이 아니라 날마다 센 순방문자의 합이다.** 해시 솔트가 날마다
  * 바뀌므로(05 §4.2) 여러 날에 걸친 같은 사람을 이을 수 없다 — 같은 사람이 사흘 오면 3으로
  * 센다. 그 한계를 감추지 않되 화면에서는 통계 용어로 말하지 않는다(03 §7.3).
+ *
+ * **어제를 나란히 둔다.** 오늘 숫자만 있으면 그게 많은 건지 적은 건지 알 수 없다 — 아침에는
+ * 늘 작아 보이고 밤에는 늘 커 보인다. 비교 대상 하나가 있어야 그 숫자가 뜻을 가진다.
  *
  * `use cache` + 짧은 수명이다. 이 숫자는 **방문자 행동으로** 바뀌므로 발행 태그로 만료시킬
  * 수 없다 — 이벤트 기반 무효화가 닿지 않는 유일한 값이라 시간이 그 자리를 맡는다(04 §1.1의
@@ -324,20 +327,25 @@ export async function findVisitorTotals(): Promise<VisitorTotals> {
   "use cache";
   cacheLife("minutes");
 
-  const rows = await prisma.$queryRaw<{ today: number; total: number }[]>`
+  const rows = await prisma.$queryRaw<VisitorTotals[]>`
     WITH daily AS (
       SELECT ("occurredAt" + interval '9 hours')::date AS day,
              count(DISTINCT "visitorHash")::int AS visitors
       FROM "StatEvent"
       WHERE "eventType"::text = 'PAGEVIEW'
       GROUP BY 1
+    ),
+    anchor AS (
+      SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS today
     )
     SELECT
-      coalesce(sum(visitors) FILTER (WHERE day = (now() + interval '9 hours')::date), 0)::int AS today,
+      coalesce(sum(visitors) FILTER (WHERE day = (SELECT today FROM anchor)), 0)::int AS today,
+      coalesce(sum(visitors) FILTER (WHERE day = (SELECT today FROM anchor) - 1), 0)::int
+        AS yesterday,
       coalesce(sum(visitors), 0)::int AS total
     FROM daily`;
 
-  return rows[0] ?? { today: 0, total: 0 };
+  return rows[0] ?? { today: 0, yesterday: 0, total: 0 };
 }
 
 export type HourlyStat = { hour: number; views: number };
