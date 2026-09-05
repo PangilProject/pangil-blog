@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cacheLife } from "next/cache";
+
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
 import { UNIT_BUCKETS, UNIT_WINDOW_DAYS, type Unit } from "@/lib/stats/range";
@@ -302,6 +304,40 @@ export async function findAllTimeTotals(): Promise<AllTimeTotals> {
     FROM "StatEvent"`;
 
   return rows[0] ?? { views: 0, days: 0 };
+}
+
+export type VisitorTotals = { today: number; total: number };
+
+/**
+ * 공개 지면 푸터의 방문자 수 (05 §4.2).
+ *
+ * **누적은 "순방문자의 누적"이 아니라 날마다 센 순방문자의 합이다.** 해시 솔트가 날마다
+ * 바뀌므로(05 §4.2) 여러 날에 걸친 같은 사람을 이을 수 없다 — 같은 사람이 사흘 오면 3으로
+ * 센다. 그 한계를 감추지 않되 화면에서는 통계 용어로 말하지 않는다(03 §7.3).
+ *
+ * `use cache` + 짧은 수명이다. 이 숫자는 **방문자 행동으로** 바뀌므로 발행 태그로 만료시킬
+ * 수 없다 — 이벤트 기반 무효화가 닿지 않는 유일한 값이라 시간이 그 자리를 맡는다(04 §1.1의
+ * "시간 기반 ISR을 쓰지 않는다"는 콘텐츠에 대한 규칙이다). 지면마다 요청이 들어와도 DB는
+ * 몇 분에 한 번만 만진다.
+ */
+export async function findVisitorTotals(): Promise<VisitorTotals> {
+  "use cache";
+  cacheLife("minutes");
+
+  const rows = await prisma.$queryRaw<{ today: number; total: number }[]>`
+    WITH daily AS (
+      SELECT ("occurredAt" + interval '9 hours')::date AS day,
+             count(DISTINCT "visitorHash")::int AS visitors
+      FROM "StatEvent"
+      WHERE "eventType"::text = 'PAGEVIEW'
+      GROUP BY 1
+    )
+    SELECT
+      coalesce(sum(visitors) FILTER (WHERE day = (now() + interval '9 hours')::date), 0)::int AS today,
+      coalesce(sum(visitors), 0)::int AS total
+    FROM daily`;
+
+  return rows[0] ?? { today: 0, total: 0 };
 }
 
 export type HourlyStat = { hour: number; views: number };
