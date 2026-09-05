@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { VisitorCount } from "@/components/public/VisitorCount";
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
 import { profileFromEnv } from "@/lib/site/profile";
@@ -60,11 +61,20 @@ export function SiteFooter({ site }: { site: PublicSite }) {
       </nav>
 
       {/* 이름이 없으면 그리지 않는다 — 자리표시자가 남은 프로필이 빈 프로필보다 나쁘다 */}
-      <p className="text-[10.5px]">
-        <Suspense fallback={<span className="opacity-0">© 0000</span>}>
-          <Copyright name={name} />
-        </Suspense>
-      </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-3 text-[10.5px]">
+        <p>
+          <Suspense fallback={<span className="opacity-0">© 0000</span>}>
+            <Copyright name={name} />
+          </Suspense>
+        </p>
+
+        {/* 방문자 수도 요청 시점 조각이다 — 껍데기에 넣으면 어제 숫자가 오늘도 붙어 있다 */}
+        <p>
+          <Suspense fallback={<span className="opacity-0">오늘 0 · 누적 0</span>}>
+            <VisitorCount />
+          </Suspense>
+        </p>
+      </div>
     </footer>
   );
 }

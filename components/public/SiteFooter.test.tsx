@@ -1,7 +1,15 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { copyrightLine, SiteFooter } from "@/components/public/SiteFooter";
+/**
+ * 방문자 수는 async 서버 컴포넌트이고 DB를 만진다 — jsdom에서 await되지 않고, 불러오는
+ * 것만으로 Prisma가 env를 요구한다. 이 테스트의 주제는 푸터의 링크와 저작권이라 대역을 세운다.
+ */
+vi.mock("@/components/public/VisitorCount", () => ({
+  VisitorCount: () => <span data-testid="visitors" />,
+}));
+
+const { copyrightLine, SiteFooter } = await import("@/components/public/SiteFooter");
 
 describe("SiteFooter", () => {
   /**
