@@ -1,11 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { publishPost } from "@/lib/actions/posts";
-import type { RecordType } from "@/lib/record/callNumber";
-import { publicPostPath } from "@/lib/record/paths";
 
 /**
  * 발행 흐름 (02 §3.2 · 05 §3.4).
@@ -44,7 +41,6 @@ const PUBLISH_FAILURE: Record<string, string> = {
 };
 
 export type PublishFlowOptions<TValues> = {
-  type: RecordType;
   gate: PublishGate;
   /** 발행 전에 저장을 마친다 — 서버는 저장된 content로 게이트를 통과시킨다 */
   flush: () => Promise<void>;
@@ -59,13 +55,11 @@ export type PublishFlowOptions<TValues> = {
 };
 
 export function usePublishFlow<TValues>({
-  type,
   gate,
   flush,
   clearMirror,
   currentId,
 }: PublishFlowOptions<TValues>) {
-  const router = useRouter();
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,8 +89,11 @@ export function usePublishFlow<TValues>({
         } else {
           clearMirror();
           // 발행 직후 그 글의 공개 지면으로 간다(02 §3.2 확정). 도착지는 설정값이 아니라
-          // 발행 결과의 slug에서 나온다 — 방금 만들어진 주소라 여기서만 알 수 있다
-          router.push(publicPostPath(type, result.slug));
+          // 발행 결과에서 온다 — 방금 만들어진 주소라 서버만 알 수 있다.
+          //
+          // `router.push`가 아닌 이유는 **호스트가 갈리기 때문**이다. 발행 화면은 루트
+          // 호스트의 `/admin`이고 글은 `faith.○`에 선다 — 라우터는 그 경계를 넘지 못한다
+          window.location.assign(result.url);
           // 이동이 끝날 때까지 진행 표시를 남긴다. 여기서 되돌리면 화면이 바뀌기 전에
           // 버튼이 `발행`으로 돌아가 안 된 것처럼 보인다
           return;

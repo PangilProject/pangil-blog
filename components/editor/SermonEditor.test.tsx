@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
 import { emptySermonForm } from "@/lib/editor/sermonForm";
@@ -9,6 +9,15 @@ const upsertDraft = vi.fn();
 const publishPost = vi.fn();
 const replace = vi.fn();
 const push = vi.fn();
+const assign = vi.fn();
+
+// 발행 뒤 이동은 교차 출처라 라우터가 아니라 브라우저가 한다(usePublishFlow).
+// jsdom의 `location.assign`은 재정의가 막혀 있어 location 자체를 갈아끼운다 — 주소는
+// 그대로 남겨둔다(가짜 location이 href를 잃으면 엉뚱한 곳이 먼저 터진다)
+beforeAll(() => {
+  const { href, origin, pathname } = window.location;
+  vi.stubGlobal("location", { href, origin, pathname, assign });
+});
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
@@ -34,11 +43,16 @@ function renderEditor() {
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   upsertDraft.mockReset().mockResolvedValue({ ok: true, id: "post-1", savedAt: new Date() });
-  publishPost
-    .mockReset()
-    .mockResolvedValue({ ok: true, id: "post-1", slug: "sr-1", callNumber: 1 });
+  publishPost.mockReset().mockResolvedValue({
+    ok: true,
+    id: "post-1",
+    slug: "sr-1",
+    callNumber: 1,
+    url: "https://faith.example/sr-1",
+  });
   replace.mockReset();
   push.mockReset();
+  assign.mockReset();
   window.localStorage.clear();
 });
 
@@ -227,7 +241,7 @@ describe("SermonEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/faith/sr-1");
+    expect(assign).toHaveBeenCalledWith("https://faith.example/sr-1");
   });
 
   /**
@@ -255,7 +269,7 @@ describe("SermonEditor — 발행", () => {
     });
 
     // 이동이 시작된 뒤에도 `발행`으로 돌아오지 않는다 — 화면이 바뀌면 이 에디터는 사라진다
-    expect(push).toHaveBeenCalledWith("/faith/sr-1");
+    expect(assign).toHaveBeenCalledWith("https://faith.example/sr-1");
     expect(screen.getByRole("button", { name: "발행 중…" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "발행" })).toBeNull();
   });

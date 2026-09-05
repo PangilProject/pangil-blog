@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PraiseEditor } from "@/components/editor/PraiseEditor";
 import { emptyPraiseForm, type PraiseFormValues } from "@/lib/editor/praiseForm";
@@ -9,6 +9,15 @@ const publishPost = vi.fn();
 const suggestTitleFromYouTube = vi.fn();
 const replace = vi.fn();
 const push = vi.fn();
+const assign = vi.fn();
+
+// 발행 뒤 이동은 교차 출처라 라우터가 아니라 브라우저가 한다(usePublishFlow).
+// jsdom의 `location.assign`은 재정의가 막혀 있어 location 자체를 갈아끼운다 — 주소는
+// 그대로 남겨둔다(가짜 location이 href를 잃으면 엉뚱한 곳이 먼저 터진다)
+beforeAll(() => {
+  const { href, origin, pathname } = window.location;
+  vi.stubGlobal("location", { href, origin, pathname, assign });
+});
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
@@ -53,9 +62,13 @@ function renderEditor(overrides: Partial<Parameters<typeof PraiseEditor>[0]> = {
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   upsertDraft.mockReset().mockResolvedValue({ ok: true, id: "post-1", savedAt: new Date() });
-  publishPost
-    .mockReset()
-    .mockResolvedValue({ ok: true, id: "post-1", slug: "pr-1", callNumber: 1 });
+  publishPost.mockReset().mockResolvedValue({
+    ok: true,
+    id: "post-1",
+    slug: "pr-1",
+    callNumber: 1,
+    url: "https://faith.example/pr-1",
+  });
   suggestTitleFromYouTube.mockReset().mockResolvedValue({
     ok: true,
     suggested: "마커스워십 - 주님의 시간에",
@@ -64,6 +77,7 @@ beforeEach(() => {
   });
   replace.mockReset();
   push.mockReset();
+  assign.mockReset();
   window.localStorage.clear();
 });
 
@@ -225,7 +239,7 @@ describe("PraiseEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/faith/pr-1");
+    expect(assign).toHaveBeenCalledWith("https://faith.example/pr-1");
   });
 
   it("묵상과 기도가 비면 막는다", async () => {

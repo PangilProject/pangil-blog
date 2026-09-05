@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QtEditor } from "@/components/editor/QtEditor";
 import { emptyQtForm, type QtFormValues } from "@/lib/editor/qtForm";
@@ -10,6 +10,15 @@ const upsertDraft = vi.fn();
 const publishPost = vi.fn();
 const replace = vi.fn();
 const push = vi.fn();
+const assign = vi.fn();
+
+// 발행 뒤 이동은 교차 출처라 라우터가 아니라 브라우저가 한다(usePublishFlow).
+// jsdom의 `location.assign`은 재정의가 막혀 있어 location 자체를 갈아끼운다 — 주소는
+// 그대로 남겨둔다(가짜 location이 href를 잃으면 엉뚱한 곳이 먼저 터진다)
+beforeAll(() => {
+  const { href, origin, pathname } = window.location;
+  vi.stubGlobal("location", { href, origin, pathname, assign });
+});
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
@@ -52,11 +61,16 @@ function renderEditor(overrides: Partial<Parameters<typeof QtEditor>[0]> = {}) {
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   upsertDraft.mockReset().mockResolvedValue({ ok: true, id: "post-1", savedAt: new Date() });
-  publishPost
-    .mockReset()
-    .mockResolvedValue({ ok: true, id: "post-1", slug: "qt-1", callNumber: 1 });
+  publishPost.mockReset().mockResolvedValue({
+    ok: true,
+    id: "post-1",
+    slug: "qt-1",
+    callNumber: 1,
+    url: "https://faith.example/qt-1",
+  });
   replace.mockReset();
   push.mockReset();
+  assign.mockReset();
   window.localStorage.clear();
 });
 
@@ -148,7 +162,7 @@ describe("QtEditor — 답변 공란은 경고만 (07 M2 DoD)", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/faith/qt-1");
+    expect(assign).toHaveBeenCalledWith("https://faith.example/qt-1");
   });
 
   it("답변이 전부 비어 있어도 발행된다", async () => {

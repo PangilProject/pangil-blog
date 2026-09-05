@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TechEditor } from "@/components/editor/TechEditor";
 import { EMPTY_TECH_FORM, type TechFormValues } from "@/lib/editor/techForm";
@@ -8,6 +8,15 @@ const upsertDraft = vi.fn();
 const publishPost = vi.fn();
 const replace = vi.fn();
 const push = vi.fn();
+const assign = vi.fn();
+
+// 발행 뒤 이동은 교차 출처라 라우터가 아니라 브라우저가 한다(usePublishFlow).
+// jsdom의 `location.assign`은 재정의가 막혀 있어 location 자체를 갈아끼운다 — 주소는
+// 그대로 남겨둔다(가짜 location이 href를 잃으면 엉뚱한 곳이 먼저 터진다)
+beforeAll(() => {
+  const { href, origin, pathname } = window.location;
+  vi.stubGlobal("location", { href, origin, pathname, assign });
+});
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
@@ -50,11 +59,16 @@ function renderEditor(overrides: Partial<Parameters<typeof TechEditor>[0]> = {})
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   upsertDraft.mockReset().mockResolvedValue({ ok: true, id: "post-1", savedAt: new Date() });
-  publishPost
-    .mockReset()
-    .mockResolvedValue({ ok: true, id: "post-1", slug: "next-16", callNumber: 1 });
+  publishPost.mockReset().mockResolvedValue({
+    ok: true,
+    id: "post-1",
+    slug: "next-16",
+    callNumber: 1,
+    url: "https://dev.example/next-16",
+  });
   replace.mockReset();
   push.mockReset();
+  assign.mockReset();
   window.localStorage.clear();
 });
 
@@ -171,7 +185,7 @@ describe("TechEditor — 발행", () => {
     });
 
     expect(publishPost).toHaveBeenCalledWith("post-1");
-    expect(push).toHaveBeenCalledWith("/dev/next-16");
+    expect(assign).toHaveBeenCalledWith("https://dev.example/next-16");
   });
 
   it("카테고리가 없으면 막는다", async () => {

@@ -147,7 +147,6 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
     error: publishError,
     publish,
   } = usePublishFlow<PraiseFormValues>({
-    type: "PRAISE",
     gate: PraisePublishFormSchema,
     flush: autosave.flush,
     clearMirror: autosave.clearMirror,
