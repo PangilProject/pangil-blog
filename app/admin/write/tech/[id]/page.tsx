@@ -17,6 +17,7 @@ export default async function EditTechPage({ params }: PageProps<"/admin/write/t
   return (
     <TechEditor
       postId={post.id}
+      isDraft={post.status === "DRAFT"}
       initialValues={fromDraftContent(post.content.ok ? post.content.content : null, {
         title: post.title,
         categoryId: post.categoryId,
