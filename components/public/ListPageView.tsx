@@ -27,7 +27,6 @@ export function ListPageView({
   searchAction,
   searchQuery,
   emptyMessage,
-  titleHidden,
 }: {
   site: PublicSite;
   title: string;
@@ -38,8 +37,6 @@ export function ListPageView({
   searchAction: string;
   searchQuery?: string;
   emptyMessage?: string;
-  /** 헤더가 이미 지면 이름을 말하는 자리에서 제목을 감춘다 */
-  titleHidden?: boolean;
 }) {
   return (
     <main className="flex w-full flex-col gap-6">
@@ -51,7 +48,6 @@ export function ListPageView({
         counts={counts}
         searchAction={searchAction}
         searchQuery={searchQuery}
-        titleHidden={titleHidden}
       />
 
       <PostList cards={page.cards} emptyMessage={emptyMessage} />

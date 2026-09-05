@@ -1,9 +1,14 @@
-import Link from "next/link";
-
 import type { RecordCounts } from "@/lib/db/publicLists";
 
 /**
  * 목록 상단 (03 §5.1) — 월 표기 + "이번 달 N장 · 통산 N장".
+ *
+ * 제목은 **지금 보고 있는 목록의 이름**이다 — `전체 글`·`큐티`·`#태그`·검색어. 한동안 지면
+ * 이름("믿음의 기록")을 적고 화면에서 감춰 뒀는데, 그건 헤더가 같은 말을 하고 있어서였다.
+ * 이제 그 이름은 사이드바가 말하므로 이 자리는 제 몫을 한다.
+ *
+ * 링크가 아니다. 목록을 갈아 끼우는 길은 사이드바에 있고, 지금 보고 있는 것을 누르면 지금
+ * 보고 있는 것이 나오는 링크는 누를 이유가 없다.
  *
  * 통계 대시보드 없이 동기를 만드는 자리다(Backlog 대시보드의 선발대). 숫자가 늘어나는 것을
  * 보는 것 자체가 지속의 연료라서, 방문자 수가 0이어도 이 줄은 의미가 있다(프리모템 #4).
@@ -14,7 +19,6 @@ export function ListHeader({
   counts,
   searchAction,
   searchQuery,
-  titleHidden = false,
 }: {
   title: string;
   /** "8월" */
@@ -23,23 +27,11 @@ export function ListHeader({
   /** 검색 폼이 향할 경로 (D-04 / F-05) */
   searchAction: string;
   searchQuery?: string;
-  /**
-   * 제목을 화면에서만 감춘다. 지면 이름을 헤더가 이미 말하고 있을 때 쓴다 —
-   * 같은 말이 두 번 찍히면 그중 하나는 장식이다.
-   *
-   * 지우지 않고 감추는 이유는 문서 구조다. h1이 없는 지면은 검색엔진과 스크린리더에게
-   * "무엇에 대한 목록인지" 말해주지 않는다.
-   */
-  titleHidden?: boolean;
 }) {
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className={titleHidden ? "sr-only" : "font-serif text-[clamp(19px,3vw,23px)]"}>
-          <Link href={searchAction} className="hover:text-(--accent)">
-            {title}
-          </Link>
-        </h1>
+        <h1 className="font-serif text-[clamp(19px,3vw,23px)]">{title}</h1>
 
         <p className="font-typewriter text-[11px] text-faint">
           {month} <b className="text-ink">{counts.thisMonth}장</b> · 통산{" "}

@@ -36,6 +36,15 @@ function parseType(value: string | undefined): RecordType | null {
   return TYPE_TABS.find((tab) => tab.type === value)?.type ?? null;
 }
 
+/**
+ * 목록 제목. 지면 이름이 아니라 **지금 보고 있는 목록**의 이름이다 — 지면 이름은 사이드바가
+ * 말한다(SiteSidebar). 같은 말이 한 화면에 두 번 찍히면 그중 하나는 장식이다.
+ */
+function listTitle(query: string | undefined, type: RecordType | null): string {
+  if (query) return `"${query}" 검색 결과`;
+  return type ? TYPE_LABELS[type] : "전체 글";
+}
+
 export default async function FaithHomePage({ searchParams }: PageProps<"/faith">) {
   // 시계를 읽기 전에 요청을 확보한다. `new Date()`는 프리렌더에서 거부된다 —
   // 재현 가능한 출력만 허용하기 때문이다(ADR-003). 실제로 이 페이지가 그렇게 깨졌다
@@ -69,10 +78,9 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
 
       <ListPageView
         site="faith"
-        title={query ? `"${query}" 검색 결과` : "믿음의 기록"}
+        title={listTitle(query, type)}
         month={`${toKstDate(now).month}월`}
         counts={counts}
-        titleHidden={!query}
         page={list}
         hrefFor={hrefFor}
         searchAction="/faith"

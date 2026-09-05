@@ -2,7 +2,7 @@ import { connection } from "next/server";
 
 import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
-import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
+import { countPublishedPosts, findAxisCounts, findPublishedPosts } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
 import { blogJsonLd } from "@/lib/seo/jsonLd";
 import { siteAlternates } from "@/lib/site/metadata";
@@ -30,10 +30,14 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
   const page = Number(typeof params.page === "string" ? params.page : 1) || 1;
   const now = new Date();
 
-  const [list, counts] = await Promise.all([
+  const [list, counts, categories] = await Promise.all([
     findPublishedPosts({ site: "dev", categorySlug, query, page }),
     countPublishedPosts("dev", startOfKstMonth(now)),
+    // 사이드바가 쓰는 그 조회다. 같은 캐시 항목이라 DB를 다시 만지지 않는다
+    findAxisCounts("dev"),
   ]);
+
+  const categoryName = categories.find((entry) => entry.key === categorySlug)?.name ?? null;
 
   const search = new URLSearchParams();
   if (categorySlug) search.set("category", categorySlug);
@@ -52,10 +56,9 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
 
       <ListPageView
         site="dev"
-        title={query ? `"${query}" 검색 결과` : "개발의 기록"}
+        title={query ? `"${query}" 검색 결과` : (categoryName ?? "전체 글")}
         month={`${toKstDate(now).month}월`}
         counts={counts}
-        titleHidden={!query}
         page={list}
         hrefFor={hrefFor}
         searchAction="/dev"
