@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { type Control, Controller, useFieldArray, useForm } from "react-hook-form";
 
 import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
+import { CancelDraftButton } from "@/components/editor/CancelDraftButton";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { CrawlBand } from "@/components/editor/CrawlBand";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
@@ -142,6 +143,8 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
         }
         actions={
           <>
+            {/* 이 세션에서 만든 초안만 지운다 — 이어서 쓰려고 연 글은 그냥 나가기가 된다 */}
+            <CancelDraftButton draftId={postId === null ? id : null} onDiscard={autosave.abandon} />
             <Button size="sm" type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>

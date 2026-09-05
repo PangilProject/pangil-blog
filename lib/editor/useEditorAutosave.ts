@@ -42,6 +42,11 @@ export type UseEditorAutosaveResult<T> = {
   lastError: string | null;
   /** 발행 완료 등 — 미러를 비운다 */
   clearMirror: () => void;
+  /**
+   * 쓰던 것을 버리고 나간다(`작성 취소`). 밀린 저장을 끊고 미러를 비운다 —
+   * 이 인스턴스는 되살아나지 않으므로 화면을 떠날 때만 부른다
+   */
+  abandon: () => void;
 };
 
 export function useEditorAutosave<T>({
@@ -152,5 +157,21 @@ export function useEditorAutosave<T>({
     dismissRecovery: useCallback(() => setRecovery(null), []),
     lastError,
     clearMirror: useCallback(() => mirror?.clear(), [mirror]),
+    /**
+     * 쓰던 것을 버리고 나간다 (`작성 취소`).
+     *
+     * **밀린 저장을 먼저 끊는다.** 안 그러면 취소를 누른 뒤에 디바운스가 깨어나 초안을
+     * 만든다 — 초안을 안 남기려고 누른 버튼이 초안을 남긴다. 타이핑하고 1초 안에 누르면
+     * 실제로 그 창이 열린다.
+     *
+     * 로컬 사본도 함께 비운다. 남겨두면 다음에 에디터를 열 때 복구 배너가 방금 버린 글을
+     * 되살리겠다고 묻는다.
+     *
+     * 되살리지 않는다 — 이 화면은 곧 사라진다(dispose된 인스턴스는 재사용하지 않는다).
+     */
+    abandon: useCallback(() => {
+      autosaveRef.current?.dispose();
+      mirror?.clear();
+    }, [mirror]),
   };
 }
