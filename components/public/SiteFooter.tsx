@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
 import { profileFromEnv } from "@/lib/site/profile";
+import { siteHref } from "@/lib/site/publicUrl";
 import type { SiteKey } from "@/lib/site/resolveSite";
 
 /**
@@ -59,7 +60,10 @@ export function SiteFooter({ site }: { site: SiteKey }) {
           </a>
         ))}
 
-        <Link href="/hub/privacy" className="ml-auto hover:text-ink">
+        <Link
+          href={siteHref("hub", "/hub/privacy", { from: site })}
+          className="ml-auto hover:text-ink"
+        >
           개인정보처리방침
         </Link>
       </nav>
@@ -96,8 +100,11 @@ function crossLinks(site: SiteKey): { href: string; label: string }[] {
   return [
     ...blogs
       .filter((blog) => blog !== site)
-      .map((blog) => ({ href: `/${blog}`, label: blogBrandName(blog) })),
-    ...(site === "hub" ? [] : [{ href: "/hub", label: "소개" }]),
+      .map((blog) => ({
+        href: siteHref(blog, `/${blog}`, { from: site }),
+        label: blogBrandName(blog),
+      })),
+    ...(site === "hub" ? [] : [{ href: siteHref("hub", "/hub", { from: site }), label: "소개" }]),
   ];
 }
 

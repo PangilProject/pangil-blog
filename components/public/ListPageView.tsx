@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/public/SiteHeader";
 import { Pagination } from "@/components/record/Pagination";
 import type { ListPage, RecordCounts } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
+import { siteHref } from "@/lib/site/publicUrl";
 
 /**
  * 목록 지면 껍데기 (F-01/F-02/F-04 · D-01/D-03 · 03 §5.1).
@@ -16,6 +17,10 @@ import type { PublicSite } from "@/lib/revalidate/tags";
  *
  * 분류 칸막이 탭도 빠졌다. 같은 분류 링크가 목록 위와 사이드바에 두 벌 서게 되고, 그중 한
  * 벌에만 글 수가 붙는다(SiteSidebar).
+ *
+ * **주소를 지면 주소로 바꾸는 자리이기도 하다.** 네 갈래 목록은 지금까지처럼 내부 라우트
+ * 경로(`/dev?page=2`)를 넘기고, 도메인이 붙은 뒤 접두사를 떼는 일은 여기 한 곳에서 한다 —
+ * 네 페이지가 각자 판단하면 그중 하나가 `/dev/dev`를 가리킨다(lib/site/publicUrl).
  */
 export function ListPageView({
   site,
@@ -38,6 +43,8 @@ export function ListPageView({
   searchQuery?: string;
   emptyMessage?: string;
 }) {
+  const href = (path: string) => siteHref(site, path, { from: site });
+
   return (
     <main className="flex w-full flex-col gap-6">
       <SiteHeader site={site} />
@@ -46,13 +53,17 @@ export function ListPageView({
         title={title}
         month={month}
         counts={counts}
-        searchAction={searchAction}
+        searchAction={href(searchAction)}
         searchQuery={searchQuery}
       />
 
       <PostList cards={page.cards} emptyMessage={emptyMessage} />
 
-      <Pagination page={page.page} pageCount={page.pageCount} hrefFor={hrefFor} />
+      <Pagination
+        page={page.page}
+        pageCount={page.pageCount}
+        hrefFor={(target) => href(hrefFor(target))}
+      />
     </main>
   );
 }

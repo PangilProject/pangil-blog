@@ -6,6 +6,7 @@ import { VisitorCount } from "@/components/public/VisitorCount";
 import { countPublishedPosts, findAxisCounts, findFeedItems } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { brandLabel, siteBrand } from "@/lib/site/brand";
+import { siteHref } from "@/lib/site/publicUrl";
 
 /**
  * 목록 옆 사이드바 (03 §5.1).
@@ -43,7 +44,10 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
       */}
       <div className="flex flex-col gap-7 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6">
         <section className="flex flex-col gap-2">
-          <Link href={`/${site}`} className="font-typewriter font-bold text-[13px] text-ink">
+          <Link
+            href={siteHref(site, `/${site}`, { from: site })}
+            className="font-typewriter font-bold text-[13px] text-ink"
+          >
             {label.lead}
             <em className="text-(--accent) not-italic">{label.accent}</em>
           </Link>
@@ -95,7 +99,7 @@ async function AxisList({ site }: { site: PublicSite }) {
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12.5px] lg:flex-col lg:gap-y-2">
         <li>
-          <Link href={`/${site}`} className="hover:text-(--accent)">
+          <Link href={siteHref(site, `/${site}`, { from: site })} className="hover:text-(--accent)">
             전체 글 <Count value={counts.total} />
           </Link>
         </li>
@@ -117,7 +121,8 @@ async function AxisList({ site }: { site: PublicSite }) {
  * 행이다(lib/record/axis). 여기가 어긋나면 링크는 멀쩡히 열리고 필터만 조용히 무시된다.
  */
 export function axisHref(site: PublicSite, key: string): string {
-  return site === "dev" ? `/dev?category=${key}` : `/faith?type=${key}`;
+  const path = site === "dev" ? `/dev?category=${key}` : `/faith?type=${key}`;
+  return siteHref(site, path, { from: site });
 }
 
 function Count({ value }: { value: number }) {
@@ -138,7 +143,10 @@ async function RecentPosts({ site }: { site: PublicSite }) {
       <ul className="flex flex-col gap-2.5">
         {items.map((item) => (
           <li key={item.id}>
-            <Link href={`/${site}/${item.slug}`} className="flex flex-col gap-0.5 group">
+            <Link
+              href={siteHref(site, `/${site}/${item.slug}`, { from: site })}
+              className="flex flex-col gap-0.5 group"
+            >
               <span className="line-clamp-2 text-[12.5px] leading-[1.5] group-hover:text-(--accent)">
                 {item.title}
               </span>

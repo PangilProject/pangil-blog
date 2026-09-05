@@ -1,8 +1,9 @@
 import { RecordCard } from "@/components/record/RecordCard";
 import type { ListCard } from "@/lib/db/publicLists";
 import { formatCallNumber } from "@/lib/record/callNumber";
-import { publicPostPath } from "@/lib/record/paths";
 import { RECORD_TYPE_LABELS } from "@/lib/record/todayCard";
+import { siteOf } from "@/lib/revalidate/tags";
+import { postHref } from "@/lib/site/publicUrl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -41,7 +42,7 @@ export function PostList({
           <RecordCard
             variant={card.type === "TECH" ? "dev" : "faith"}
             rotate={ROTATIONS[index % ROTATIONS.length]}
-            href={publicPostPath(card.type, card.slug)}
+            href={postHref(card.type, card.slug, siteOf(card.type))}
             callNumber={formatCallNumber({
               type: card.type,
               callNumber: card.callNumber,
