@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { CrawlButton } from "@/components/admin/CrawlButton";
 import { NitList } from "@/components/admin/NitList";
 import { TodayCard } from "@/components/admin/TodayCard";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -9,6 +10,7 @@ import { getAdminUser } from "@/lib/auth/adminSession";
 import { countOpenNits, listOpenNits } from "@/lib/db/nits";
 import { listDrafts } from "@/lib/db/posts";
 import { findTodayCrawl, findTodayPosts } from "@/lib/db/today";
+import { crawlTriggerState } from "@/lib/record/crawlTrigger";
 import { formatKstDay, isSunday } from "@/lib/record/kst";
 import { formatRelativeTime } from "@/lib/record/relativeTime";
 import {
@@ -64,18 +66,24 @@ export default async function AdminDashboardPage() {
       <main className="mx-auto flex w-full max-w-[760px] flex-col gap-7 px-[5%] py-8">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="font-serif text-lg">{formatKstDay(now)}, 오늘의 기록</h1>
-          <p className="font-typewriter text-[11px] text-faint">
-            {/* QT는 크롤러가 채운다(06 §2). 일요일엔 크롤이 없으므로 배지도 없다 */}
-            {isSunday(now) ? (
-              "설교 · 찬양의 날"
-            ) : crawl ? (
-              <>
-                크롤러 <b className="text-ink">{CRAWL_LABELS[crawl.status]}</b>
-              </>
-            ) : (
-              "아직 오늘 큐티를 못 가져왔어요"
-            )}
-          </p>
+          {/* 상태와 그 상태에서 할 수 있는 일을 나란히 둔다 — "못 가져왔어요" 다음에
+              해야 하는 일이 레포를 열어 워크플로우를 찾는 것이면 그건 답이 아니다 */}
+          <div className="flex items-center gap-2.5 font-typewriter text-[11px] text-faint">
+            <p>
+              {/* QT는 크롤러가 채운다(06 §2). 일요일엔 크롤이 없으므로 배지도 없다 */}
+              {isSunday(now) ? (
+                "설교 · 찬양의 날"
+              ) : crawl ? (
+                <>
+                  크롤러 <b className="text-ink">{CRAWL_LABELS[crawl.status]}</b>
+                </>
+              ) : (
+                "아직 오늘 큐티를 못 가져왔어요"
+              )}
+            </p>
+
+            <CrawlButton state={crawlTriggerState(now, crawl)} />
+          </div>
         </div>
 
         <section className="grid gap-4 sm:grid-cols-2">
