@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { isInternalPath, resolveSite, sitePrefixOf, siteRewritePath } from "@/lib/site/resolveSite";
+import {
+  isInternalPath,
+  resolveSite,
+  sitePrefixOf,
+  siteRewritePath,
+  staleSiteRedirect,
+} from "@/lib/site/resolveSite";
 
 const HOSTS = {
   root: "pangil.example",
@@ -117,5 +123,40 @@ describe("isInternalPath — 3면 리라이트 예외", () => {
   it("접두사만 같은 경로를 내부로 오인하지 않는다", () => {
     expect(isInternalPath("/administrator")).toBe(false);
     expect(isInternalPath("/designs")).toBe(false);
+  });
+});
+
+/**
+ * 지면이 경로였던 시절의 주소는 이미 밖에 나가 있다. 도메인을 붙이는 순간 전부 404가 됐고,
+ * 읽는 사람 쪽에서는 고칠 길이 없다 — 제 호스트로 돌려보낸다.
+ */
+describe("staleSiteRedirect — 옛 주소 구제", () => {
+  it("루트 호스트의 지면 경로를 그 지면 호스트로 보낸다", () => {
+    expect(staleSiteRedirect("/faith/sr-1", "", HOSTS)).toBe("https://faith.pangil.example/sr-1");
+    expect(staleSiteRedirect("/dev", "", HOSTS)).toBe("https://dev.pangil.example/");
+  });
+
+  it("쿼리를 잃지 않는다 — 필터와 검색어가 주소에 있다", () => {
+    expect(staleSiteRedirect("/dev", "?category=fe", HOSTS)).toBe(
+      "https://dev.pangil.example/?category=fe",
+    );
+  });
+
+  it("허브 경로도 같은 규칙이다 — `/hub`는 라우트일 뿐 주소가 아니다", () => {
+    expect(staleSiteRedirect("/hub/privacy", "", HOSTS)).toBe("https://pangil.example/privacy");
+  });
+
+  it("접두사가 남은 채 제 호스트에 온 주소도 받는다 — 실제로 이게 404였다", () => {
+    expect(staleSiteRedirect("/dev/0504", "", HOSTS)).toBe("https://dev.pangil.example/0504");
+  });
+
+  it("지면 경로가 아니면 건드리지 않는다 — 그게 대부분의 요청이다", () => {
+    expect(staleSiteRedirect("/sr-1", "", HOSTS)).toBeNull();
+    expect(staleSiteRedirect("/", "", HOSTS)).toBeNull();
+    expect(staleSiteRedirect("/tags/감사", "", HOSTS)).toBeNull();
+  });
+
+  it("도메인 미확정 구간에서는 아무것도 하지 않는다 — 거기서는 경로가 곧 지면이다", () => {
+    expect(staleSiteRedirect("/faith/sr-1", "", {})).toBeNull();
   });
 });
