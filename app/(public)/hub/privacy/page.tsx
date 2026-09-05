@@ -5,9 +5,17 @@ import Link from "next/link";
  *
  * 통계 수집 고지의 최소본이다. 전 사이트 공용이고 하단의 조용한 링크로만 들어온다.
  *
- * **아직 수집하지 않는 것을 수집한다고 적지 않는다.** 통계 수집은 M6에서 붙으므로, 그 사실을
- * 그대로 쓴다 — 방침 문서가 실제와 어긋나는 것이 가장 나쁘다.
+ * **적힌 것과 실제가 어긋나지 않게 한다.** 한동안 "통계 수집은 사이트 공개 시점부터
+ * 적용됩니다"라고 적혀 있었는데 수집은 이미 돌고 있었다 — 앞날을 적어둔 문장은 그날이
+ * 지나면 거짓말이 된다. 그래서 예고가 아니라 **시행일**을 적는다.
+ *
+ * 시행일은 상수다. 시계에서 읽으면 문서를 열 때마다 "오늘부터 적용"이 되는데, 그건 아무것도
+ * 말하지 않는 문장이다. 방침의 내용을 고칠 때 사람이 함께 고친다.
  */
+
+/** 이 방침이 지금 모습을 갖춘 날 */
+const EFFECTIVE_DATE = "2026년 9월 5일";
+
 export const metadata = {
   title: "개인정보처리방침",
   robots: { index: false, follow: true },
@@ -16,6 +24,12 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="mx-auto flex w-full max-w-measure flex-col gap-6 px-[6%] py-16">
+      {/* 돌아가는 길이 맨 아래에 있었다. 읽다가 그만두는 사람이 대부분인 문서라
+          그 길은 스크롤 끝이 아니라 눈이 처음 닿는 자리에 있어야 한다 */}
+      <Link href="/hub" className="font-typewriter text-[11px] text-faint hover:text-ink">
+        ← 소개
+      </Link>
+
       <h1 className="font-serif font-bold text-[22px]">개인정보처리방침</h1>
 
       <section className="flex flex-col gap-2">
@@ -49,17 +63,13 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-2">
         <h2 className="font-typewriter text-[11px] tracking-[0.14em] text-faint">문의</h2>
         <p className="text-[14px] leading-body text-ink-soft">
-          이 방침에 대한 문의는 허브에 적힌 링크로 연락해 주세요.
+          이 방침에 대한 문의는 소개 지면에 적힌 링크로 연락해 주세요.
         </p>
       </section>
 
       <p className="border-edge border-t pt-4 font-typewriter text-[10.5px] text-faint">
-        통계 수집은 사이트 공개 시점부터 적용됩니다. 그 전까지는 아무것도 수집하지 않습니다.
+        이 방침은 {EFFECTIVE_DATE}부터 적용됩니다.
       </p>
-
-      <Link href="/hub" className="font-typewriter text-[11px] text-faint hover:text-ink">
-        ← 허브로
-      </Link>
     </main>
   );
 }
