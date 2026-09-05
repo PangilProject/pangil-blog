@@ -17,10 +17,13 @@ describe("SiteHeader", () => {
     );
   });
 
-  it("신앙 지면의 글쓰기는 일단 큐티로 간다 — 세 종류 선택 화면을 새로 만들지 않는다", () => {
+  it("신앙 지면의 글쓰기는 묵상 글쓰기 하나로 간다 — 서식은 그 화면에서 고른다", () => {
     render(<SiteHeader site="faith" />);
 
-    expect(screen.getByRole("link", { name: "글쓰기" })).toHaveAttribute("href", "/admin/write/qt");
+    expect(screen.getByRole("link", { name: "글쓰기" })).toHaveAttribute(
+      "href",
+      "/admin/write/faith",
+    );
   });
 
   it("글쓰기는 로그인 여부와 무관하게 놓인다 — 갈리는 곳은 proxy다", () => {

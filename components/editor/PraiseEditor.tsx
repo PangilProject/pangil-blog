@@ -7,6 +7,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
+import { FaithFormatTabs } from "@/components/editor/FaithFormatTabs";
 import { PraiseSectionList } from "@/components/editor/PraiseSectionList";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
@@ -18,6 +19,7 @@ import { upsertDraft } from "@/lib/actions/posts";
 import { suggestTitleFromYouTube } from "@/lib/actions/praise";
 import {
   emptyPraiseForm,
+  isEmptyForm,
   newMeditationBlock,
   newSection,
   type PraiseFormValues,
@@ -207,6 +209,10 @@ export function PraiseEditor({ postId, initialValues }: PraiseEditorProps) {
         }
       >
         <div className="flex flex-col gap-5 px-[6%] pt-8">
+          {/* 서식은 아직 아무것도 안 적었을 때만 고를 수 있다(02 §2.4) — 저장 계약이
+              타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
+          <FaithFormatTabs current="PRAISE" postId={id} isEmpty={isEmptyForm(watch())} />
+
           <div className="flex flex-col gap-2">
             <input
               {...register("youtubeUrl")}

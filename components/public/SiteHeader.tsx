@@ -38,7 +38,7 @@ export function SiteHeader({ site }: { site: PublicSite }) {
         {/* nofollow인 이유는 색인이 아니라 예산이다 — 로봇이 모든 지면에서 이 링크를
             따라가면 그 요청이 전부 로그인 리다이렉트로 끝난다 */}
         <Link
-          href={editorPath(site === "dev" ? "TECH" : "QT")}
+          href={site === "dev" ? editorPath("TECH") : "/admin/write/faith"}
           rel="nofollow"
           className="hover:text-ink"
         >

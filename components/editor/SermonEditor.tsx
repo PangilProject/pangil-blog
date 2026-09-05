@@ -8,6 +8,7 @@ import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
+import { FaithFormatTabs } from "@/components/editor/FaithFormatTabs";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
 import {
   EMPTY_SERMON_FORM,
+  isEmptyForm,
   type SermonFormValues,
   SermonPublishFormSchema,
   toDraftContent,
@@ -161,6 +163,10 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
         }
       >
         <div className="flex flex-col gap-5 px-[6%] pt-8">
+          {/* 서식은 아직 아무것도 안 적었을 때만 고를 수 있다(02 §2.4) — 저장 계약이
+              타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
+          <FaithFormatTabs current="SERMON" postId={id} isEmpty={isEmptyForm(watch())} />
+
           <input
             {...register("title")}
             // 진입 커서는 제목 (02 결정 로그 #10)

@@ -4,6 +4,7 @@ import { EMPTY_TIPTAP_DOC, type TiptapDoc } from "@/lib/content/schema";
 import {
   EMPTY_SERMON_FORM,
   fromDraftContent,
+  isEmptyForm,
   SermonPublishFormSchema,
   toDraftContent,
   toPublishContent,
@@ -96,5 +97,25 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
 
   it("content가 없으면 빈 폼이다 (새 글)", () => {
     expect(fromDraftContent(null, "")).toEqual(EMPTY_SERMON_FORM);
+  });
+});
+
+describe("isEmptyForm — 서식 전환 조건", () => {
+  it("빈 폼은 비어 있다", () => {
+    expect(isEmptyForm(EMPTY_SERMON_FORM)).toBe(true);
+  });
+
+  it("한 칸이라도 적혀 있으면 비어 있지 않다", () => {
+    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, title: "오늘이라는 선물" })).toBe(false);
+    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, scriptureRef: "전도서" })).toBe(false);
+    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, body: doc("속기") })).toBe(false);
+  });
+
+  it("공백만 적은 것은 빈 것이다", () => {
+    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, title: "   " })).toBe(true);
+  });
+
+  it("태그만 붙여둔 것도 쓴 것이다 — 지우면 그것도 유실이다", () => {
+    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, tags: ["전도서"] })).toBe(false);
   });
 });

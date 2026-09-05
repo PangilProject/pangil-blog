@@ -5,6 +5,7 @@ import {
   countEmptyAnswers,
   emptyQtForm,
   fromDraftContent,
+  isEmptyForm,
   type QtFormValues,
   QtPublishFormSchema,
   toDraftContent,
@@ -146,5 +147,40 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
 
     expect(form.title).toBe("제목");
     expect(form.scriptureRef).toBe("");
+  });
+});
+
+describe("isEmptyForm — 서식 전환 조건", () => {
+  it("프리셋만 놓인 빈 폼은 비어 있다", () => {
+    expect(isEmptyForm(emptyQtForm())).toBe(true);
+  });
+
+  it("크롤러가 채운 질문 텍스트는 쓴 것으로 보지 않는다", () => {
+    const crawled = fromDraftContent(
+      {
+        kind: "QT",
+        questionGroups: [
+          {
+            group: "내용관찰",
+            questions: [
+              { label: "1", text: "무엇을 보았는가?", answer: { type: "doc", content: [] } },
+            ],
+          },
+        ],
+      },
+      "",
+    );
+
+    expect(isEmptyForm(crawled)).toBe(true);
+  });
+
+  it("사람이 쓰는 자리에 값이 있으면 비어 있지 않다", () => {
+    const base = emptyQtForm();
+
+    expect(isEmptyForm({ ...base, title: "오늘의 큐티" })).toBe(false);
+    expect(isEmptyForm({ ...base, scriptureBody: "말씀" })).toBe(false);
+    expect(isEmptyForm({ ...base, annotations: [{ term: "지혜", verseRef: "", body: "" }] })).toBe(
+      false,
+    );
   });
 });

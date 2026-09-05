@@ -187,3 +187,33 @@ export function fromDraftContent(
     tags,
   };
 }
+
+/**
+ * 아직 아무것도 적지 않은 폼인가 (A-04 · 서식 전환 조건).
+ *
+ * **질문 텍스트와 그룹 라벨은 보지 않는다.** 프리셋(4그룹 6문)과 크롤러가 채우는 자리이고,
+ * 사람이 쓴 것이 아니다 — 그것까지 세면 크롤러 초안은 열자마자 "쓴 글"이 된다.
+ * 사람이 쓰는 자리는 제목·말씀·주석·답변·요약·태그다.
+ */
+export function isEmptyForm(values: QtFormValues): boolean {
+  const answered = values.questionGroups.some((group) =>
+    group.questions.some((question) => !isEmptyDoc(question.answer)),
+  );
+
+  const annotated = values.annotations.some(
+    (annotation) =>
+      annotation.term.trim() !== "" ||
+      annotation.verseRef.trim() !== "" ||
+      annotation.body.trim() !== "",
+  );
+
+  return (
+    values.title.trim() === "" &&
+    values.scriptureRef.trim() === "" &&
+    values.scriptureBody.trim() === "" &&
+    !annotated &&
+    !answered &&
+    isEmptyDoc(values.summary) &&
+    values.tags.length === 0
+  );
+}

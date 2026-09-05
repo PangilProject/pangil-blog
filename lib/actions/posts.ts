@@ -139,6 +139,30 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
   };
 });
 
+export type DiscardDraftResult = { ok: true } | { ok: false; reason: "not-found" | "published" };
+
+/**
+ * 빈 초안 버리기 — 서식(글의 종류)을 바꿀 때 쓴다 (02 §2.4).
+ *
+ * 서식은 저장 계약을 가르므로 내용이 있는 뒤에는 바꿀 수 없다. 아직 아무것도 안 적은
+ * 초안이라면 그건 변경이 아니라 **처음 고르는 것**이고, 그때 남아 있던 빈 초안은 지운다 —
+ * 초안함에 빈 껍데기가 쌓이면 "이어서 쓸 것"이라는 초안함의 질문이 흐려진다.
+ *
+ * **발행된 글은 지우지 않는다.** 비어 있는지는 화면이 판단하지만(폼 값을 아는 쪽이다),
+ * "초안만"이라는 보장은 서버가 한다 — 화면의 판단이 틀려도 발행된 글이 사라지면 안 된다.
+ */
+export const discardDraft = withAdmin(
+  async (_user, postId: string): Promise<DiscardDraftResult> => {
+    const post = await findEditablePost(postId);
+    if (!post) return { ok: false, reason: "not-found" };
+    if (post.status !== PostStatus.DRAFT) return { ok: false, reason: "published" };
+
+    await deletePostRecord(postId);
+    // 초안은 공개 지면에 없다. 무효화할 것도, 검색엔진에 알릴 것도 없다
+    return { ok: true };
+  },
+);
+
 export type UnpublishPostResult =
   | { ok: true }
   | { ok: false; reason: "not-found" | "not-published" };
