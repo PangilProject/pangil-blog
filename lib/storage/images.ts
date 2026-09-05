@@ -2,6 +2,8 @@ import "server-only";
 
 import { nanoid } from "nanoid";
 
+import { MAX_IMAGE_BYTES } from "@/lib/images/limits";
+
 /**
  * 이미지 업로드 (04 §3.3 · 05 §1.4 Asset).
  *
@@ -18,7 +20,8 @@ const BUCKET = "post-images";
 /** 05 §1.4의 경로 규칙: `post-images/{postId|orphan}/{nanoid}.{ext}` */
 const ORPHAN_PREFIX = "orphan";
 
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+// 한도는 화면도 봐야 하는 값이라 순수 모듈에 있다(lib/images/limits)
+export { MAX_IMAGE_BYTES };
 
 export const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/png": "png",
