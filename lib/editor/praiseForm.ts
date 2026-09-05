@@ -10,6 +10,7 @@ import {
   toTiptapDoc,
 } from "@/lib/editor/richText";
 import { parseYouTubeId } from "@/lib/praise/youtube";
+import { defaultTagsFor, hasOwnTags } from "@/lib/record/defaultTags";
 
 /**
  * A-06 찬양 에디터의 폼 계약 (02 §5.4 · 04 §2.5).
@@ -124,7 +125,7 @@ export function emptyPraiseForm(): PraiseFormValues {
     sections: [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
     // 빈 화면을 주지 않는다. 첫 블록은 늘 놓여 있다 — 가사 섹션과 같다
     meditationBlocks: [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
-    tags: [],
+    tags: defaultTagsFor("PRAISE"),
   };
 }
 
@@ -265,6 +266,6 @@ export function isEmptyForm(values: PraiseFormValues): boolean {
     values.youtubeUrl.trim() === "" &&
     values.sections.every((section) => section.lyrics.trim() === "") &&
     values.meditationBlocks.every((block) => isEmptyDoc(block.doc)) &&
-    values.tags.length === 0
+    !hasOwnTags("PRAISE", values.tags)
   );
 }

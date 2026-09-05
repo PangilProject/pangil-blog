@@ -8,6 +8,7 @@ import {
   type RichTextValue,
   toTiptapDoc,
 } from "@/lib/editor/richText";
+import { defaultTagsFor, hasOwnTags } from "@/lib/record/defaultTags";
 
 /**
  * A-04 QT 에디터의 폼 계약 (02 §5.2).
@@ -80,7 +81,7 @@ export function emptyQtForm(): QtFormValues {
     annotations: [],
     questionGroups: emptyQtGroups(),
     summary: EMPTY_RICH_TEXT,
-    tags: [],
+    tags: defaultTagsFor("QT"),
   };
 }
 
@@ -214,6 +215,6 @@ export function isEmptyForm(values: QtFormValues): boolean {
     !annotated &&
     !answered &&
     isEmptyDoc(values.summary) &&
-    values.tags.length === 0
+    !hasOwnTags("QT", values.tags)
   );
 }

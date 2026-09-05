@@ -17,7 +17,7 @@ import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
 import {
-  EMPTY_SERMON_FORM,
+  emptySermonForm,
   isEmptyForm,
   type SermonFormValues,
   SermonPublishFormSchema,
@@ -50,7 +50,7 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
    */
   const idRef = useRef(postId);
 
-  const form = useForm<SermonFormValues>({ defaultValues: initialValues ?? EMPTY_SERMON_FORM });
+  const form = useForm<SermonFormValues>({ defaultValues: initialValues ?? emptySermonForm() });
   const { control, register, setValue, watch, handleSubmit } = form;
 
   const save = useCallback(
