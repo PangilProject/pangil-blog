@@ -24,6 +24,7 @@ export function ListPageView({
   searchAction,
   searchQuery,
   emptyMessage,
+  titleHidden,
 }: {
   site: PublicSite;
   title: string;
@@ -36,6 +37,8 @@ export function ListPageView({
   searchAction: string;
   searchQuery?: string;
   emptyMessage?: string;
+  /** 헤더가 이미 지면 이름을 말하는 자리에서 제목을 감춘다 */
+  titleHidden?: boolean;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 px-[5%] py-10">
@@ -47,6 +50,7 @@ export function ListPageView({
         counts={counts}
         searchAction={searchAction}
         searchQuery={searchQuery}
+        titleHidden={titleHidden}
       />
 
       {tabs && tabs.length > 0 && <DividerTabs items={tabs} label={tabsLabel ?? "필터"} />}
