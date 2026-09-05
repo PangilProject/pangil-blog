@@ -11,8 +11,12 @@ import { cn } from "@/lib/utils";
  * 목록 카드에 있던 것이 그대로 온다: 상단 괘, 청구기호, 하단 천공. 카드를 눌러 들어온
  * 사람이 같은 물건의 안쪽을 보고 있다고 느껴야 한다(04 §3.5 — 목록 카드 = 상세 지면 = OG 카드).
  *
- * 지면 폭은 본문 가독 폭(--container-measure)에 맞춘다. 기술 글의 목차는 이 지면 밖
- * 우측 여백에 서므로(04 §3.4) 이 컴포넌트는 폭만 정하고 여백은 라우트가 정한다.
+ * 지면 폭은 `--sheet`다. 지면 자체가 아니라 **그 안의 본문**이 가독 폭이어야 하는데, 이
+ * 컴포넌트는 안쪽에 7% 여백을 두므로 그만큼을 미리 얹어 둔 값이다(52rem − 14% ≈ --measure).
+ * 전에는 지면 폭을 --measure로 잡아서 실제 글줄이 그보다 한참 좁았다.
+ *
+ * 기술 글의 목차는 이 지면 밖 우측 여백에 서므로(04 §3.4) 이 컴포넌트는 폭만 정하고
+ * 여백은 라우트가 정한다.
  */
 export function RecordSheet({
   type,
@@ -53,7 +57,7 @@ export function RecordSheet({
     <article
       data-post-id={postId}
       className={cn(
-        "relative mx-auto w-full max-w-measure border border-edge bg-card px-[7%] pt-9 pb-14 shadow-card",
+        "relative mx-auto w-full max-w-sheet border border-edge bg-card px-[7%] pt-9 pb-14 shadow-card",
         className,
       )}
     >
