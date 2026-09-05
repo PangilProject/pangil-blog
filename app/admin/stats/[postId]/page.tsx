@@ -13,8 +13,8 @@ import {
   findPostReferrers,
   findPostStatSummary,
 } from "@/lib/db/statSummary";
-import { publicPostPath } from "@/lib/record/paths";
 import { editorPath } from "@/lib/record/todayCard";
+import { postHref } from "@/lib/site/publicUrl";
 
 /**
  * A-09 글 하나의 추이.
@@ -77,7 +77,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
           {post && (
             <nav className="flex gap-3 font-typewriter text-[10.5px] text-faint">
               {post.slug && (
-                <Link href={publicPostPath(post.type, post.slug)} className="hover:text-ink">
+                <Link href={postHref(post.type, post.slug)} className="hover:text-ink">
                   글 보기
                 </Link>
               )}

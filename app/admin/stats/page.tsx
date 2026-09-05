@@ -19,7 +19,7 @@ import {
   findTopPosts,
   findWeekdays,
 } from "@/lib/db/statSummary";
-import { publicPostPath } from "@/lib/record/paths";
+import { postHref } from "@/lib/site/publicUrl";
 import { parseUnit, UNIT_WINDOW_DAYS } from "@/lib/stats/range";
 import { REFERRER_KIND_LABELS, referrerKind } from "@/lib/stats/referrer";
 
@@ -301,7 +301,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                       {event.title ? (
                         event.type && event.slug ? (
                           <Link
-                            href={publicPostPath(event.type, event.slug)}
+                            href={postHref(event.type, event.slug)}
                             className="hover:text-(--accent)"
                           >
                             {event.title}
