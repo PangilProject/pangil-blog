@@ -3,10 +3,18 @@ import { describe, expect, it } from "vitest";
 import { deriveSlug, findAvailableSlug, toKebabCase, withDedupeSuffix } from "@/lib/record/slug";
 
 describe("deriveSlug — 05 §6.4", () => {
-  it("묵상 3타입은 프리픽스와 번호로 만든다 — 제목이 한글이고 매일 반복된다", () => {
+  /**
+   * 화면에 적는 그대로다(`QT-0204`). 같은 번호가 주소와 화면에서 두 모양으로 적히면
+   * 그중 하나는 언젠가 틀린 것으로 읽힌다.
+   */
+  it("묵상 3타입은 프리픽스와 자리 채운 번호로 만든다", () => {
+    expect(deriveSlug({ type: "QT", callNumber: 204 })).toBe("qt-0204");
+    expect(deriveSlug({ type: "SERMON", callNumber: 104 })).toBe("sr-0104");
+    expect(deriveSlug({ type: "PRAISE", callNumber: 388 })).toBe("pr-0388");
+  });
+
+  it("네 자리를 넘으면 그대로 늘어난다", () => {
     expect(deriveSlug({ type: "QT", callNumber: 1043 })).toBe("qt-1043");
-    expect(deriveSlug({ type: "SERMON", callNumber: 104 })).toBe("sr-104");
-    expect(deriveSlug({ type: "PRAISE", callNumber: 388 })).toBe("pr-388");
   });
 
   /**
