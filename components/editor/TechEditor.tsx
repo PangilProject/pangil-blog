@@ -24,6 +24,7 @@ import {
 import { uploadPostImage } from "@/lib/actions/images";
 import { upsertDraft } from "@/lib/actions/posts";
 import type { CategoryOption } from "@/lib/db/categories";
+import { IMAGE_UPLOAD_THREW, imageUploadMessage } from "@/lib/editor/imageUploadMessage";
 import { measureImage } from "@/lib/editor/measureImage";
 import {
   deriveExcerpt,
@@ -65,6 +66,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
    * 이 클로저에 보이지 않아 "아직 저장되지 않았어요"로 막힌다 — 방금 저장에 성공했는데도.
    */
   const idRef = useRef(postId);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const form = useForm<TechFormValues>({ defaultValues: initialValues ?? EMPTY_TECH_FORM });
   const { control, register, setValue, watch, handleSubmit } = form;
@@ -100,6 +102,13 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
    * 붙여넣은·끌어놓은 이미지를 Storage로 올린다(04 §3.3). 크기는 브라우저가 잰다 — 파일을
    * 이미 들고 있는 쪽이 재는 게 정확하고, 서버에서 이미지 헤더를 파싱할 필요가 없다.
    */
+  /**
+   * 붙여넣은 그림. **실패를 조용히 넘기지 않는다** — 전에는 `onError`가 연결돼 있지 않아
+   * 그림이 그냥 안 들어갔고, 개발자 도구를 열어야만 원인이 보였다.
+   *
+   * 액션이 던지는 경우도 잡는다. 본문 한도를 넘기면 액션이 실행되기도 전에 요청이 거절돼서
+   * 사유 코드가 오지 않는다(next.config의 bodySizeLimit 주석).
+   */
   const uploadImage = useCallback(async (file: File) => {
     const size = await measureImage(file);
     const form = new FormData();
@@ -110,8 +119,22 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
       form.set("height", String(size.height));
     }
 
-    const result = await uploadPostImage(form);
-    return result.ok ? { url: result.url, width: result.width, height: result.height } : null;
+    setImageError(null);
+
+    try {
+      const result = await uploadPostImage(form);
+
+      if (!result.ok) {
+        setImageError(imageUploadMessage(result.reason));
+        return null;
+      }
+
+      return { url: result.url, width: result.width, height: result.height };
+    } catch (cause) {
+      console.error("[upload]", cause);
+      setImageError(IMAGE_UPLOAD_THREW);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -150,6 +173,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
               savedAgo={autosave.savedAt ? "방금" : undefined}
             />
             <SaveErrorNote message={autosave.lastError} />
+            <SaveErrorNote message={imageError} />
           </>
         }
         actions={

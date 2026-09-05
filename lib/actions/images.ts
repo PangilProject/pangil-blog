@@ -11,9 +11,11 @@ import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, uploadImage } from "@/lib/storage
  * 상태를 바꾸는 일이고, Server Action은 별도 POST로 직접 호출될 수 있다(05 §3.2).
  */
 
+export type UploadImageFailure = "no-file" | "unsupported-type" | "too-large" | "upload-failed";
+
 export type UploadImageActionResult =
   | { ok: true; url: string; width: number | null; height: number | null }
-  | { ok: false; reason: "no-file" | "unsupported-type" | "too-large" | "upload-failed" };
+  | { ok: false; reason: UploadImageFailure };
 
 /** 브라우저가 잰 크기. 값이 이상하면 없는 것으로 본다 — 잘못된 크기는 레이아웃만 흔든다 */
 function sanitizeDimension(value: FormDataEntryValue | null): number | null {

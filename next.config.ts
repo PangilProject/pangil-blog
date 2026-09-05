@@ -23,6 +23,22 @@ const nextConfig: NextConfig = {
    */
   serverExternalPackages: ["@resvg/resvg-js", "satori"],
 
+  /**
+   * Server Action 본문 한도 (04 §3.3).
+   *
+   * **기본값이 1MB다.** 그래서 레티나 스크린샷 한 장(1.3MB)을 붙여넣으면 액션이 실행되기도
+   * 전에 요청이 거절돼 500이 됐다 — 화면에는 아무 말도 없이 그림만 안 들어갔다. 앱은
+   * 5MB까지 받는다고 적어두고 플랫폼이 1MB에서 자르고 있었다.
+   *
+   * 4MB인 것은 **Vercel의 함수 본문 한도가 4.5MB이고 그건 못 바꾸기 때문이다.** 그 위로
+   * 올려봐야 413으로 바뀔 뿐이라, 앱 쪽 한도(MAX_IMAGE_BYTES)를 그 아래에 두고 우리가 먼저
+   * 사람 말로 거절한다. 더 큰 파일이 필요해지면 브라우저에서 Storage로 바로 올리는 길을
+   * 따로 내야 한다.
+   */
+  experimental: {
+    serverActions: { bodySizeLimit: "4mb" },
+  },
+
   images: {
     /**
      * 업로드 이미지는 Supabase Storage에서 온다(04 §3.3).
