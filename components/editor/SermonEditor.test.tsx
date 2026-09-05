@@ -47,15 +47,15 @@ afterEach(() => {
 });
 
 describe("SermonEditor — 방해 요소 제로 (02 §5.3)", () => {
-  it("진입 커서는 제목에 있다", () => {
+  it("진입 커서는 글 제목에 있다", () => {
     renderEditor();
-    expect(screen.getByLabelText("설교 제목")).toHaveFocus();
+    expect(screen.getByLabelText("글 제목")).toHaveFocus();
   });
 
   it("필드는 최소다 — 제목·말씀 범위·말씀 본문·본문·요약", () => {
     renderEditor();
 
-    expect(screen.getByLabelText("설교 제목")).toBeInTheDocument();
+    expect(screen.getByLabelText("글 제목")).toBeInTheDocument();
     expect(screen.getByLabelText("말씀 범위")).toBeInTheDocument();
     expect(screen.getByLabelText("말씀 본문")).toBeInTheDocument();
     expect(screen.getByLabelText("설교 본문")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("SermonEditor — 자동 저장 배선", () => {
 
     // fireEvent.change는 React의 값 추적기를 우회해 onChange를 실제로 발화시킨다
     await act(async () => {
-      fireEvent.change(screen.getByLabelText("설교 제목"), {
+      fireEvent.change(screen.getByLabelText("글 제목"), {
         target: { value: "오늘이라는 선물" },
       });
     });
@@ -133,7 +133,7 @@ describe("SermonEditor — 자동 저장 배선", () => {
     renderEditor();
 
     await act(async () => {
-      fireEvent.change(screen.getByLabelText("설교 제목"), { target: { value: "예배당에서" } });
+      fireEvent.change(screen.getByLabelText("글 제목"), { target: { value: "예배당에서" } });
     });
 
     await act(async () => {
@@ -162,7 +162,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
     );
 
     await act(async () => {
-      fireEvent.change(screen.getByLabelText("설교 제목"), { target: { value: "예배 노트" } });
+      fireEvent.change(screen.getByLabelText("글 제목"), { target: { value: "예배 노트" } });
     });
 
     await act(async () => {
@@ -182,7 +182,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
     );
 
     await act(async () => {
-      fireEvent.change(screen.getByLabelText("설교 제목"), { target: { value: "새 설교" } });
+      fireEvent.change(screen.getByLabelText("글 제목"), { target: { value: "새 설교" } });
     });
 
     await act(async () => {
@@ -203,7 +203,7 @@ describe("SermonEditor — 발행", () => {
     });
 
     expect(publishPost).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("설교 제목을 적어주세요");
+    expect(screen.getByRole("alert")).toHaveTextContent("글 제목을 적어주세요");
   });
 
   it("갖춰지면 발행하고 그 글의 공개 지면으로 간다 (02 §3.2)", async () => {
@@ -212,6 +212,7 @@ describe("SermonEditor — 발행", () => {
         postId="post-1"
         initialValues={{
           title: "오늘이라는 선물",
+          sermonTitle: "하나님의 편에 서라",
           scriptureRef: "전도서 9장 7~10절",
           scriptureBody: "너는 가서",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
@@ -239,6 +240,7 @@ describe("SermonEditor — 발행", () => {
         postId="post-1"
         initialValues={{
           title: "제목",
+          sermonTitle: "하나님의 편에 서라",
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
@@ -266,6 +268,7 @@ describe("SermonEditor — 발행", () => {
         postId="post-1"
         initialValues={{
           title: "제목",
+          sermonTitle: "하나님의 편에 서라",
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
@@ -291,6 +294,7 @@ describe("SermonEditor — 발행", () => {
         postId="post-1"
         initialValues={{
           title: "제목",
+          sermonTitle: "하나님의 편에 서라",
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
@@ -311,6 +315,34 @@ describe("SermonEditor — 발행", () => {
     logged.mockRestore();
   });
 
+  /**
+   * 두 제목은 역할이 다르다(02 §5.3). 글 제목은 목록·RSS·OG에 나가고, 설교 제목은 그날
+   * 설교의 이름이다 — 한 칸에 몰아 두면 "2026년 08월 23일 주일 예배 설교"가 설교 제목이 된다.
+   */
+  it("설교 제목이 비면 서버를 부르지 않고 그 사실을 알려준다", async () => {
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={{
+          title: "2026년 09월 06일 주일 예배 설교",
+          sermonTitle: "",
+          scriptureRef: "전도서 9장 7~10절",
+          scriptureBody: "너는 가서",
+          body: { type: "doc", content: [{ type: "text", text: "속기" }] },
+          summary: { type: "doc", content: [] },
+          tags: [],
+        }}
+      />,
+    );
+
+    await act(async () => {
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    expect(publishPost).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("설교 제목을 적어주세요");
+  });
+
   it("발행이 실패하면 이동하지 않고 사유를 남긴다", async () => {
     publishPost.mockResolvedValue({ ok: false, reason: "invalid-content" });
 
@@ -319,6 +351,7 @@ describe("SermonEditor — 발행", () => {
         postId="post-1"
         initialValues={{
           title: "제목",
+          sermonTitle: "하나님의 편에 서라",
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
@@ -375,6 +408,6 @@ describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
       screen.getByRole("button", { name: "복원" }).click();
     });
 
-    expect(screen.getByLabelText("설교 제목")).toHaveValue("저장 안 된 설교");
+    expect(screen.getByLabelText("글 제목")).toHaveValue("저장 안 된 설교");
   });
 });

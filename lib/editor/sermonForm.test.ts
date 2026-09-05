@@ -17,6 +17,7 @@ const doc = (text: string): TiptapDoc => ({
 
 const filled = {
   title: "오늘이라는 선물",
+  sermonTitle: "하나님의 편에 서라",
   scriptureRef: "전도서 9장 7~10절",
   scriptureBody: "너는 가서 기쁨으로",
   body: doc("설교 속기"),

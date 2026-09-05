@@ -167,14 +167,24 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
               타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
           <FaithFormatTabs current="SERMON" postId={id} isEmpty={isEmptyForm(watch())} />
 
+          {/* 두 제목은 역할이 다르다(02 §5.3). 글 제목은 목록·RSS·OG에 나가는 이름이고
+              (`2026년 08월 23일 주일 예배 설교`), 설교 제목은 그날 설교의 이름이다
+              (`하나님의 편에 서라`). 진입 커서는 글 제목에 둔다 — 예배 전에 적어두는 쪽이다 */}
           <input
             {...register("title")}
             // 진입 커서는 제목 (02 결정 로그 #10)
             // biome-ignore lint/a11y/noAutofocus: 예배 시작과 동시에 바로 적을 수 있어야 한다
             autoFocus
+            placeholder="글 제목 (예: 2026년 09월 06일 주일 예배 설교)"
+            aria-label="글 제목"
+            className="border-edge border-b bg-transparent pb-2 font-serif text-xl outline-none placeholder:text-faint"
+          />
+
+          <input
+            {...register("sermonTitle")}
             placeholder="설교 제목"
             aria-label="설교 제목"
-            className="border-edge border-b bg-transparent pb-2 font-serif text-xl outline-none placeholder:text-faint"
+            className="border-edge border-b bg-transparent pb-1.5 font-serif text-base outline-none placeholder:text-faint"
           />
 
           <div className="flex flex-col gap-2">
