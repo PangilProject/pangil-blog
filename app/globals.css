@@ -232,6 +232,35 @@
   }
 }
 
+/* 그림이 올라오는 동안 그 자리에 서는 빈 칸 (04 §3.3 · lib/editor/imagePaste).
+   문서가 아니라 장식이라 저장되지 않는다. 진행률은 적지 않는다 — 올라간 바이트를 알 수 없다.
+   숨쉬듯 흐려지는 것만으로 "멈춘 게 아니다"가 읽힌다. */
+.image-uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  margin: 1.2em 0;
+  border: 1px dashed var(--edge);
+  background: color-mix(in oklab, var(--card) 92%, var(--accent) 8%);
+  color: var(--faint);
+  font-family: var(--font-typewriter);
+  font-size: 11px;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .image-uploading {
+    animation: image-uploading-breathe 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes image-uploading-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .record-appear {
     animation: record-appear 0.45s var(--ease-record) both;
