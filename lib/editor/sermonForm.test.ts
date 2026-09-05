@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { EMPTY_TIPTAP_DOC, type TiptapDoc } from "@/lib/content/schema";
 import {
-  EMPTY_SERMON_FORM,
+  emptySermonForm,
   fromDraftContent,
   isEmptyForm,
   SermonPublishFormSchema,
@@ -27,7 +27,7 @@ const filled = {
 
 describe("toDraftContent — 자동 저장", () => {
   it("반쯤 적힌 상태도 그대로 담는다 — 예배 첫 몇 초", () => {
-    const content = toDraftContent({ ...EMPTY_SERMON_FORM, scriptureRef: "전도서" });
+    const content = toDraftContent({ ...emptySermonForm(), scriptureRef: "전도서" });
 
     expect(content.kind).toBe("SERMON");
     if (content.kind === "SERMON") expect(content.scriptureRef).toBe("전도서");
@@ -93,30 +93,35 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
 
   it("타입이 다른 content는 빈 폼으로 시작한다 — 엉뚱한 값을 들고 오지 않는다", () => {
     const values = fromDraftContent({ kind: "QT" }, "제목");
-    expect(values).toEqual({ ...EMPTY_SERMON_FORM, title: "제목" });
+    expect(values).toEqual({ ...emptySermonForm(), title: "제목", tags: [] });
   });
 
-  it("content가 없으면 빈 폼이다 (새 글)", () => {
-    expect(fromDraftContent(null, "")).toEqual(EMPTY_SERMON_FORM);
+  /**
+   * 이 함수는 **저장된 글**을 여는 길이다(새 글은 emptySermonForm이 만든다). 그래서 기본
+   * 태그를 놓지 않는다 — 일부러 지운 태그가 다시 열 때마다 되살아나면 그건 고장이다.
+   */
+  it("저장된 글에는 기본 태그를 놓지 않는다", () => {
+    expect(fromDraftContent(null, "").tags).toEqual([]);
+    expect(fromDraftContent(null, "", ["예배"]).tags).toEqual(["예배"]);
   });
 });
 
 describe("isEmptyForm — 서식 전환 조건", () => {
   it("빈 폼은 비어 있다", () => {
-    expect(isEmptyForm(EMPTY_SERMON_FORM)).toBe(true);
+    expect(isEmptyForm(emptySermonForm())).toBe(true);
   });
 
   it("한 칸이라도 적혀 있으면 비어 있지 않다", () => {
-    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, title: "오늘이라는 선물" })).toBe(false);
-    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, scriptureRef: "전도서" })).toBe(false);
-    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, body: doc("속기") })).toBe(false);
+    expect(isEmptyForm({ ...emptySermonForm(), title: "오늘이라는 선물" })).toBe(false);
+    expect(isEmptyForm({ ...emptySermonForm(), scriptureRef: "전도서" })).toBe(false);
+    expect(isEmptyForm({ ...emptySermonForm(), body: doc("속기") })).toBe(false);
   });
 
   it("공백만 적은 것은 빈 것이다", () => {
-    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, title: "   " })).toBe(true);
+    expect(isEmptyForm({ ...emptySermonForm(), title: "   " })).toBe(true);
   });
 
   it("태그만 붙여둔 것도 쓴 것이다 — 지우면 그것도 유실이다", () => {
-    expect(isEmptyForm({ ...EMPTY_SERMON_FORM, tags: ["전도서"] })).toBe(false);
+    expect(isEmptyForm({ ...emptySermonForm(), tags: ["전도서"] })).toBe(false);
   });
 });

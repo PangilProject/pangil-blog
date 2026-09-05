@@ -106,11 +106,19 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
   });
 });
 
+/**
+ * 출처 띠의 문구와 기본 태그(`날마다 솟는 샘물`)가 같은 말이다 — 둘 다 맞는 말이라 하나를
+ * 바꾸지 않는다. 대신 이 테스트는 **띠**를 가리킨다: `…에서 가져옴`은 띠에만 있다.
+ */
 describe("QtEditor — 크롤 표시 (03 §3)", () => {
   it("크롤 초안은 출처 띠를 보여준다", () => {
     renderEditor({ crawl: { status: "ok", fetchedAt: "06:12" } });
 
-    expect(screen.getByText(/날마다 솟는 샘물/)).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => element?.textContent?.includes("에서 가져옴") === true, {
+        selector: "span",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/06:12/)).toBeInTheDocument();
   });
 
@@ -123,7 +131,7 @@ describe("QtEditor — 크롤 표시 (03 §3)", () => {
   it("손으로 만든 새 글에는 띠도 '가져옴' 표시도 없다 — 없는 출처를 적지 않는다", () => {
     renderEditor({ crawl: null });
 
-    expect(screen.queryByText(/날마다 솟는 샘물/)).toBeNull();
+    expect(screen.queryByText(/에서 가져옴/)).toBeNull();
     expect(screen.queryByText("가져오지 못했어요")).toBeNull();
     expect(screen.queryByText("가져옴")).toBeNull();
   });

@@ -8,6 +8,7 @@ import {
   type RichTextValue,
   toTiptapDoc,
 } from "@/lib/editor/richText";
+import { defaultTagsFor, hasOwnTags } from "@/lib/record/defaultTags";
 
 /**
  * A-05 설교 에디터의 폼 계약 (02 §5.3).
@@ -34,15 +35,21 @@ export type SermonFormValues = {
   tags: string[];
 };
 
-export const EMPTY_SERMON_FORM: SermonFormValues = {
-  title: "",
-  sermonTitle: "",
-  scriptureRef: "",
-  scriptureBody: "",
-  body: EMPTY_RICH_TEXT,
-  summary: EMPTY_RICH_TEXT,
-  tags: [],
-};
+/**
+ * 빈 폼. 상수가 아니라 함수인 것은 **태그 배열 때문**이다 — 상수로 두면 모든 새 글이 같은
+ * 배열을 가리키고, 한 화면에서 지운 태그가 다음 화면에도 없다. QT·찬양도 같은 이유로 함수다.
+ */
+export function emptySermonForm(): SermonFormValues {
+  return {
+    title: "",
+    sermonTitle: "",
+    scriptureRef: "",
+    scriptureBody: "",
+    body: EMPTY_RICH_TEXT,
+    summary: EMPTY_RICH_TEXT,
+    tags: defaultTagsFor("SERMON"),
+  };
+}
 
 /** 자동 저장용 — 무엇이든 저장한다(04 §2.2). 빈 요약은 넣지 않는다 */
 export function toDraftContent(values: SermonFormValues): DraftContent {
@@ -93,7 +100,8 @@ export function fromDraftContent(
   title: string,
   tags: string[] = [],
 ): SermonFormValues {
-  if (content?.kind !== "SERMON") return { ...EMPTY_SERMON_FORM, title, tags };
+  // 저장된 글에는 기본 태그를 넣지 않는다 — 일부러 지운 태그가 되살아나면 그건 고장이다
+  if (content?.kind !== "SERMON") return { ...emptySermonForm(), title, tags };
 
   return {
     title,
@@ -112,7 +120,8 @@ export function fromDraftContent(
  * 서식(글의 종류)은 저장 계약을 가르므로 내용이 있는 뒤에는 바꿀 수 없다(02 §2.4).
  * 다만 **비어 있으면 바꾸는 것이 아니라 처음 고르는 것**이다 — 그 판정이 이 함수다.
  *
- * 태그도 본다. 태그만 붙여둔 초안을 빈 것으로 보고 지우면 그것도 유실이다.
+ * 태그는 **기본 태그가 아닌 것**만 센다(lib/record/defaultTags). 손으로 붙인 태그가
+ * 하나라도 있으면 쓴 글이다 — 그것만 남기고 지우면 그것도 유실이다.
  */
 export function isEmptyForm(values: SermonFormValues): boolean {
   return (
@@ -122,6 +131,6 @@ export function isEmptyForm(values: SermonFormValues): boolean {
     values.scriptureBody.trim() === "" &&
     isEmptyDoc(values.body) &&
     isEmptyDoc(values.summary) &&
-    values.tags.length === 0
+    !hasOwnTags("SERMON", values.tags)
   );
 }

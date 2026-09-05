@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { QtEditor } from "@/components/editor/QtEditor";
 import { SermonEditor } from "@/components/editor/SermonEditor";
 import { emptyQtForm } from "@/lib/editor/qtForm";
-import { EMPTY_SERMON_FORM } from "@/lib/editor/sermonForm";
+import { emptySermonForm } from "@/lib/editor/sermonForm";
 import { isSunday } from "@/lib/record/kst";
 
 /**
@@ -25,7 +25,7 @@ export default async function NewFaithPostPage() {
   await connection();
 
   if (isSunday(new Date())) {
-    return <SermonEditor postId={null} initialValues={EMPTY_SERMON_FORM} />;
+    return <SermonEditor postId={null} initialValues={emptySermonForm()} />;
   }
 
   return <QtEditor postId={null} initialValues={emptyQtForm()} />;

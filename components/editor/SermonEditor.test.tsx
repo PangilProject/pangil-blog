@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
-import { EMPTY_SERMON_FORM } from "@/lib/editor/sermonForm";
+import { emptySermonForm } from "@/lib/editor/sermonForm";
 
 const upsertDraft = vi.fn();
 const publishPost = vi.fn();
@@ -27,7 +27,7 @@ vi.mock("next/navigation", () => ({
  */
 function renderEditor() {
   return render(
-    <SermonEditor postId="post-1" initialValues={{ ...EMPTY_SERMON_FORM, title: "" }} />,
+    <SermonEditor postId="post-1" initialValues={{ ...emptySermonForm(), title: "" }} />,
   );
 }
 
@@ -157,7 +157,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
   it("effect가 두 번 실행돼도 저장이 나간다", async () => {
     render(
       <StrictMode>
-        <SermonEditor postId="post-1" initialValues={{ ...EMPTY_SERMON_FORM }} />
+        <SermonEditor postId="post-1" initialValues={{ ...emptySermonForm() }} />
       </StrictMode>,
     );
 
@@ -177,7 +177,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
 
     render(
       <StrictMode>
-        <SermonEditor postId={null} initialValues={{ ...EMPTY_SERMON_FORM }} />
+        <SermonEditor postId={null} initialValues={{ ...emptySermonForm() }} />
       </StrictMode>,
     );
 
@@ -379,7 +379,7 @@ describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
       JSON.stringify({
         rev: 4,
         syncedRev: 1,
-        value: { ...EMPTY_SERMON_FORM, title: "저장 안 된 설교" },
+        value: { ...emptySermonForm(), title: "저장 안 된 설교" },
         updatedAt: new Date("2026-08-16T02:00:00.000Z").toISOString(),
       }),
     );
@@ -397,7 +397,7 @@ describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
       JSON.stringify({
         rev: 4,
         syncedRev: 1,
-        value: { ...EMPTY_SERMON_FORM, title: "저장 안 된 설교" },
+        value: { ...emptySermonForm(), title: "저장 안 된 설교" },
         updatedAt: new Date("2026-08-16T02:00:00.000Z").toISOString(),
       }),
     );
