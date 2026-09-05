@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -17,6 +16,9 @@ import { profileFromEnv } from "@/lib/site/profile";
  * **정적 한 페이지로 극소화한다**: 이름, 한 줄 소개, 두 블로그 카드, 링크. 끝.
  * 경력·프로젝트·이력서는 Backlog다 — "갱신할 게 없을 만큼 단순하면 낡지도 않는다"
  * (프리모템 #11).
+ *
+ * 링크와 방침은 이제 공용 푸터가 그린다(SiteFooter). 여기에도 같은 줄이 있었는데, 그쪽에만
+ * 두 블로그로 가는 길이 빠져 있었다 — 푸터가 두 벌이면 반드시 한쪽이 낡는다.
  *
  * 카드 두 장이 각자의 액센트를 고정으로 쓴다(03 §2.1) — 허브에서 나란히 서기 때문이다.
  * 장수는 목록과 같은 조회를 쓴다: 여기가 두 블로그의 입구이므로, 얼마나 쌓였는지가 곧 소개다.
@@ -84,23 +86,6 @@ export default function HubPage() {
           <p className="pt-3 font-typewriter text-[11px] text-(--card-accent)">읽으러 가기 →</p>
         </RecordCard>
       </div>
-
-      <footer className="flex flex-wrap items-center gap-3 font-typewriter text-[11px] text-faint">
-        {profile.links.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="border border-edge px-2.5 py-1 hover:text-ink"
-          >
-            {link.label}
-          </a>
-        ))}
-        <Link href="/hub/privacy" className="ml-auto hover:text-ink">
-          개인정보처리방침
-        </Link>
-      </footer>
     </main>
   );
 }

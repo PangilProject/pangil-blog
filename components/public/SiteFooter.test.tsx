@@ -1,15 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-/**
- * 방문자 수는 async 서버 컴포넌트이고 DB를 만진다 — jsdom에서 await되지 않고, 불러오는
- * 것만으로 Prisma가 env를 요구한다. 이 테스트의 주제는 푸터의 링크와 저작권이라 대역을 세운다.
- */
-vi.mock("@/components/public/VisitorCount", () => ({
-  VisitorCount: () => <span data-testid="visitors" />,
-}));
-
-const { copyrightLine, SiteFooter } = await import("@/components/public/SiteFooter");
+import { copyrightLine, SiteFooter } from "@/components/public/SiteFooter";
 
 describe("SiteFooter", () => {
   /**
@@ -34,5 +26,32 @@ describe("SiteFooter", () => {
     render(<SiteFooter site="dev" />);
 
     expect(screen.getByRole("link", { name: "RSS" })).toHaveAttribute("href", "/rss.xml");
+  });
+
+  /**
+   * `/hub`는 라우트의 이름이다. 화면에서는 그 지면에 실제로 있는 것 — 소개라고 부른다
+   * (03 §7.2). 이 말이 코드 여러 곳에서 갈리면 같은 지면이 두 이름을 갖는다.
+   */
+  it("소개 지면을 허브라고 부르지 않는다", () => {
+    render(<SiteFooter site="faith" />);
+
+    expect(screen.getByRole("link", { name: "소개" })).toHaveAttribute("href", "/hub");
+    expect(screen.queryByRole("link", { name: "허브" })).toBeNull();
+  });
+
+  /** 지금 서 있는 지면으로 가는 링크는 누를 이유가 없는 자리만 차지한다 */
+  it("소개 지면에서는 두 블로그로 가는 길만 남는다", () => {
+    render(<SiteFooter site="hub" />);
+
+    expect(screen.getByRole("link", { name: "믿음의 기록" })).toHaveAttribute("href", "/faith");
+    expect(screen.getByRole("link", { name: "개발의 기록" })).toHaveAttribute("href", "/dev");
+    expect(screen.queryByRole("link", { name: "소개" })).toBeNull();
+  });
+
+  /** 방문자 수는 사이드바로 갔다 — 매일 보는 숫자가 지면 맨 끝에 있을 이유가 없다 */
+  it("방문자 수는 푸터에 없다", () => {
+    const { container } = render(<SiteFooter site="dev" />);
+
+    expect(container.textContent).not.toContain("오늘");
   });
 });
