@@ -77,6 +77,15 @@ const QtContentSchema = z.object({
 
 const SermonContentSchema = z.object({
   kind: z.literal("SERMON"),
+  /**
+   * 그날 설교의 제목 (02 §5.3). posts.title은 **글 제목**이고 이것과 다르다 —
+   * "2026년 08월 23일 주일 예배 설교"가 글 제목이고 "하나님의 편에 서라"가 설교 제목이다.
+   *
+   * **발행 스키마에서도 optional이다.** 이관해 온 글에는 이 값이 없고, 필수로 두면 그 글들이
+   * 렌더링 전 검증에서 떨어져 원문 폴백으로 그려진다(04 §2.4). 화면 쪽 발행 게이트는 필수로
+   * 받는다 — 새로 쓰는 글에는 빠지지 않게 하고, 옛 글은 읽히게 둔다.
+   */
+  sermonTitle: z.string().optional(),
   scriptureRef: z.string(),
   // 실제로 항상 포함되므로 발행 시 필수로 격상됐다(02 결정 로그 #13)
   scriptureBody: z.string(),

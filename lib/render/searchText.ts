@@ -37,6 +37,8 @@ export function extractSearchText(title: string, content: PostContent): string {
       parts.push(
         content.scriptureRef,
         content.scriptureBody,
+        // 설교 제목은 본문 밖에 있다 — 안 담으면 그 말로는 글을 못 찾는다
+        content.sermonTitle ?? "",
         tiptapToPlainText(content.body),
         tiptapToPlainText(content.summary),
       );

@@ -19,7 +19,10 @@ import {
  */
 
 export type SermonFormValues = {
+  /** 글 제목 — 목록·RSS·OG에 나가는 이름. posts.title로 간다 */
   title: string;
+  /** 그날 설교의 제목. content에 실린다(02 §5.3) */
+  sermonTitle: string;
   scriptureRef: string;
   scriptureBody: string;
   body: RichTextValue;
@@ -33,6 +36,7 @@ export type SermonFormValues = {
 
 export const EMPTY_SERMON_FORM: SermonFormValues = {
   title: "",
+  sermonTitle: "",
   scriptureRef: "",
   scriptureBody: "",
   body: EMPTY_RICH_TEXT,
@@ -44,6 +48,8 @@ export const EMPTY_SERMON_FORM: SermonFormValues = {
 export function toDraftContent(values: SermonFormValues): DraftContent {
   return {
     kind: "SERMON",
+    // 아직 안 적은 설교 제목은 필드를 넣지 않는다 — 빈 문자열이 "적었는데 비었다"로 읽힌다
+    ...(values.sermonTitle.trim() === "" ? {} : { sermonTitle: values.sermonTitle.trim() }),
     scriptureRef: values.scriptureRef,
     scriptureBody: values.scriptureBody,
     body: toTiptapDoc(values.body),
@@ -57,7 +63,9 @@ export function toDraftContent(values: SermonFormValues): DraftContent {
  * 용도다. 규칙을 두 곳에 적는 대신 메시지만 여기서 붙인다.
  */
 export const SermonPublishFormSchema = z.object({
-  title: z.string().trim().min(1, "설교 제목을 적어주세요"),
+  title: z.string().trim().min(1, "글 제목을 적어주세요"),
+  // 저장 계약에서는 optional이다(옛 글에는 없다). 새로 쓰는 글에서만 화면이 막는다
+  sermonTitle: z.string().trim().min(1, "설교 제목을 적어주세요"),
   scriptureRef: z.string().trim().min(1, "당일 말씀 범위를 적어주세요"),
   scriptureBody: z.string().trim().min(1, "말씀 본문을 적어주세요"),
   body: z.custom<RichTextValue>(
@@ -71,6 +79,7 @@ export const SermonPublishFormSchema = z.object({
 export function toPublishContent(values: SermonFormValues): PostContent {
   return {
     kind: "SERMON",
+    ...(values.sermonTitle.trim() === "" ? {} : { sermonTitle: values.sermonTitle.trim() }),
     scriptureRef: values.scriptureRef.trim(),
     scriptureBody: values.scriptureBody.trim(),
     body: toTiptapDoc(values.body),
@@ -88,6 +97,7 @@ export function fromDraftContent(
 
   return {
     title,
+    sermonTitle: content.sermonTitle ?? "",
     scriptureRef: content.scriptureRef ?? "",
     scriptureBody: content.scriptureBody ?? "",
     body: (content.body ?? EMPTY_TIPTAP_DOC) as RichTextValue,
@@ -107,6 +117,7 @@ export function fromDraftContent(
 export function isEmptyForm(values: SermonFormValues): boolean {
   return (
     values.title.trim() === "" &&
+    values.sermonTitle.trim() === "" &&
     values.scriptureRef.trim() === "" &&
     values.scriptureBody.trim() === "" &&
     isEmptyDoc(values.body) &&
