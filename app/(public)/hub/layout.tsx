@@ -13,7 +13,7 @@ export const metadata = siteLayoutMetadata("hub");
 
 export default function HubSiteLayout({ children }: LayoutProps<"/hub">) {
   return (
-    <div data-site="hub" className="flex min-h-full flex-col">
+    <div data-site="hub" className="flex min-h-full flex-1 flex-col">
       <div className="flex-1">{children}</div>
 
       {/* 자기 푸터를 따로 그리고 있었다. 그쪽에만 다른 지면으로 가는 길이 없었다 */}

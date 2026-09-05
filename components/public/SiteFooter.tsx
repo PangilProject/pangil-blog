@@ -34,7 +34,7 @@ export function SiteFooter({ site }: { site: SiteKey }) {
   const { name, links } = profileFromEnv();
 
   return (
-    <footer className="mx-auto flex w-full max-w-[1240px] flex-col gap-3 border-edge border-t px-[5%] py-8 font-typewriter text-[11px] text-faint">
+    <footer className="flex w-full flex-col gap-3 border-edge border-t px-[6%] py-8 font-typewriter text-[11px] text-faint lg:px-10">
       <nav aria-label="다른 지면과 구독" className="flex flex-wrap items-center gap-4">
         {crossLinks(site).map((link) => (
           <Link key={link.href} href={link.href} className="hover:text-ink">
