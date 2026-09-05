@@ -25,7 +25,8 @@
     "db:seed": "prisma db seed",
     "prepare": "husky",
     "db:deploy": "prisma migrate deploy",
-    "content:sermon-title": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/001-sermon-title.mts"
+    "content:sermon-title": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/001-sermon-title.mts",
+    "content:tech-slug": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/002-tech-index-slug.mts"
   },
   "prisma": {
     "seed": "node prisma/seed.ts"
