@@ -8,8 +8,11 @@ import { brandLabel } from "@/lib/site/brand";
 /**
  * 공개 지면 상단 (프로토타입 `shead` · 02 §1).
  *
- * 브랜드 + 얇은 네비 하나. 읽는 사람이 목록으로 돌아갈 길과 구독(RSS), 그리고 밤낮 전환이
- * 여기 있다. 그 외에는 두지 않는다 — 지면의 주인은 글이다.
+ * 브랜드 + 얇은 네비 하나. 그 외에는 두지 않는다 — 지면의 주인은 글이다.
+ *
+ * `목록`과 `RSS`는 뺐다(2026-09-05). 목록은 **브랜드를 누르면 가는 그 자리**여서 같은 링크가
+ * 둘이었고, 구독은 한 번 하면 끝이라 글을 읽으러 온 사람의 눈길을 매번 나눠 가질 이유가
+ * 없다 — 푸터로 내렸다(SiteFooter).
  *
  * `글쓰기`는 예외다(A-03b). 상세의 `수정`과 달리 **로그인 여부와 무관하게 보인다** — 그래서
  * 쿠키를 읽을 필요가 없고, 정적 링크 하나로 끝난다(클라이언트 JS 0). 세션이 없으면 proxy가
@@ -44,12 +47,6 @@ export function SiteHeader({ site }: { site: PublicSite }) {
         >
           글쓰기
         </Link>
-        <Link href={home} className="hover:text-ink">
-          목록
-        </Link>
-        <a href="/rss.xml" className="hover:text-ink">
-          RSS
-        </a>
         <ThemeToggle />
       </nav>
     </header>

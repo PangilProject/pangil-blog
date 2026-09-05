@@ -14,6 +14,7 @@ export function ListHeader({
   counts,
   searchAction,
   searchQuery,
+  titleHidden = false,
 }: {
   title: string;
   /** "8월" */
@@ -22,11 +23,19 @@ export function ListHeader({
   /** 검색 폼이 향할 경로 (D-04 / F-05) */
   searchAction: string;
   searchQuery?: string;
+  /**
+   * 제목을 화면에서만 감춘다. 지면 이름을 헤더가 이미 말하고 있을 때 쓴다 —
+   * 같은 말이 두 번 찍히면 그중 하나는 장식이다.
+   *
+   * 지우지 않고 감추는 이유는 문서 구조다. h1이 없는 지면은 검색엔진과 스크린리더에게
+   * "무엇에 대한 목록인지" 말해주지 않는다.
+   */
+  titleHidden?: boolean;
 }) {
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="font-serif text-[clamp(19px,3vw,23px)]">
+        <h1 className={titleHidden ? "sr-only" : "font-serif text-[clamp(19px,3vw,23px)]"}>
           <Link href={searchAction} className="hover:text-(--accent)">
             {title}
           </Link>

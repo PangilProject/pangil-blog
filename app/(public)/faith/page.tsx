@@ -75,6 +75,7 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
           href: tab.type ? `/faith?type=${tab.type}` : "/faith",
           active: type === tab.type,
         }))}
+        titleHidden={!query}
         tabsLabel="묵상 타입 필터"
         page={list}
         hrefFor={hrefFor}

@@ -63,6 +63,7 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
             active: categorySlug === category.slug,
           })),
         ]}
+        titleHidden={!query}
         tabsLabel="카테고리 필터"
         page={list}
         hrefFor={hrefFor}

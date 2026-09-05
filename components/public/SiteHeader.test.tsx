@@ -26,6 +26,13 @@ describe("SiteHeader", () => {
     );
   });
 
+  it("목록과 RSS는 헤더에 없다 — 브랜드가 곧 목록이고, 구독은 푸터로 내렸다", () => {
+    render(<SiteHeader site="faith" />);
+
+    expect(screen.queryByRole("link", { name: "목록" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "RSS" })).toBeNull();
+  });
+
   it("글쓰기는 로그인 여부와 무관하게 놓인다 — 갈리는 곳은 proxy다", () => {
     // 서버 컴포넌트이고 세션을 보지 않는다. 즉 렌더만으로 늘 있어야 한다
     render(<SiteHeader site="faith" />);
