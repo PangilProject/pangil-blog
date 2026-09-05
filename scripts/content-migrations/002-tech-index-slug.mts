@@ -29,6 +29,30 @@ import { padCallNumber } from "@/lib/record/callNumber";
 
 const APPLY = process.argv.includes("--apply");
 
+/**
+ * 어느 DB에 붙었는지 먼저 말한다.
+ *
+ * 이 스크립트는 `--env-file-if-exists=.env`로 도는데 그 파일은 **dev 전용**이다(08 §3).
+ * 프로덕션에 돌리려면 셸에서 `DATABASE_URL`을 덮어써야 하는데, 잊으면 dev에 붙고 dev는
+ * 이미 옮겨져 있어 "옮길 것이 없다"로 조용히 끝난다 — 실제로 그렇게 한 번 헛돌았다.
+ * 성공처럼 보이는 실패가 가장 나쁘다.
+ *
+ * 비밀번호는 찍지 않는다. 대신 **사용자 이름은 찍는다** — Supabase 풀러 주소는 dev·prod가
+ * 같은 리전이면 호스트까지 똑같고, 둘을 가르는 것은 사용자 이름에 붙은 프로젝트 ref뿐이다.
+ * 그 ref는 `NEXT_PUBLIC_SUPABASE_URL`에도 들어 있는 공개 값이다.
+ */
+function connectionLabel(): string {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return "(DATABASE_URL 없음)";
+
+  try {
+    const url = new URL(raw);
+    return `${url.username}@${url.hostname}${url.pathname}`;
+  } catch {
+    return "(읽을 수 없는 DATABASE_URL)";
+  }
+}
+
 async function main() {
   const posts = await prisma.post.findMany({
     where: { type: "TECH", slug: { not: null }, callNumber: { not: null } },
@@ -49,6 +73,7 @@ async function main() {
     return owner !== undefined && owner !== post.id;
   });
 
+  console.log(`붙은 곳        ${connectionLabel()}`);
   console.log(`기술 글        ${posts.length}편`);
   console.log(`이미 제 번호   ${already}편`);
   console.log(`옮길 대상      ${targets.length}편`);
