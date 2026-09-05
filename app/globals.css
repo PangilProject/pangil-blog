@@ -65,6 +65,7 @@
   --rule-top: 1.5px; /* 카드 상단 괘 두께 */
   --rule-gap: 27px; /* 하늘 괘선 간격 */
   --measure: 42rem; /* 읽기 지면 폭 (660~720px 범위) */
+  --sheet: 52rem; /* 기록 지면 폭 — 안쪽 7% 여백을 빼면 본문이 --measure 근처에 떨어진다 */
   --lh-body: 2; /* 본문 행간 */
   --lh-scripture: 2.15; /* 말씀 행간 */
 
@@ -170,6 +171,7 @@
   --leading-body: var(--lh-body);
   --leading-scripture: var(--lh-scripture);
   --container-measure: var(--measure);
+  --container-sheet: var(--sheet);
 
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);

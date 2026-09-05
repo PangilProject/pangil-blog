@@ -76,7 +76,7 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
         데스크탑에서는 사이드바 + 지면 + 목차 세 칸이다. 지면 폭은 본문 가독 폭(--container-measure)에
         묶여 있고, 목차는 그 옆에 붙는다 — 지면을 좁히지 않는다
       */}
-      <div className="flex w-full max-w-[calc(var(--container-measure)+15rem)] flex-col lg:flex-row lg:items-start lg:gap-10">
+      <div className="flex w-full mx-auto max-w-[calc(var(--container-sheet)+15rem)] flex-col lg:flex-row lg:items-start lg:gap-10">
         <div className="order-2 flex min-w-0 flex-1 flex-col gap-8 lg:order-1">
           <PostDetail post={post} />
 
