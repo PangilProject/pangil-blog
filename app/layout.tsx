@@ -14,7 +14,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: BRAND_MARK,
-  robots: { index: true, follow: true },
+  /**
+   * `robots: index, follow`를 적지 않는다. 그건 로봇의 기본값이라 적어도 얻는 것이 없는데,
+   * **없는 주소 화면에서는 해가 된다** — 그 화면에는 Next가 `noindex`를 붙이므로 한 문서에
+   * 상반된 지시가 둘 남는다. 색인하지 말아야 할 지면은 각자 `robots`를 깐다
+   * (개인정보처리방침·검색 결과·없는 주소).
+   */
   // 호스트를 보고 지면별로 답한다(app/manifest.webmanifest/route.ts)
   manifest: "/manifest.webmanifest",
   /**
