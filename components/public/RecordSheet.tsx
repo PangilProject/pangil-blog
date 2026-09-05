@@ -20,6 +20,7 @@ export function RecordSheet({
   publishedAt,
   title,
   subtitle,
+  actions,
   meta,
   children,
   className,
@@ -32,6 +33,11 @@ export function RecordSheet({
   title: string;
   /** 말씀 범위·카테고리 등 제목 아래 한 줄 */
   subtitle?: ReactNode;
+  /**
+   * 이 글에 하는 일 — 상단 첫 줄 오른쪽. 청구기호·날짜와 같은 줄이다(A-03b).
+   * 읽는 사람에게는 아무것도 그리지 않으므로 그 줄은 대개 비어 있다.
+   */
+  actions?: ReactNode;
   /** 태그 등 지면 하단 메타 */
   meta?: ReactNode;
   children: ReactNode;
@@ -55,9 +61,18 @@ export function RecordSheet({
       <div aria-hidden className="absolute inset-x-0 top-0 h-[1.5px] bg-(--accent)" />
 
       <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 font-typewriter text-[11px]">
-          <span className="text-(--accent)">{formatCallNumber({ type, callNumber }) ?? ""}</span>
-          {publishedAt && <time className="text-faint">{publishedAt}</time>}
+        {/*
+          한 줄이다: 왼쪽은 이 글이 무엇인지(청구기호·날짜), 오른쪽은 이 글에 할 수 있는 일.
+          전에는 날짜가 오른쪽 끝에 혼자 밀려 있고 관리 버튼이 그 아래 또 한 줄을 차지했다 —
+          같이 읽어야 할 두 값이 지면 양 끝으로 갈라져 있었다
+        */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 font-typewriter text-[11px]">
+          <span className="flex flex-wrap items-baseline gap-2.5">
+            <span className="text-(--accent)">{formatCallNumber({ type, callNumber }) ?? ""}</span>
+            {publishedAt && <time className="text-faint">{publishedAt}</time>}
+          </span>
+
+          {actions}
         </div>
 
         {/* 분류·관리 컨트롤이 제목 위에 온다 — 제목이 본문에 가장 가까이 붙는다 */}

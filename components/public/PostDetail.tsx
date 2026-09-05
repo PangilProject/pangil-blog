@@ -30,23 +30,20 @@ export function PostDetail({ post }: { post: PublicPost }) {
       callNumber={post.callNumber}
       publishedAt={publishedAt}
       title={post.title}
+      // 분류는 제목 바로 위 한 줄. faith에는 이 값이 없다(카테고리는 TECH 전용)
       subtitle={
-        // 제목 아래 줄: 왼쪽은 분류, 오른쪽은 관리 컨트롤(A-03b).
-        // faith는 이 자리에 분류가 없다(카테고리는 TECH 전용) — 그래도 줄은 놓는다
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          {post.categoryName ? (
-            <p className="font-typewriter text-[11px] text-faint">{post.categoryName}</p>
-          ) : (
-            <span />
-          )}
-
-          <PostAdminControls
-            slug={post.slug}
-            postId={post.id}
-            title={post.title}
-            listPath={post.type === "TECH" ? "/dev" : "/faith"}
-          />
-        </div>
+        post.categoryName ? (
+          <p className="font-typewriter text-[11px] text-faint">{post.categoryName}</p>
+        ) : null
+      }
+      // 관리 컨트롤은 청구기호·날짜와 같은 줄 오른쪽이다 — 제목과 본문 사이를 비워 둔다
+      actions={
+        <PostAdminControls
+          slug={post.slug}
+          postId={post.id}
+          title={post.title}
+          listPath={post.type === "TECH" ? "/dev" : "/faith"}
+        />
       }
       meta={
         post.tags.length > 0 ? (
