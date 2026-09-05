@@ -267,7 +267,7 @@ export async function publishPostRecord({
     // 이미 slug가 있으면 유지한다 — 발행된 URL은 바뀌면 안 된다
     const slug =
       existingSlug ??
-      (await findAvailableSlug(deriveSlug({ type, callNumber, title }), async (candidate) => {
+      (await findAvailableSlug(deriveSlug({ type, callNumber }), async (candidate) => {
         const taken = await tx.post.findFirst({
           where: { slug: candidate, NOT: { id } },
           select: { id: true },

@@ -123,7 +123,7 @@ async function loadPost(
 
   const slug = publishable
     ? await findAvailableSlug(
-        deriveSlug({ type: post.type, callNumber: callNumber as number, title: post.title }),
+        deriveSlug({ type: post.type, callNumber: callNumber as number }),
         async (candidate) =>
           (await prisma.post.findUnique({ where: { slug: candidate }, select: { id: true } })) !==
           null,
