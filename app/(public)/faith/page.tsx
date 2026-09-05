@@ -15,6 +15,8 @@ import { siteAlternates } from "@/lib/site/metadata";
  * 정렬은 **순수 최신순**이다(2026-08-18 결정). QT를 저녁에 쓰는 날도 있어 작성 순서가
  * 유동적이므로 상단 고정·그룹핑을 두지 않는다.
  *
+ * 타입 축은 사이드바가 쥔다(SiteSidebar) — 목록 위 칸막이 탭과 두 벌이 되지 않게.
+ *
  * 타입 필터(F-02)는 쿼리 파라미터다 — URL로 공유 가능한 뷰이고, `/faith/{slug}`가 상세이므로
  * 경로 세그먼트를 쓸 수 없다. 태그별 목록(F-04)만 경로다(`/faith/tags/{태그}`) — 상세에서
  * 오는 링크이고 검색엔진이 읽는 주소다.
@@ -70,13 +72,7 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
         title={query ? `"${query}" 검색 결과` : "믿음의 기록"}
         month={`${toKstDate(now).month}월`}
         counts={counts}
-        tabs={TYPE_TABS.map((tab) => ({
-          label: tab.label,
-          href: tab.type ? `/faith?type=${tab.type}` : "/faith",
-          active: type === tab.type,
-        }))}
         titleHidden={!query}
-        tabsLabel="묵상 타입 필터"
         page={list}
         hrefFor={hrefFor}
         searchAction="/faith"

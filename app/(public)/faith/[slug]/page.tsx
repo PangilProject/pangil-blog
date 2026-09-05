@@ -5,9 +5,8 @@ import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
 import { PostNeighbors } from "@/components/public/PostNeighbors";
 import { SiteHeader } from "@/components/public/SiteHeader";
-import { DividerTabs } from "@/components/record/DividerTabs";
 import { findNeighbors, findPublishedPostBySlug } from "@/lib/db/publicPosts";
-import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
+import { TYPE_LABELS } from "@/lib/record/axis";
 import { listTag, postTag } from "@/lib/revalidate/tags";
 import { articleJsonLd } from "@/lib/seo/jsonLd";
 import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
@@ -44,7 +43,7 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
   const neighbors = await findNeighbors("faith", { kind: "type", type: post.type }, post);
 
   return (
-    <main className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 px-[5%] py-10">
+    <main className="flex w-full flex-col gap-8">
       <JsonLd
         data={articleJsonLd({
           site: "faith",
@@ -59,20 +58,6 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
       />
 
       <SiteHeader site="faith" />
-
-      {/* 목록이 쓰는 그 칸막이 탭이다(03 §3). 상세에서도 다른 타입으로 한 번에 가고,
-          지금 읽는 글의 타입이 활성으로 보인다 */}
-      <DividerTabs
-        items={[
-          { label: "전체", href: "/faith", active: false },
-          ...FAITH_TYPES.map((type) => ({
-            label: TYPE_LABELS[type],
-            href: `/faith?type=${type}`,
-            active: type === post.type,
-          })),
-        ]}
-        label="묵상 타입"
-      />
 
       <PostDetail post={post} />
 

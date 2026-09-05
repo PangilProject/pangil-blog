@@ -2,7 +2,7 @@ import { connection } from "next/server";
 
 import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
-import { countPublishedPosts, findPublishedPosts, findUsedCategories } from "@/lib/db/publicLists";
+import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
 import { blogJsonLd } from "@/lib/seo/jsonLd";
 import { siteAlternates } from "@/lib/site/metadata";
@@ -13,7 +13,8 @@ import { siteAlternates } from "@/lib/site/metadata";
  * 홈과 목록을 통합한다(02 §2.2 — 기술 글은 비정기라 별도 홈 큐레이션은 과설계).
  * 카테고리 필터(D-03)는 쿼리 파라미터, 태그는 경로다 — faith와 같은 규칙이다.
  *
- * 카테고리 탭은 **글이 있는 카테고리만** 보여준다. 빈 칸막이는 "이 칸은 아직 비어 있어요"를
+ * 카테고리 축은 사이드바가 쥔다(SiteSidebar) — 목록 위 칸막이 탭과 두 벌이 되지 않게.
+ * 거기서도 **글이 있는 카테고리만** 보여준다: 빈 칸막이는 "이 칸은 아직 비어 있어요"를
  * 부르는 자리만 만든다.
  */
 export const instant = false;
@@ -29,10 +30,9 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
   const page = Number(typeof params.page === "string" ? params.page : 1) || 1;
   const now = new Date();
 
-  const [list, counts, categories] = await Promise.all([
+  const [list, counts] = await Promise.all([
     findPublishedPosts({ site: "dev", categorySlug, query, page }),
     countPublishedPosts("dev", startOfKstMonth(now)),
-    findUsedCategories(),
   ]);
 
   const search = new URLSearchParams();
@@ -55,16 +55,7 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
         title={query ? `"${query}" 검색 결과` : "개발의 기록"}
         month={`${toKstDate(now).month}월`}
         counts={counts}
-        tabs={[
-          { label: "전체", href: "/dev", active: categorySlug === null },
-          ...categories.map((category) => ({
-            label: category.name,
-            href: `/dev?category=${category.slug}`,
-            active: categorySlug === category.slug,
-          })),
-        ]}
         titleHidden={!query}
-        tabsLabel="카테고리 필터"
         page={list}
         hrefFor={hrefFor}
         searchAction="/dev"
