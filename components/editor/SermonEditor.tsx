@@ -105,7 +105,6 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
     error: publishError,
     publish,
   } = usePublishFlow<SermonFormValues>({
-    type: "SERMON",
     gate: SermonPublishFormSchema,
     flush: autosave.flush,
     clearMirror: autosave.clearMirror,

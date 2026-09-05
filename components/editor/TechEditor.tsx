@@ -126,7 +126,6 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
     error: publishError,
     publish,
   } = usePublishFlow<TechFormValues>({
-    type: "TECH",
     gate: TechPublishFormSchema,
     flush: autosave.flush,
     clearMirror: autosave.clearMirror,

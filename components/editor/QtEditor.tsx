@@ -119,7 +119,6 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
     error: publishError,
     publish,
   } = usePublishFlow<QtFormValues>({
-    type: "QT",
     gate: QtPublishFormSchema,
     flush: autosave.flush,
     clearMirror: autosave.clearMirror,

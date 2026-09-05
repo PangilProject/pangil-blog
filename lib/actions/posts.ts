@@ -102,7 +102,12 @@ export const upsertDraft = withAdmin(
 );
 
 export type PublishPostResult =
-  | { ok: true; id: string; slug: string; callNumber: number }
+  /**
+   * `url`은 **도착지**다. 발행 화면은 루트 호스트의 `/admin`이고 글은 `faith.○`에 서므로,
+   * 도메인이 붙은 뒤로는 지면 이동이 교차 출처다 — 경로만으로는 갈 수 없다. 그리고
+   * 화면에서는 `SITE_HOST_*`를 읽을 수 없으니(NEXT_PUBLIC_이 아니다) 서버가 적어 보낸다
+   */
+  | { ok: true; id: string; slug: string; callNumber: number; url: string }
   | { ok: false; reason: "not-found" | "invalid-content" | "type-mismatch"; issues?: string[] };
 
 export const publishPost = withAdmin(async (_user, postId: string): Promise<PublishPostResult> => {
@@ -136,6 +141,7 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
     id: published.id,
     slug: published.slug,
     callNumber: published.callNumber,
+    url: absolutePostUrl(post.type, published.slug, { host: (await headers()).get("host") }),
   };
 });
 
