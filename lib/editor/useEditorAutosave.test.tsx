@@ -134,6 +134,35 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
     expect(storage.getItem(mirrorKey("QT", "f"))).toBeNull();
   });
 
+  /**
+   * `작성 취소`의 핵심이다. 밀린 저장을 끊지 않으면 취소를 누른 뒤 디바운스가 깨어나
+   * 초안을 만든다 — 초안을 안 남기려고 누른 버튼이 초안을 남긴다.
+   */
+  it("버리고 나가면 밀린 저장이 나가지 않는다", async () => {
+    const saved: string[] = [];
+    const storage = memoryStorage();
+
+    const { result } = renderHook(() =>
+      useEditorAutosave<string>({
+        type: "QT",
+        id: "h",
+        storage,
+        save: async (value) => void saved.push(value),
+      }),
+    );
+
+    act(() => result.current.onChange("쓰다 만 글"));
+    act(() => result.current.abandon());
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+
+    expect(saved).toEqual([]);
+    // 로컬 사본도 남지 않는다 — 다음에 열 때 복구 배너가 이걸 되살리겠다고 물으면 안 된다
+    expect(storage.getItem(mirrorKey("QT", "h"))).toBeNull();
+  });
+
   it("저장소가 없어도(SSR·차단) 동작한다", async () => {
     const saved: string[] = [];
 
