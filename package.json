@@ -24,7 +24,8 @@
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
     "prepare": "husky",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "content:sermon-title": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/001-sermon-title.mts"
   },
   "prisma": {
     "seed": "node prisma/seed.ts"
