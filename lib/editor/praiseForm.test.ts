@@ -6,6 +6,7 @@ import {
   formatBarCount,
   fromDraftContent,
   isBarOnlyLabel,
+  isEmptyForm,
   newSection,
   type PraiseFormValues,
   PraisePublishFormSchema,
@@ -238,5 +239,21 @@ describe("묵상과 기도 — 블록 목록 (02 §5.4)", () => {
       doc("첫 덩이"),
       doc("둘째 덩이"),
     ]);
+  });
+});
+
+describe("isEmptyForm — 서식 전환 조건", () => {
+  it("섹션 하나가 놓인 빈 폼은 비어 있다 — 라벨만 있는 섹션은 아직 빈 것이다", () => {
+    expect(isEmptyForm(emptyPraiseForm())).toBe(true);
+  });
+
+  it("가사나 주소가 있으면 비어 있지 않다", () => {
+    const base = emptyPraiseForm();
+
+    expect(isEmptyForm({ ...base, youtubeUrl: "https://youtu.be/x" })).toBe(false);
+    expect(
+      isEmptyForm({ ...base, sections: [{ id: "a", label: "Verse", lyrics: "주님의 시간에" }] }),
+    ).toBe(false);
+    expect(isEmptyForm(filled())).toBe(false);
   });
 });

@@ -252,3 +252,19 @@ export function fromDraftContent(
     tags,
   };
 }
+
+/**
+ * 아직 아무것도 적지 않은 폼인가 (A-06 · 서식 전환 조건).
+ *
+ * 섹션은 빈 폼에도 하나가 놓여 있고(빈 화면을 주지 않는다) 라벨도 기본값이 들어 있다.
+ * 그래서 **가사가 적혔는가**로 본다 — 라벨만 있는 섹션은 아직 빈 것이다.
+ */
+export function isEmptyForm(values: PraiseFormValues): boolean {
+  return (
+    values.title.trim() === "" &&
+    values.youtubeUrl.trim() === "" &&
+    values.sections.every((section) => section.lyrics.trim() === "") &&
+    values.meditationBlocks.every((block) => isEmptyDoc(block.doc)) &&
+    values.tags.length === 0
+  );
+}

@@ -9,6 +9,7 @@ import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolb
 import { CrawlBand } from "@/components/editor/CrawlBand";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
+import { FaithFormatTabs } from "@/components/editor/FaithFormatTabs";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
@@ -21,6 +22,7 @@ import { upsertDraft } from "@/lib/actions/posts";
 import {
   countEmptyAnswers,
   emptyQtForm,
+  isEmptyForm,
   type QtFormValues,
   QtPublishFormSchema,
   toDraftContent,
@@ -178,6 +180,10 @@ export function QtEditor({ postId, initialValues, crawl }: QtEditorProps) {
         }
       >
         <div className="flex flex-col gap-4 px-[6%] pt-6">
+          {/* 서식은 아직 아무것도 안 적었을 때만 고를 수 있다(02 §2.4) — 저장 계약이
+              타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
+          <FaithFormatTabs current="QT" postId={id} isEmpty={isEmptyForm(watch())} />
+
           {crawl && (
             <CrawlBand
               variant={crawl.status}

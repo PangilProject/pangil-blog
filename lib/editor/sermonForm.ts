@@ -95,3 +95,22 @@ export function fromDraftContent(
     tags,
   };
 }
+
+/**
+ * 아직 아무것도 적지 않은 폼인가 (A-05 · 서식 전환 조건).
+ *
+ * 서식(글의 종류)은 저장 계약을 가르므로 내용이 있는 뒤에는 바꿀 수 없다(02 §2.4).
+ * 다만 **비어 있으면 바꾸는 것이 아니라 처음 고르는 것**이다 — 그 판정이 이 함수다.
+ *
+ * 태그도 본다. 태그만 붙여둔 초안을 빈 것으로 보고 지우면 그것도 유실이다.
+ */
+export function isEmptyForm(values: SermonFormValues): boolean {
+  return (
+    values.title.trim() === "" &&
+    values.scriptureRef.trim() === "" &&
+    values.scriptureBody.trim() === "" &&
+    isEmptyDoc(values.body) &&
+    isEmptyDoc(values.summary) &&
+    values.tags.length === 0
+  );
+}
