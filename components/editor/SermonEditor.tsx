@@ -39,10 +39,15 @@ import { usePublishFlow } from "@/lib/editor/usePublishFlow";
 
 export type SermonEditorProps = {
   postId: string | null;
+  /**
+   * 초안인가. 새 글 경로는 늘 초안이라 기본값이 참이고, `[id]` 경로만 실제 상태를 넘긴다 —
+   * 발행된 글을 고치는 중이면 `작성 취소`가 서지 않는다
+   */
+  isDraft?: boolean;
   initialValues: SermonFormValues;
 };
 
-export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
+export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -130,8 +135,8 @@ export function SermonEditor({ postId, initialValues }: SermonEditorProps) {
         }
         actions={
           <>
-            {/* 이 세션에서 만든 초안만 지운다 — 이어서 쓰려고 연 글은 그냥 나가기가 된다 */}
-            <CancelDraftButton draftId={postId === null ? id : null} onDiscard={autosave.abandon} />
+            {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
+            <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
             <Button size="sm" type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>

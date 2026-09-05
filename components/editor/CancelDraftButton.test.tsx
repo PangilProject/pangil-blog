@@ -67,6 +67,16 @@ describe("CancelDraftButton", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  /**
+   * 첫 자동 저장이 끝나면 에디터가 `[id]` 경로로 옮겨가며 다시 마운트된다. 그때도 이 글은
+   * 여전히 초안이므로 확인 창이 떠야 한다 — 처음 구현은 여기서 그냥 나가버렸다.
+   */
+  it("발행된 글을 고치는 중이면 이 버튼이 없다", () => {
+    render(<CancelDraftButton draftId="p1" isDraft={false} onDiscard={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: "작성 취소" })).toBeNull();
+  });
+
   /** 지우지 못한 채로 나가면 안 된다 — 남은 초안을 모른 채 초안함이 늘어난다 */
   it("지우지 못하면 머무르고 사유를 말한다", async () => {
     discardDraft.mockResolvedValue({ ok: false, reason: "not-found" });

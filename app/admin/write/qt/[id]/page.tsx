@@ -21,6 +21,7 @@ export default async function EditQtPage({ params }: PageProps<"/admin/write/qt/
   return (
     <QtEditor
       postId={post.id}
+      isDraft={post.status === "DRAFT"}
       initialValues={fromDraftContent(
         post.content.ok ? post.content.content : null,
         post.title,
