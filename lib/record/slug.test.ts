@@ -9,22 +9,28 @@ describe("deriveSlug — 05 §6.4", () => {
     expect(deriveSlug({ type: "PRAISE", callNumber: 388 })).toBe("pr-388");
   });
 
-  it("TECH는 제목을 kebab으로 만든다", () => {
-    expect(deriveSlug({ type: "TECH", callNumber: 72, title: "Next.js App Router 정리" })).toBe(
-      "next-js-app-router",
-    );
+  /**
+   * 제목은 주소에 들어가지 않는다(2026-09-05 개편). 한글로 쓰는 글에서 제목 kebab은
+   * `cto`·`2-velog-tistory` 같은 ASCII 찌꺼기만 남겼고, 514편 중 61편은 숫자만 남아
+   * 백준 문제 번호가 주소가 돼 있었다.
+   */
+  it("TECH는 청구기호를 화면에 적는 그대로 쓴다", () => {
+    expect(deriveSlug({ type: "TECH", callNumber: 72 })).toBe("0072");
+    expect(deriveSlug({ type: "TECH", callNumber: 1 })).toBe("0001");
+    expect(deriveSlug({ type: "TECH", callNumber: 514 })).toBe("0514");
   });
 
-  it("한글만 있는 TECH 제목은 번호로 폴백한다 — kebab 결과가 비기 때문이다", () => {
-    expect(deriveSlug({ type: "TECH", callNumber: 72, title: "티스토리를 떠나며" })).toBe(
-      "post-72",
-    );
-    expect(deriveSlug({ type: "TECH", callNumber: 72, title: "" })).toBe("post-72");
-    expect(deriveSlug({ type: "TECH", callNumber: 72 })).toBe("post-72");
+  /**
+   * 자리를 채우는 것이 소급 적용을 살렸다. 옛 slug 중 `2947`·`260405`처럼 숫자만 남은 것이
+   * 61개 있었는데 전부 앞자리가 0이 아니라, 패딩한 목표와 하나도 부딪히지 않았다.
+   */
+  it("앞자리를 채운다 — 맨 숫자로 갔으면 옛 주소와 부딪혔다", () => {
+    expect(deriveSlug({ type: "TECH", callNumber: 2 })).not.toBe("2");
+    expect(deriveSlug({ type: "TECH", callNumber: 2 })).toBe("0002");
   });
 
-  it("기호만 있는 제목도 폴백한다", () => {
-    expect(deriveSlug({ type: "TECH", callNumber: 5, title: "!!! ??? ---" })).toBe("post-5");
+  it("네 자리를 넘으면 그대로 늘어난다 — 자르지 않는다", () => {
+    expect(deriveSlug({ type: "TECH", callNumber: 12345 })).toBe("12345");
   });
 });
 
