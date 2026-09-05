@@ -84,3 +84,75 @@ describe("ImagePaste", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 });
+
+/**
+ * 올리는 동안 화면이 아무 말도 하지 않던 자리다. 붙여넣어도 아무 일이 없고, 올라간 뒤에야
+ * 그림이 툭 나타났다 — 되고 있는 건지 알 수 없었다.
+ */
+describe("올리는 동안", () => {
+  const held = () => {
+    let release: (value: ImageUploadResult | null) => void = () => {};
+    const promise = new Promise<ImageUploadResult | null>((resolve) => {
+      release = resolve;
+    });
+    return { upload: () => promise, release };
+  };
+
+  const boxes = (instance: Editor) => instance.view.dom.querySelectorAll(".image-uploading").length;
+
+  it("빈 칸을 세워 되고 있다고 말한다", async () => {
+    const { upload } = held();
+    const instance = open(upload);
+
+    paste(instance, [png()]);
+    await settle();
+
+    expect(boxes(instance)).toBe(1);
+    expect(instance.view.dom.textContent).toContain("올리는 중");
+  });
+
+  /**
+   * 빈 칸이 문서에 들어가면 1초마다 도는 자동 저장이 그것까지 저장한다 — content는 Zod를
+   * 지나가므로 모르는 노드는 검증에서 걸리거나 초안에 쓰레기로 남는다.
+   */
+  it("빈 칸은 문서에 들어가지 않는다 — 저장되면 안 된다", async () => {
+    const { upload } = held();
+    const instance = open(upload);
+
+    paste(instance, [png()]);
+    await settle();
+
+    expect(JSON.stringify(instance.getJSON())).not.toContain("image-uploading");
+    expect(instance.getJSON()).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "본문" }] }],
+    });
+  });
+
+  it("올라오면 빈 칸이 그림으로 바뀐다", async () => {
+    const { upload, release } = held();
+    const instance = open(upload);
+
+    paste(instance, [png()]);
+    await settle();
+
+    release({ url: "https://example.com/a.png", width: 800, height: 600 });
+    await settle();
+
+    expect(boxes(instance)).toBe(0);
+    expect(JSON.stringify(instance.getJSON())).toContain("https://example.com/a.png");
+  });
+
+  /** 빈 칸을 남겨두면 영원히 올리는 중인 글이 된다 */
+  it("실패해도 빈 칸을 걷어낸다", async () => {
+    const { upload, release } = held();
+    const instance = open(upload);
+
+    paste(instance, [png()]);
+    await settle();
+    release(null);
+    await settle();
+
+    expect(boxes(instance)).toBe(0);
+  });
+});
