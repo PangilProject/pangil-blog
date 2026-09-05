@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
+import { siteHref } from "@/lib/site/publicUrl";
 
 /**
  * 없는 주소 안내 (03 §5 · §7).
@@ -31,7 +32,7 @@ export function NotFoundNotice({ site }: { site?: PublicSite }) {
         {(site ? [site, other(site)] : (["faith", "dev"] as PublicSite[])).map((target) => (
           <Link
             key={target}
-            href={`/${target}`}
+            href={siteHref(target, `/${target}`, { from: site })}
             className="border border-edge px-2.5 py-1 text-faint hover:text-ink"
           >
             {blogBrandName(target)}

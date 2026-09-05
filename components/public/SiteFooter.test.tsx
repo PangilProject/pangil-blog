@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { copyrightLine, SiteFooter } from "@/components/public/SiteFooter";
 
@@ -53,5 +53,56 @@ describe("SiteFooter", () => {
     const { container } = render(<SiteFooter site="dev" />);
 
     expect(container.textContent).not.toContain("오늘");
+  });
+
+  /**
+   * 도메인이 붙으면 지면이 호스트로 갈린다 — 그때 `/faith`는 루트 호스트에서 `/hub/faith`로
+   * 리라이트돼 404다(proxy.ts). 실제로 도메인을 붙이자 공개 지면의 링크가 전부 그렇게 깨졌다.
+   * 지면을 건너가는 길은 여기가 주된 자리이므로 여기서 고정한다.
+   */
+  describe("도메인이 붙은 뒤", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    function withDomains() {
+      vi.stubEnv("SITE_HOST_ROOT", "pangil.example");
+      vi.stubEnv("SITE_HOST_DEV", "dev.pangil.example");
+      vi.stubEnv("SITE_HOST_FAITH", "faith.pangil.example");
+    }
+
+    it("다른 지면은 그 호스트의 절대 URL로 간다", () => {
+      withDomains();
+      render(<SiteFooter site="faith" />);
+
+      expect(screen.getByRole("link", { name: "개발의 기록" })).toHaveAttribute(
+        "href",
+        "https://dev.pangil.example/",
+      );
+      expect(screen.getByRole("link", { name: "소개" })).toHaveAttribute(
+        "href",
+        "https://pangil.example/",
+      );
+    });
+
+    it("방침은 루트 호스트의 `/privacy`다 — `/hub` 세그먼트가 주소에 남지 않는다", () => {
+      withDomains();
+      render(<SiteFooter site="dev" />);
+
+      expect(screen.getByRole("link", { name: "개인정보처리방침" })).toHaveAttribute(
+        "href",
+        "https://pangil.example/privacy",
+      );
+    });
+
+    it("허브에서 자기 방침으로 갈 때는 상대 경로다 — 같은 호스트다", () => {
+      withDomains();
+      render(<SiteFooter site="hub" />);
+
+      expect(screen.getByRole("link", { name: "개인정보처리방침" })).toHaveAttribute(
+        "href",
+        "/privacy",
+      );
+    });
   });
 });

@@ -8,6 +8,8 @@ import { SermonView } from "@/components/public/SermonView";
 import { TechView } from "@/components/public/TechView";
 import type { PublicPost } from "@/lib/db/publicPosts";
 import { tiptapToPlainText } from "@/lib/render/plainText";
+import { siteOf } from "@/lib/revalidate/tags";
+import { siteHref } from "@/lib/site/publicUrl";
 
 /**
  * 상세 지면 조립 (F-03 / D-02).
@@ -17,6 +19,8 @@ import { tiptapToPlainText } from "@/lib/render/plainText";
  * 알림(Slack)은 M4에서 붙는다.
  */
 export function PostDetail({ post }: { post: PublicPost }) {
+  // 상세에서 나가는 길은 전부 이 글이 선 지면 안이다 — 목록도 태그도 남의 호스트가 아니다
+  const site = siteOf(post.type);
   const publishedAt = post.publishedAt
     ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "long", timeZone: "Asia/Seoul" }).format(
         post.publishedAt,
@@ -42,7 +46,7 @@ export function PostDetail({ post }: { post: PublicPost }) {
           slug={post.slug}
           postId={post.id}
           title={post.title}
-          listPath={post.type === "TECH" ? "/dev" : "/faith"}
+          listPath={siteHref(site, `/${site}`, { from: site })}
         />
       }
       meta={
@@ -52,7 +56,7 @@ export function PostDetail({ post }: { post: PublicPost }) {
               <li key={tag}>
                 {/* 태그 목록 지면은 슬라이스 3에서 생긴다 */}
                 <Link
-                  href={`/${post.type === "TECH" ? "dev" : "faith"}/tags/${encodeURIComponent(tag)}`}
+                  href={siteHref(site, `/${site}/tags/${encodeURIComponent(tag)}`, { from: site })}
                   className="border border-edge px-2 py-0.5 font-typewriter text-[10.5px] text-faint hover:text-ink"
                 >
                   {tag}

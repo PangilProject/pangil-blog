@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import type { PostNeighbor } from "@/lib/db/publicPosts";
-import { publicPostPath } from "@/lib/record/paths";
+import { siteOf } from "@/lib/revalidate/tags";
+import { postHref } from "@/lib/site/publicUrl";
 
 /**
  * 이전글·다음글 (F-03). 정적 링크 둘이다.
@@ -30,7 +31,11 @@ export function PostNeighbors({
       className="grid gap-4 border-edge border-t pt-5 sm:grid-cols-2"
     >
       {previous ? (
-        <Link href={publicPostPath(previous.type, previous.slug)} rel="prev" className="group">
+        <Link
+          href={postHref(previous.type, previous.slug, siteOf(previous.type))}
+          rel="prev"
+          className="group"
+        >
           <span className="block font-typewriter text-[10.5px] text-faint">
             ← {axisLabel} · 이전 글
           </span>
@@ -44,7 +49,7 @@ export function PostNeighbors({
 
       {next && (
         <Link
-          href={publicPostPath(next.type, next.slug)}
+          href={postHref(next.type, next.slug, siteOf(next.type))}
           rel="next"
           className="group sm:text-right"
         >

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { siteHref } from "@/lib/site/publicUrl";
+
 /**
  * H-02 개인정보처리방침 (02 §2.4 · 05 §4).
  *
@@ -26,7 +28,10 @@ export default function PrivacyPage() {
     <main className="mx-auto flex w-full max-w-measure flex-col gap-6 px-[6%] py-16">
       {/* 돌아가는 길이 맨 아래에 있었다. 읽다가 그만두는 사람이 대부분인 문서라
           그 길은 스크롤 끝이 아니라 눈이 처음 닿는 자리에 있어야 한다 */}
-      <Link href="/hub" className="font-typewriter text-[11px] text-faint hover:text-ink">
+      <Link
+        href={siteHref("hub", "/hub", { from: "hub" })}
+        className="font-typewriter text-[11px] text-faint hover:text-ink"
+      >
         ← 소개
       </Link>
 

@@ -9,6 +9,7 @@ import type { PublicSite } from "@/lib/revalidate/tags";
 import { personJsonLd } from "@/lib/seo/jsonLd";
 import { siteAlternates } from "@/lib/site/metadata";
 import { profileFromEnv } from "@/lib/site/profile";
+import { siteHref } from "@/lib/site/publicUrl";
 
 /**
  * H-01 프로필 허브 (01 §3.3 · 02 §2.1).
@@ -53,7 +54,7 @@ export default function HubPage() {
         <RecordCard
           variant="faith"
           rotate={-1}
-          href="/faith"
+          href={siteHref("faith", "/faith", { from: "hub" })}
           callNumber="FAITH"
           aside="매일"
           title="믿음의 기록"
@@ -71,7 +72,7 @@ export default function HubPage() {
         <RecordCard
           variant="dev"
           rotate={0.8}
-          href="/dev"
+          href={siteHref("dev", "/dev", { from: "hub" })}
           callNumber="DEV"
           aside="비정기"
           title="개발의 기록"
