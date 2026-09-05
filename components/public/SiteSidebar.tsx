@@ -31,27 +31,38 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
   const { description } = siteBrand(site);
 
   return (
-    <aside className="flex w-full flex-col gap-7 lg:sticky lg:top-10 lg:w-[13.5rem] lg:flex-none">
-      <section className="flex flex-col gap-2">
-        <Link href={`/${site}`} className="font-typewriter font-bold text-[13px] text-ink">
-          {label.lead}
-          <em className="text-(--accent) not-italic">{label.accent}</em>
-        </Link>
-        {description && <p className="text-[11.5px] leading-body text-faint">{description}</p>}
-      </section>
+    // 화면 왼쪽 끝에 붙는다. 바깥 여백은 이 칸 안쪽에만 있고, 오른쪽 괘선이 본문과 나눈다 —
+    // 붙어 있는 칸이 화면 가운데 떠 있는 칸보다 "이 블로그의 것"으로 읽힌다
+    <aside className="w-full border-edge border-b lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0">
+      {/*
+        이 칸이 화면 끝까지 서려면 레이아웃 쪽이 `flex-1`이어야 한다 — 없으면 짧은 글에서
+        오른쪽 괘선이 본문 끝나는 자리에서 툭 끊긴다.
 
-      <Suspense fallback={<VisitorSkeleton />}>
-        <VisitorCount />
-      </Suspense>
+        sticky는 안쪽 div에 건다. aside 자체에 걸면 그 칸이 내용 높이만큼만 서서 오른쪽
+        괘선이 본문 중간에서 끊긴다 — 목차가 같은 이유로 같은 모양이다(dev 상세)
+      */}
+      <div className="flex flex-col gap-7 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6">
+        <section className="flex flex-col gap-2">
+          <Link href={`/${site}`} className="font-typewriter font-bold text-[13px] text-ink">
+            {label.lead}
+            <em className="text-(--accent) not-italic">{label.accent}</em>
+          </Link>
+          {description && <p className="text-[11.5px] leading-body text-faint">{description}</p>}
+        </section>
 
-      <Suspense fallback={null}>
-        <AxisList site={site} />
-      </Suspense>
+        <Suspense fallback={<VisitorSkeleton />}>
+          <VisitorCount />
+        </Suspense>
 
-      {/* 최근 글은 넓은 화면에서만. 모바일에서는 바로 아래가 그 목록이다 */}
-      <Suspense fallback={null}>
-        <RecentPosts site={site} />
-      </Suspense>
+        <Suspense fallback={null}>
+          <AxisList site={site} />
+        </Suspense>
+
+        {/* 최근 글은 넓은 화면에서만. 모바일에서는 바로 아래가 그 목록이다 */}
+        <Suspense fallback={null}>
+          <RecentPosts site={site} />
+        </Suspense>
+      </div>
     </aside>
   );
 }
