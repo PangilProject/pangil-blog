@@ -11,6 +11,7 @@ import {
   siteHostsFromEnv,
   sitePrefixOf,
   siteRewritePath,
+  staleSiteRedirect,
 } from "@/lib/site/resolveSite";
 import { optOutCookieDomain, STAT_OPT_OUT_COOKIE, STAT_OPT_OUT_MAX_AGE } from "@/lib/stats/optOut";
 
@@ -82,10 +83,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const hosts = siteHostsFromEnv(process.env);
+
+  // 지면이 경로였던 시절의 주소를 제 호스트로 돌려보낸다(staleSiteRedirect). 도메인을 붙이는
+  // 순간 그 주소가 전부 404가 됐는데, 이미 공유된 링크라 읽는 사람 쪽에서는 고칠 길이 없다
+  const stale = staleSiteRedirect(pathname, request.nextUrl.search, hosts);
+  if (stale) return NextResponse.redirect(stale, 308);
+
   const site = resolveSite({
     host,
     siteParam: request.nextUrl.searchParams.get("site"),
-    hosts: siteHostsFromEnv(process.env),
+    hosts,
   });
 
   const url = request.nextUrl.clone();

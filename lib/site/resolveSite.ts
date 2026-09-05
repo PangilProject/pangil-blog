@@ -119,6 +119,37 @@ export function sitePrefixOf(pathname: string): SiteKey | null {
   return isSiteKey(label ?? null) ? (label as SiteKey) : null;
 }
 
+/**
+ * 옛 주소를 제 지면으로 돌려보낸다 — `○/faith/sr-1` → `https://faith.○/sr-1`.
+ *
+ * 도메인이 붙기 전에는 지면이 경로였다(`○/faith/sr-1`). 그 주소가 이미 밖에 나가 있고,
+ * 지금은 `/faith/faith/sr-1`로 리라이트돼 404다. 읽으러 온 사람에게 보여줄 화면이 아니다.
+ *
+ * **rewrite가 아니라 redirect다.** 같은 글이 두 주소로 열리면 그게 중복 URL이고, 이 파일이
+ * `sitePrefixOf`에서 경계하는 바로 그것이다. 308은 "이제 저기가 그 글의 주소"라고 말한다.
+ *
+ * 지면 호스트가 설정된 경우에만 돈다 — 호스트가 하나인 환경에서 이게 돌면 로컬에서 세 면에
+ * 들어갈 길이 사라진다(거기서는 경로가 곧 지면이다).
+ *
+ * 접두사와 같은 이름의 슬러그(`dev.○/faith`)는 이 규칙에 걸린다. 청구기호에서 나오는
+ * 슬러그(`qt-0205`·`0504`)는 그렇게 생길 수 없고, 손으로 적는 기술 글 슬러그만 해당한다 —
+ * 그 세 단어를 슬러그로 쓰지 않으면 된다.
+ */
+export function staleSiteRedirect(
+  pathname: string,
+  search: string,
+  hosts: SiteHostConfig,
+): string | null {
+  const site = sitePrefixOf(pathname);
+  if (!site) return null;
+
+  const host = normalizeHost(site === "hub" ? hosts.root : hosts[site]);
+  if (!host) return null;
+
+  const rest = pathname.slice(`/${site}`.length);
+  return `https://${host}${rest || "/"}${search}`;
+}
+
 /** 호스트 분기 결과를 실제 라우트 경로로 바꾼다. `/` → `/hub`, `/tags/x` → `/faith/tags/x` */
 export function siteRewritePath(site: SiteKey, pathname: string): string {
   const suffix = pathname === "/" ? "" : pathname;
