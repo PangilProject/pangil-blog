@@ -20,7 +20,20 @@ function open(html: string) {
   return editor;
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 150));
+/**
+ * **시간이 아니라 조건을 기다린다.**
+ *
+ * 전에는 150ms를 고정으로 재웠는데, 토큰화는 Shiki가 문법을 불러온 뒤에 끝난다 — 테스트
+ * 파일 백 개가 동시에 도는 전체 실행에서는 그보다 늦는 날이 있었고, 그때 색이 아직 안 입은
+ * 상태로 단언해서 **간헐적으로 빨개졌다.** 단독 실행과 CI는 통과해서 원인이 안 잡혔다.
+ */
+const colored = (instance: Editor) => instance.view.dom.querySelectorAll('span[style*="color"]');
+
+const untilColored = (instance: Editor) =>
+  vi.waitFor(() => expect(colored(instance).length).toBeGreaterThan(0), {
+    timeout: 5000,
+    interval: 25,
+  });
 
 afterEach(() => {
   editor?.destroy();
@@ -31,19 +44,25 @@ describe("CodeHighlight", () => {
   it("코드에 색이 입는다 — 쓰는 자리에서 보인다(ADR-001)", async () => {
     const instance = open('<pre><code class="language-ts">const a = 1;</code></pre>');
 
-    await settle();
-
-    const colored = instance.view.dom.querySelectorAll('span[style*="color"]');
-    expect(colored.length).toBeGreaterThan(0);
+    await untilColored(instance);
   });
 
+  /**
+   * 두 블록을 한 문서에 넣는 이유는 **기다릴 신호를 만들기 위해서**다. 언어를 모르는 블록만
+   * 두고 "색이 없다"를 단언하면, 토큰화가 아직 안 끝났을 때도 통과한다 — 아무것도 확인하지
+   * 못한 채 초록인 테스트다. 아는 언어가 색을 입은 뒤에 물어야 그 답이 뜻을 가진다.
+   */
   it("언어를 모르면 색을 입히지 않는다 — 코드는 그대로 보인다", async () => {
-    const instance = open("<pre><code>그냥 글자</code></pre>");
+    const instance = open(
+      '<pre><code class="language-ts">const a = 1;</code></pre>' +
+        "<pre><code>그냥 글자</code></pre>",
+    );
 
-    await settle();
+    await untilColored(instance);
 
-    expect(instance.view.dom.querySelectorAll('span[style*="color"]')).toHaveLength(0);
-    expect(instance.view.dom.textContent).toContain("그냥 글자");
+    const blocks = instance.view.dom.querySelectorAll("pre");
+    expect(blocks[1]?.querySelectorAll('span[style*="color"]')).toHaveLength(0);
+    expect(blocks[1]?.textContent).toContain("그냥 글자");
   });
 
   it("토큰화 중에 에디터를 파괴해도 터지지 않는다", async () => {
@@ -54,7 +73,10 @@ describe("CodeHighlight", () => {
     instance.destroy();
     editor = null;
 
-    await settle();
+    // 여기서는 기다릴 신호가 없다 — 확인하려는 것이 "아무 일도 일어나지 않음"이기 때문이다.
+    // 토큰화가 끝나고도 남을 만큼 넉넉히 준다. 늦게 터지면 이 대기 밖이라 놓치지만,
+    // 놓친 실패는 다음 실행에서 잡히고 여기서 빨개지는 것은 진짜 실패뿐이다
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     expect(onRejection).not.toHaveBeenCalled();
     window.removeEventListener("unhandledrejection", onRejection);
