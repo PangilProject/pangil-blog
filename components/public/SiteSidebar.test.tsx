@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * Prisma가 env를 요구한다. 이 테스트가 보는 것은 껍데기와 주소 규칙이라 리포지토리를
  * 대역으로 세운다.
  */
-vi.mock("@/lib/db/statSummary", () => ({ findVisitorTotals: async () => null }));
+vi.mock("@/lib/db/statSummary", () => ({ findViewTotals: async () => null }));
 vi.mock("@/lib/db/publicLists", () => ({
   findAxisCounts: async () => [],
   findFeedItems: async () => [],
