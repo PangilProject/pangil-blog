@@ -1,9 +1,11 @@
 import { SectionBlock } from "@/components/editor/SectionBlock";
+import { CopyButton } from "@/components/public/CopyButton";
 import { RichTextBody } from "@/components/public/RichTextBody";
 import { YouTubeLite } from "@/components/public/YouTubeLite";
 import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
 import { sectionOrdinals } from "@/lib/editor/praiseForm";
 import { parseYouTubeId } from "@/lib/praise/youtube";
+import { tiptapToCopyText } from "@/lib/render/plainText";
 
 /**
  * F-03 찬양 상세 (02 §2.3 · 03 §5.2).
@@ -33,51 +35,61 @@ export function PraiseView({
     })),
   );
 
+  const meditation = praiseMeditationBlocks(content.meditationAndPrayer).filter(
+    (block) => !block.hidden,
+  );
+
   /**
-   * **번호를 먼저 매기고 감춘다.** 감춘 절까지 세고 나서 걸러야 남은 절이 제 번호를 지킨다 —
-   * 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다. 에디터와도 같은 이름이어야 한다.
+   * 복사용 평문. 문단이 곧 의미라 줄바꿈을 살리고(`tiptapToCopyText`) 덩이 사이는 빈 줄로
+   * 끊는다 — 에디터에서 끊어둔 자리가 붙여넣은 곳에서도 그대로 남는다.
    */
-  const visible = content.sections
-    .map((section, at) => ({ section, ordinal: ordinals[at] }))
-    .filter((entry) => entry.section.hidden !== true);
+  const copyText = meditation
+    .map((block) => tiptapToCopyText(block.doc))
+    .filter((text) => text !== "")
+    .join("\n\n");
 
   return (
     <>
       {videoId && <YouTubeLite videoId={videoId} title={title} />}
 
-      {/* 다 감춘 곡은 가사 판 자체를 세우지 않는다 — 빈 상자만 남는다 */}
-      {visible.length > 0 && (
-        <div className="flex flex-col gap-2.5">
-          {visible.map(({ section, ordinal }) => {
-            const label = typeof section.label === "string" ? section.label : section.label.custom;
+      <div className="flex flex-col gap-2.5">
+        {content.sections.map((section, index) => {
+          const label = typeof section.label === "string" ? section.label : section.label.custom;
 
-            return (
-              <SectionBlock
-                key={section.id}
-                label={label}
-                ordinal={ordinal}
-                lyrics={section.lyrics}
-                // 공개 지면에는 에디터 안내 문구를 두지 않는다 — 빈 섹션은 연주 구간이고
-                // "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다
-                emptyLabel={null}
-              />
-            );
-          })}
-        </div>
+          return (
+            <SectionBlock
+              key={section.id}
+              label={label}
+              ordinal={ordinals[index]}
+              lyrics={section.lyrics}
+              // 공개 지면에는 에디터 안내 문구를 두지 않는다 — 빈 섹션은 연주 구간이고
+              // "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다
+              emptyLabel={null}
+            />
+          );
+        })}
+      </div>
+
+      {/* 다 감춘 글은 소제목도 세우지 않는다 — 빈 "묵상과 기도"만 남는다 */}
+      {meditation.length > 0 && (
+        <section className="border-edge border-t pt-5">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <h2 className="font-serif font-bold text-[15px]">묵상과 기도</h2>
+            {/* 복사되는 것은 **여기 보이는 것**이다. 감춘 덩이가 클립보드로 새면
+                감춘 것이 아니다. 옮겨 적을 글자가 없으면 버튼도 세우지 않는다 */}
+            {copyText !== "" && <CopyButton text={copyText} label="묵상과 기도 복사" />}
+          </div>
+          {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
+              구분선을 그으면 없는 절이 생긴다 */}
+          <div className="flex flex-col gap-4">
+            {meditation.map((block, index) => (
+              // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
+              // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
+              <RichTextBody key={index} doc={block.doc} />
+            ))}
+          </div>
+        </section>
       )}
-
-      <section className="border-edge border-t pt-5">
-        <h2 className="mb-2 font-serif font-bold text-[15px]">묵상과 기도</h2>
-        {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
-            구분선을 그으면 없는 절이 생긴다 */}
-        <div className="flex flex-col gap-4">
-          {praiseMeditationBlocks(content.meditationAndPrayer).map((block, index) => (
-            // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
-            // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
-            <RichTextBody key={index} doc={block} />
-          ))}
-        </div>
-      </section>
     </>
   );
 }

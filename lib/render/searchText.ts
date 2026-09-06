@@ -47,15 +47,15 @@ export function extractSearchText(title: string, content: PostContent): string {
 
     case "PRAISE": {
       for (const section of content.sections) {
-        // 감춘 절은 검색에도 안 걸린다. 지면에서 뺐는데 검색어로 찾아지면 감춘 것이 아니다
-        if (section.hidden === true) continue;
-
         parts.push(typeof section.label === "string" ? section.label : section.label.custom);
         parts.push(section.lyrics);
       }
 
       for (const block of praiseMeditationBlocks(content.meditationAndPrayer)) {
-        parts.push(tiptapToPlainText(block));
+        // 가사와 같은 규칙이다 — 감춘 것은 검색어로도 찾아지지 않는다
+        if (block.hidden) continue;
+
+        parts.push(tiptapToPlainText(block.doc));
       }
       break;
     }

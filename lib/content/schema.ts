@@ -97,15 +97,17 @@ const PraiseSectionSchema = z.object({
   id: z.string(), // nanoid. 순서는 배열 인덱스가 유일한 진실(04 §2.5)
   label: z.union([z.enum(PRAISE_SECTION_LABELS), z.object({ custom: z.string() })]),
   lyrics: z.string().default(""), // 빈 섹션 허용 — 연주 메모만 있는 섹션이 있다
-  /**
-   * 공개 지면에서 감출까 (02 §5.4).
-   *
-   * 선택 필드다 — 이미 발행된 글에는 이 자리가 없고, 없으면 보이는 것이다. 감출 때만
-   * 적으므로 저장값에 `false`가 줄줄이 쌓이지 않는다.
-   *
-   * **지우는 것이 아니라 감추는 것이다.** 가사는 에디터에 그대로 남아 있고, 되풀이 번호도
-   * 감춘 절까지 세어서 매긴다 — 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다.
-   */
+});
+
+/**
+ * 감춘 묵상 블록 (02 §5.4).
+ *
+ * 문서만 있는 옛 저장값에는 표시를 붙일 자리가 없어서 감출 때만 이 껍데기를 씌운다.
+ * 보이는 블록은 예전처럼 문서 그대로 저장된다 — 안 감춘 블록까지 모양이 바뀌면
+ * 이미 발행된 글 전부가 다음 저장에서 통째로 다시 쓰인다.
+ */
+const HiddenPraiseMeditationSchema = z.object({
+  doc: TiptapDocSchema,
   hidden: z.boolean().optional(),
 });
 
@@ -113,18 +115,36 @@ const PraiseSectionSchema = z.object({
  * "묵상과 기도" (02 §5.4).
  *
  * 블록 여러 개다 — 묵상 한 덩이, 기도 한 덩이처럼 끊어 쓰는 글이라 한 칸에 몰아 두면
- * 어디서 끊겼는지가 저장값에 남지 않는다. **읽기만 두 갈래고 쓰기는 늘 배열이다**:
- * 이미 발행된 글이 문서 하나로 저장돼 있어서 그것도 읽어야 한다. 분기를 펴는 곳은
- * praiseMeditationBlocks 한 곳뿐이다 — 읽는 쪽마다 풀면 규칙이 네 곳에 생긴다.
+ * 어디서 끊겼는지가 저장값에 남지 않는다. **읽기는 세 갈래고 쓰기는 늘 배열이다**:
+ * 이미 발행된 글이 문서 하나로 저장돼 있고(가장 옛것), 그다음이 문서 배열, 감춘 블록만
+ * `{ doc, hidden }`이다. 분기를 펴는 곳은 praiseMeditationBlocks 한 곳뿐이다 —
+ * 읽는 쪽마다 풀면 규칙이 다섯 곳에 생긴다.
  */
-const PraiseMeditationSchema = z.union([TiptapDocSchema, z.array(TiptapDocSchema)]);
+const PraiseMeditationSchema = z.union([
+  TiptapDocSchema,
+  z.array(z.union([TiptapDocSchema, HiddenPraiseMeditationSchema])),
+]);
 
 export type PraiseMeditation = z.infer<typeof PraiseMeditationSchema>;
 
-/** 저장값을 블록 배열로 편다. 옛 글(문서 하나)은 블록 하나짜리로 읽힌다 */
-export function praiseMeditationBlocks(value: PraiseMeditation | undefined | null): TiptapDoc[] {
+/** 편 뒤의 한 덩이. 여기서부터는 어느 저장 모양에서 왔는지 아무도 몰라도 된다 */
+export type PraiseMeditationBlock = { doc: TiptapDoc; hidden: boolean };
+
+/**
+ * 저장값을 블록 배열로 편다. 옛 글(문서 하나)은 블록 하나짜리로 읽히고, 표시가 없는
+ * 블록은 보이는 것으로 읽는다.
+ */
+export function praiseMeditationBlocks(
+  value: PraiseMeditation | undefined | null,
+): PraiseMeditationBlock[] {
   if (!value) return [];
-  return Array.isArray(value) ? value : [value];
+
+  const blocks = Array.isArray(value) ? value : [value];
+  return blocks.map((block) =>
+    "doc" in block
+      ? { doc: block.doc, hidden: block.hidden === true }
+      : { doc: block, hidden: false },
+  );
 }
 
 const PraiseContentSchema = z.object({

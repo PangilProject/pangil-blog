@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EMPTY_TIPTAP_DOC, type TiptapDoc } from "@/lib/content/schema";
-import { normalizeWhitespace, tiptapToPlainText } from "@/lib/render/plainText";
+import { normalizeWhitespace, tiptapToCopyText, tiptapToPlainText } from "@/lib/render/plainText";
 import { extractSearchText } from "@/lib/render/searchText";
 
 const doc = (...texts: string[]): TiptapDoc => ({
@@ -47,6 +47,36 @@ describe("tiptapToPlainText — 04 §3.1 평문 타깃", () => {
     expect(tiptapToPlainText(EMPTY_TIPTAP_DOC)).toBe("");
     expect(tiptapToPlainText(null)).toBe("");
     expect(tiptapToPlainText(undefined)).toBe("");
+  });
+});
+
+describe("tiptapToCopyText — 붙여넣기용은 줄바꿈을 살린다", () => {
+  it("문단마다 줄을 남긴다 — 색인용과 달리 여기서는 문단이 곧 의미다", () => {
+    expect(tiptapToCopyText(doc("첫 문단", "둘째 문단"))).toBe("첫 문단\n둘째 문단");
+  });
+
+  it("목록도 같은 한 줄이다 — 문단만 줄이 살고 목록은 겹치는 일이 없다", () => {
+    const listed: TiptapDoc = {
+      type: "doc",
+      content: [
+        {
+          type: "bulletList",
+          content: [
+            {
+              type: "listItem",
+              content: [{ type: "paragraph", content: [{ type: "text", text: "항목" }] }],
+            },
+          ],
+        },
+        { type: "paragraph", content: [{ type: "text", text: "다음 문단" }] },
+      ],
+    };
+
+    expect(tiptapToCopyText(listed)).toBe("항목\n다음 문단");
+  });
+
+  it("없는 문서는 빈 문자열이다", () => {
+    expect(tiptapToCopyText(null)).toBe("");
   });
 });
 
@@ -110,21 +140,6 @@ describe("extractSearchText — 05 §4A", () => {
     expect(text).toContain("가사를 묵상하며");
   });
 
-  it("감춘 절은 담지 않는다 — 지면에서 뺐는데 검색어로 찾아지면 감춘 것이 아니다", () => {
-    const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
-      kind: "PRAISE",
-      youtubeUrl: "https://youtu.be/x",
-      sections: [
-        { id: "a", label: "Verse", lyrics: "내 마음의 노래를" },
-        { id: "b", label: "Verse", lyrics: "감춘 절입니다", hidden: true },
-      ],
-      meditationAndPrayer: doc("가사를 묵상하며"),
-    });
-
-    expect(text).toContain("내 마음의 노래를");
-    expect(text).not.toContain("감춘 절입니다");
-  });
-
   it("묵상이 블록 여러 개여도 전부 담는다 — 뒤쪽 블록으로도 글을 찾는다", () => {
     const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
       kind: "PRAISE",
@@ -135,6 +150,18 @@ describe("extractSearchText — 05 §4A", () => {
 
     expect(text).toContain("가사를 묵상하며");
     expect(text).toContain("오늘도 지키소서");
+  });
+
+  it("감춘 묵상 덩이도 담지 않는다 — 가사와 같은 규칙이다", () => {
+    const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
+      kind: "PRAISE",
+      youtubeUrl: "https://youtu.be/x",
+      sections: [{ id: "a", label: "Verse", lyrics: "내 마음의 노래를" }],
+      meditationAndPrayer: [doc("가사를 묵상하며"), { doc: doc("감춘 기도입니다"), hidden: true }],
+    });
+
+    expect(text).toContain("가사를 묵상하며");
+    expect(text).not.toContain("감춘 기도입니다");
   });
 
   it("기술 글은 제목과 본문을 담는다", () => {

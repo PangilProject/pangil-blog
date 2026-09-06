@@ -31,8 +31,6 @@ export type PraiseSectionFormValue = {
   label: string;
   /** 빈 섹션 허용 — "16 Bar"처럼 연주 메모만 있는 섹션이 실제로 있다(02 §5.4) */
   lyrics: string;
-  /** 공개 지면에서 감출까. 감추는 것이지 지우는 것이 아니다 — 가사는 여기 그대로 남는다 */
-  hidden: boolean;
 };
 
 /**
@@ -42,6 +40,8 @@ export type PraiseSectionFormValue = {
 export type PraiseMeditationBlockFormValue = {
   id: string;
   doc: RichTextValue;
+  /** 공개 지면에서 감출까. 가사 섹션과 같은 규칙이다 */
+  hidden: boolean;
 };
 
 export type PraiseFormValues = {
@@ -105,7 +105,7 @@ export function formatBarCount(count: string): string {
  * 저장값 복원의 id는 자리 번호로 결정적으로 만든다.
  */
 export function newSection(label: string = DEFAULT_SECTION_LABEL): PraiseSectionFormValue {
-  return { id: nanoid(), label, lyrics: "", hidden: false };
+  return { id: nanoid(), label, lyrics: "" };
 }
 
 /** 자리 번호로 만드는 결정적 id — 서버에서 만들어도 안전하다 */
@@ -119,7 +119,7 @@ export function meditationBlockIdAt(index: number): string {
 }
 
 export function newMeditationBlock(): PraiseMeditationBlockFormValue {
-  return { id: nanoid(), doc: EMPTY_RICH_TEXT };
+  return { id: nanoid(), doc: EMPTY_RICH_TEXT, hidden: false };
 }
 
 /**
@@ -133,8 +133,8 @@ export function newMeditationBlock(): PraiseMeditationBlockFormValue {
  */
 export function defaultSections(): PraiseSectionFormValue[] {
   return [
-    { id: sectionIdAt(0), label: "Intro", lyrics: "", hidden: false },
-    { id: sectionIdAt(1), label: DEFAULT_SECTION_LABEL, lyrics: "", hidden: false },
+    { id: sectionIdAt(0), label: "Intro", lyrics: "" },
+    { id: sectionIdAt(1), label: DEFAULT_SECTION_LABEL, lyrics: "" },
   ];
 }
 
@@ -145,7 +145,7 @@ export function emptyPraiseForm(): PraiseFormValues {
     // 빈 화면을 주지 않는다. 첫 섹션은 늘 놓여 있다
     sections: defaultSections(),
     // 빈 화면을 주지 않는다. 첫 블록은 늘 놓여 있다 — 가사 섹션과 같다
-    meditationBlocks: [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
+    meditationBlocks: [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT, hidden: false }],
     tags: defaultTagsFor("PRAISE"),
   };
 }
@@ -259,7 +259,11 @@ function fromContentLabel(label: unknown): string {
 function toContentMeditation(values: PraiseFormValues) {
   return values.meditationBlocks
     .filter((block) => !isEmptyDoc(block.doc))
-    .map((block) => toTiptapDoc(block.doc));
+    .map((block) =>
+      // 감출 때만 껍데기를 씌운다. 보이는 블록까지 모양을 바꾸면 이미 발행된 글 전부가
+      // 다음 저장에서 통째로 다시 쓰인다
+      block.hidden ? { doc: toTiptapDoc(block.doc), hidden: true } : toTiptapDoc(block.doc),
+    );
 }
 
 function toContentSections(values: PraiseFormValues) {
@@ -267,8 +271,6 @@ function toContentSections(values: PraiseFormValues) {
     id: section.id,
     label: toContentLabel(section.label),
     lyrics: section.lyrics,
-    // 감출 때만 적는다. 보이는 것이 기본이라 `false`를 저장값에 줄줄이 쌓을 이유가 없다
-    ...(section.hidden ? { hidden: true } : {}),
   }));
 }
 
@@ -297,10 +299,10 @@ export const PraisePublishFormSchema = z.object({
     .trim()
     .refine((value) => parseYouTubeId(value) !== null, "유튜브 주소를 확인해 주세요"),
   sections: z
-    .array(z.object({ id: z.string(), label: z.string(), lyrics: z.string(), hidden: z.boolean() }))
+    .array(z.object({ id: z.string(), label: z.string(), lyrics: z.string() }))
     .min(1, "가사 섹션이 하나는 있어야 해요"),
   meditationBlocks: z
-    .array(z.object({ id: z.string(), doc: z.custom<RichTextValue>() }))
+    .array(z.object({ id: z.string(), doc: z.custom<RichTextValue>(), hidden: z.boolean() }))
     .refine((blocks) => blocks.some((block) => !isEmptyDoc(block.doc)), "묵상과 기도를 적어주세요"),
 });
 
@@ -326,13 +328,12 @@ export function fromDraftContent(
     id: section.id ?? sectionIdAt(index),
     label: fromContentLabel(section.label),
     lyrics: section.lyrics ?? "",
-    // 이 자리가 없는 옛 글은 보이는 것으로 읽는다
-    hidden: section.hidden === true,
   }));
 
-  const blocks = praiseMeditationBlocks(content.meditationAndPrayer).map((doc, index) => ({
+  const blocks = praiseMeditationBlocks(content.meditationAndPrayer).map((block, index) => ({
     id: meditationBlockIdAt(index),
-    doc: doc as RichTextValue,
+    doc: block.doc as RichTextValue,
+    hidden: block.hidden,
   }));
 
   return {
@@ -341,7 +342,9 @@ export function fromDraftContent(
     sections: sections.length > 0 ? sections : defaultSections(),
     // 문서 하나로 저장된 옛 글은 블록 하나로 열린다(praiseMeditationBlocks)
     meditationBlocks:
-      blocks.length > 0 ? blocks : [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
+      blocks.length > 0
+        ? blocks
+        : [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT, hidden: false }],
     tags,
   };
 }
