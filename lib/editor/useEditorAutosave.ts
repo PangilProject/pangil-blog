@@ -40,6 +40,14 @@ export type UseEditorAutosaveResult<T> = {
    * "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
    */
   lastError: string | null;
+  /**
+   * 아직 서버로 못 올린 값이 남아 있는가.
+   *
+   * `flush()`는 **저장이 실패해도 정상 종료한다**(상태 기계가 재시도를 걸 뿐 다시 던지지
+   * 않는다). 그래서 발행 직전에 이 값을 봐야 방금 쓴 문단이 빠진 채 발행되는 것을 막는다
+   * (usePublishFlow).
+   */
+  isDirty: () => boolean;
   /** 발행 완료 등 — 미러를 비운다 */
   clearMirror: () => void;
   /**
@@ -153,6 +161,7 @@ export function useEditorAutosave<T>({
     savedAt,
     onChange,
     flush: useCallback(() => autosave.flush(), [autosave]),
+    isDirty: useCallback(() => autosave.isDirty(), [autosave]),
     recovery,
     dismissRecovery: useCallback(() => setRecovery(null), []),
     lastError,
