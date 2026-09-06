@@ -6,6 +6,7 @@ const row = (isOwner: boolean, n: number) => ({
   isOwner,
   today: n,
   yesterday: n * 2,
+  thisWeek: n * 4,
   total: n * 3,
 });
 
@@ -18,6 +19,7 @@ describe("splitOf", () => {
     expect(splitOf([row(false, 10), row(true, 1)]).all).toEqual({
       today: 11,
       yesterday: 22,
+      thisWeek: 44,
       total: 33,
     });
   });
@@ -26,6 +28,7 @@ describe("splitOf", () => {
     expect(splitOf([row(false, 10), row(true, 1)]).others).toEqual({
       today: 10,
       yesterday: 20,
+      thisWeek: 40,
       total: 30,
     });
   });
@@ -43,13 +46,13 @@ describe("splitOf", () => {
     const { all, others } = splitOf([row(true, 2)]);
 
     expect(all.total).toBe(6);
-    expect(others).toEqual({ today: 0, yesterday: 0, total: 0 });
+    expect(others).toEqual({ today: 0, yesterday: 0, thisWeek: 0, total: 0 });
   });
 
   it("아무 줄도 없으면 둘 다 0이다", () => {
     const { all, others } = splitOf([]);
 
-    expect(all).toEqual({ today: 0, yesterday: 0, total: 0 });
-    expect(others).toEqual({ today: 0, yesterday: 0, total: 0 });
+    expect(all).toEqual({ today: 0, yesterday: 0, thisWeek: 0, total: 0 });
+    expect(others).toEqual({ today: 0, yesterday: 0, thisWeek: 0, total: 0 });
   });
 });

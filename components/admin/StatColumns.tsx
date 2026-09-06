@@ -16,8 +16,9 @@ import { cn } from "@/lib/utils";
 export function StatColumns({ points, unit }: { points: SeriesPoint[]; unit: Unit }) {
   const max = Math.max(...points.map((point) => point.views), 0);
 
-  // 칸이 많으면 라벨을 솎는다. 30칸에 라벨 30개를 적으면 글자가 겹쳐 아무것도 안 읽힌다
-  const labelEvery = points.length > 20 ? 5 : points.length > 12 ? 2 : 1;
+  // 칸이 많으면 라벨을 솎는다. 30칸에 라벨 30개를 적으면 글자가 겹쳐 아무것도 안 읽힌다.
+  // 화면을 1040px로 넓힌 뒤 5칸마다에서 3칸마다로 줄였다 — 날짜가 더 보여야 "어느 날"이 읽힌다
+  const labelEvery = points.length > 24 ? 3 : points.length > 12 ? 2 : 1;
 
   return (
     <div className="flex flex-col gap-2">
@@ -27,7 +28,7 @@ export function StatColumns({ points, unit }: { points: SeriesPoint[]; unit: Uni
         "올리면 나온다"가 아니고, 실제로 안 나온다고 느껴진다. CSS hover면 즉시 뜨고
         조판도 우리 것을 쓴다. 여전히 클라이언트 JS는 0이다.
       */}
-      <div className="flex h-[132px] items-end gap-[3px]">
+      <div className="flex h-[168px] items-end gap-[3px]">
         {points.map((point) => (
           <div
             key={point.key}

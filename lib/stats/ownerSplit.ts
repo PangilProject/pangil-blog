@@ -9,18 +9,25 @@
  * 숫자가 서로를 반박하지 않게 하는 규칙이 이 함수 하나에 있으므로, 여기는 테스트가 닿아야 한다.
  */
 
-export type ViewTotals = { today: number; yesterday: number; total: number };
+export type ViewTotals = {
+  today: number;
+  yesterday: number;
+  /** 일요일에 시작하는 주 — 이 블로그의 한 주가 설교에서 시작한다(02 §3.1) */
+  thisWeek: number;
+  total: number;
+};
 
 export type SplitTotals = { all: ViewTotals; others: ViewTotals };
 
 export type OwnerRow = ViewTotals & { isOwner: boolean };
 
-const ZERO: ViewTotals = { today: 0, yesterday: 0, total: 0 };
+const ZERO: ViewTotals = { today: 0, yesterday: 0, thisWeek: 0, total: 0 };
 
 function add(a: ViewTotals, b: ViewTotals): ViewTotals {
   return {
     today: a.today + b.today,
     yesterday: a.yesterday + b.yesterday,
+    thisWeek: a.thisWeek + b.thisWeek,
     total: a.total + b.total,
   };
 }
@@ -42,5 +49,10 @@ export function splitOf(rows: OwnerRow[]): SplitTotals {
  */
 function totalsOf(row: OwnerRow | undefined): ViewTotals {
   if (!row) return ZERO;
-  return { today: row.today, yesterday: row.yesterday, total: row.total };
+  return {
+    today: row.today,
+    yesterday: row.yesterday,
+    thisWeek: row.thisWeek,
+    total: row.total,
+  };
 }

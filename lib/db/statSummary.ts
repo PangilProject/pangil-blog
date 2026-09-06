@@ -248,51 +248,6 @@ export async function findDwellTimes(days = 30, limit = 8): Promise<DwellStat[]>
     LIMIT ${limit}`;
 }
 
-export type PeriodTotals = { current: number; previous: number };
-
-/**
- * KPI 여섯 칸 (티스토리 통계의 갈림을 따른다 — 오늘·어제를 나란히 두고 주 단위로 묶는다).
- *
- * **주는 일요일에 시작한다.** Postgres의 `date_trunc('week')`는 월요일 기준이라 쓰지 않고
- * `dow`를 빼서 직접 계산한다. 이 블로그의 한 주가 일요일(설교)에서 시작하기 때문이다
- * (02 §3.1의 요일 카드 구성) — 통계의 주와 작성 루틴의 주가 어긋나면 둘을 나란히 못 본다.
- *
- * `now()`는 timestamptz라 `AT TIME ZONE 'UTC'`로 못 박고 9시간을 더한다. 세션 타임존에
- * 의존하면 서버 설정 하나로 "오늘"이 바뀐다.
- */
-export type Kpis = {
-  today: number;
-  yesterday: number;
-  thisWeek: number;
-  lastWeek: number;
-  month: number;
-  total: number;
-};
-
-export async function findKpis(): Promise<Kpis> {
-  const rows = await prisma.$queryRaw<Kpis[]>`
-    WITH days AS (
-      SELECT ("occurredAt" + interval '9 hours')::date AS day
-      FROM "StatEvent"
-      WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner"
-    ),
-    anchor AS (
-      SELECT d AS today, d - extract(dow from d)::int AS week_start
-      FROM (SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS d) AS x
-    )
-    SELECT
-      count(*) FILTER (WHERE day = (SELECT today FROM anchor))::int AS today,
-      count(*) FILTER (WHERE day = (SELECT today FROM anchor) - 1)::int AS yesterday,
-      count(*) FILTER (WHERE day >= (SELECT week_start FROM anchor))::int AS "thisWeek",
-      count(*) FILTER (WHERE day >= (SELECT week_start FROM anchor) - 7
-                         AND day <  (SELECT week_start FROM anchor))::int AS "lastWeek",
-      count(*) FILTER (WHERE day >  (SELECT today FROM anchor) - 30)::int AS month,
-      count(*)::int AS total
-    FROM days`;
-
-  return rows[0] ?? { today: 0, yesterday: 0, thisWeek: 0, lastWeek: 0, month: 0, total: 0 };
-}
-
 export type AllTimeTotals = { views: number; days: number };
 
 /**
@@ -375,7 +330,8 @@ export async function findViewTotals(): Promise<SplitTotals> {
 
   const rows = await prisma.$queryRaw<OwnerRow[]>`
     WITH anchor AS (
-      SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS today
+      SELECT d AS today, d - extract(dow from d)::int AS week_start
+      FROM (SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS d) AS x
     ),
     days AS (
       SELECT ("occurredAt" + interval '9 hours')::date AS day, "isOwner"
@@ -386,6 +342,7 @@ export async function findViewTotals(): Promise<SplitTotals> {
       "isOwner",
       count(*) FILTER (WHERE day = (SELECT today FROM anchor))::int AS today,
       count(*) FILTER (WHERE day = (SELECT today FROM anchor) - 1)::int AS yesterday,
+      count(*) FILTER (WHERE day >= (SELECT week_start FROM anchor))::int AS "thisWeek",
       count(*)::int AS total
     FROM days
     GROUP BY "isOwner"`;
