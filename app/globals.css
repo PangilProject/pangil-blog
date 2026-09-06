@@ -306,6 +306,9 @@
   font-weight: 700;
   line-height: 1.5;
   margin-top: 1.6em;
+
+  /* 목차에서 눌러 온 제목이 화면 맨 위에 딱 붙지 않게 한 뼘 남긴다 (components/public/Toc) */
+  scroll-margin-top: 24px;
 }
 
 .record-prose h2 {

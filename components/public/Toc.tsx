@@ -35,8 +35,14 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
 
         if (visible[0]) setActiveId(visible[0].target.id);
       },
-      // 제목이 화면 상단 근처에 왔을 때를 "읽는 중"으로 본다
-      { rootMargin: "-10% 0px -70% 0px", threshold: 0 },
+      /**
+       * 제목이 화면 상단 근처에 왔을 때를 "읽는 중"으로 본다.
+       *
+       * **위쪽 여백은 0이어야 한다.** `-10%`였을 때 띠가 화면의 10~30% 구간이었는데, 목차를
+       * 누르면 그 제목이 화면 **맨 위(0%)** 로 올라간다 — 띠 밖이라 관찰자가 못 보고,
+       * 대신 띠에 들어온 **다음** 제목이 활성으로 잡혔다. 눌렀는데 다른 줄에 불이 들어왔다.
+       */
+      { rootMargin: "0px 0px -70% 0px", threshold: 0 },
     );
 
     for (const element of elements) observer.observe(element);
@@ -51,6 +57,12 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
         <li key={heading.id} className={heading.level === 3 ? "pl-3" : undefined}>
           <a
             href={`#${heading.id}`}
+            /**
+             * 누른 줄을 **즉시** 활성으로 만든다. 관찰자만 믿으면 두 경우가 새는다 —
+             * 스크롤이 끝나기 전의 짧은 사이, 그리고 **글 끝 제목**이다. 마지막 제목은
+             * 아래에 남은 지면이 없어 아무리 눌러도 띠까지 올라오지 못한다.
+             */
+            onClick={() => setActiveId(heading.id)}
             aria-current={activeId === heading.id ? "location" : undefined}
             className={cn(
               "block text-[12px] leading-[1.5] transition-colors duration-150",
