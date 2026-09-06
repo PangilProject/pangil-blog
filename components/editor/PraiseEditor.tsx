@@ -18,6 +18,7 @@ import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
 import { suggestTitleFromYouTube } from "@/lib/actions/praise";
+import { focusWhenReady } from "@/lib/editor/focusWhenReady";
 import {
   emptyPraiseForm,
   isEmptyForm,
@@ -75,10 +76,17 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
   useEffect(() => {
     if (pendingBlockFocus === null) return;
-    const target = meditationRef.current?.querySelector<HTMLElement>(
-      `[data-meditation-block="${pendingBlockFocus}"] [contenteditable="true"]`,
+
+    /**
+     * **찾을 때까지 몇 프레임 기다린다.** 리치 텍스트 칸은 Tiptap이 자기 effect에서 붙이므로
+     * 이 effect가 도는 시점에 `contenteditable`이 아직 없을 수 있다 — 한 번만 찾아보고
+     * 끝내면 아무 일도 일어나지 않고 의도까지 사라진다(엔터 두 번에 커서가 안 옮겨가던 것).
+     */
+    focusWhenReady(() =>
+      meditationRef.current?.querySelector<HTMLElement>(
+        `[data-meditation-block="${pendingBlockFocus}"] [contenteditable="true"]`,
+      ),
     );
-    target?.focus();
     setPendingBlockFocus(null);
   }, [pendingBlockFocus]);
   // 가사·라벨을 화면에 그리려면 값을 구독해야 한다. useFieldArray의 fields는 순서만 알려준다
