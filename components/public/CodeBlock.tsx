@@ -23,7 +23,8 @@ export function CodeBlock({
     <div className="my-[1.4em] border border-[#3a3630] bg-ink">
       <div className="flex items-center justify-between border-[#3a3630] border-b px-3.5 py-1.5">
         <span className="font-typewriter text-[10.5px] text-[#8B8474]">{label ?? "code"}</span>
-        <CopyButton code={code} />
+        {/* 코드 판은 어두워서 색을 따로 준다 — 색은 부르는 쪽의 사정이다 */}
+        <CopyButton text={code} label="코드 복사" className="text-[#8B8474] hover:text-[#F3EFE4]" />
       </div>
 
       {html ? (
