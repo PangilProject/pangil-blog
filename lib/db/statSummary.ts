@@ -348,6 +348,46 @@ export async function findVisitorTotals(): Promise<VisitorTotals> {
   return rows[0] ?? { today: 0, yesterday: 0, total: 0 };
 }
 
+export type ViewTotals = { today: number; yesterday: number; total: number };
+
+/**
+ * 공개 지면 사이드바의 조회 수 (05 §4).
+ *
+ * 처음에는 방문자 수를 적었다(티스토리 사이드바가 그렇다). 조회로 바꾼 이유는 **각주가
+ * 필요 없어서**다 — 누적 방문자는 해시 솔트가 날마다 바뀌어 "날마다 센 합"이고, 같은 사람이
+ * 사흘 오면 3이다(05 §4.2). 설명 없이는 틀린 숫자처럼 보이는 값을 지면에 적을 이유가 없다.
+ * 조회는 몇 번 읽혔는지, 그게 전부다.
+ *
+ * 관리자 본인의 방문은 여기 없다 — 옵트아웃 쿠키가 있으면 비콘도 안 쏘고 서버도 안 받는다
+ * (05 §4.1). 그래서 직접 돌아다녀도 숫자가 부풀지 않는다.
+ *
+ * 방문자 수는 그대로 남는다. 관리 화면이 두 값을 나란히 보여준다(A-09).
+ *
+ * `use cache` + 짧은 수명인 이유는 findVisitorTotals와 같다 — 이 값은 방문자 행동으로
+ * 바뀌므로 발행 태그로 만료시킬 수 없다.
+ */
+export async function findViewTotals(): Promise<ViewTotals> {
+  "use cache";
+  cacheLife("minutes");
+
+  const rows = await prisma.$queryRaw<ViewTotals[]>`
+    WITH anchor AS (
+      SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS today
+    ),
+    days AS (
+      SELECT ("occurredAt" + interval '9 hours')::date AS day
+      FROM "StatEvent"
+      WHERE "eventType"::text = 'PAGEVIEW'
+    )
+    SELECT
+      count(*) FILTER (WHERE day = (SELECT today FROM anchor))::int AS today,
+      count(*) FILTER (WHERE day = (SELECT today FROM anchor) - 1)::int AS yesterday,
+      count(*)::int AS total
+    FROM days`;
+
+  return rows[0] ?? { today: 0, yesterday: 0, total: 0 };
+}
+
 export type HourlyStat = { hour: number; views: number };
 
 /** 시간대 분포 (KST). 빈 시간은 0으로 채워 24칸을 항상 돌려준다 — 칸이 비면 눈이 못 읽는다 */

@@ -25,7 +25,7 @@ import type { SiteKey } from "@/lib/site/resolveSite";
  * (ADR-003) `new Date()`가 껍데기에서 불리면 빌드가 거부한다 — 실제로 그렇게 깨졌다.
  * 그래서 연도만 Suspense 안의 조각으로 떼어 요청 시점에 흘려보낸다.
  *
- * 방문자 수는 여기 없다. 사이드바로 올렸다(VisitorCount) — 매일 보게 되는 숫자가 지면
+ * 조회 수는 여기 없다. 사이드바로 올렸다(ViewCount) — 매일 보게 되는 숫자가 지면
  * 맨 끝에 있을 이유가 없다.
  *
  * 지면 이름은 브랜드에서 온다(lib/site/brand). 도메인·표시명이 출시 게이트에서 확정되면
