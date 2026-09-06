@@ -28,11 +28,11 @@ function filled(): PraiseFormValues {
     title: "마커스워십 - 주님의 시간에",
     youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     sections: [
-      { id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false },
-      { id: "b", label: "Chorus", lyrics: "내가 주를 찬양하리", hidden: false },
-      { id: "c", label: "Verse", lyrics: "", hidden: false },
+      { id: "a", label: "Verse", lyrics: "주님의 시간에" },
+      { id: "b", label: "Chorus", lyrics: "내가 주를 찬양하리" },
+      { id: "c", label: "Verse", lyrics: "" },
     ],
-    meditationBlocks: [{ id: "m1", doc: doc("기다림을 배웁니다") }],
+    meditationBlocks: [{ id: "m1", doc: doc("기다림을 배웁니다"), hidden: false }],
     tags: [],
   };
 }
@@ -175,41 +175,42 @@ describe("불러오기 시나리오 — Verse 2를 가져온 자리는 Verse 2�
   });
 });
 
-describe("섹션 숨김 — 감추는 것이지 지우는 것이 아니다 (02 §5.4)", () => {
-  it("감출 때만 저장값에 적는다 — 보이는 것이 기본이라 false를 쌓지 않는다", () => {
+describe("묵상 덩이 숨김 — 감추는 것이지 지우는 것이 아니다 (02 §5.4)", () => {
+  it("감출 때만 껍데기를 씌운다 — 보이는 덩이는 예전 모양 그대로다", () => {
     const values: PraiseFormValues = {
       ...filled(),
-      sections: [
-        { id: "a", label: "Verse", lyrics: "1절", hidden: false },
-        { id: "b", label: "Verse", lyrics: "2절", hidden: true },
+      meditationBlocks: [
+        { id: "m1", doc: doc("보이는 덩이"), hidden: false },
+        { id: "m2", doc: doc("감춘 덩이"), hidden: true },
       ],
     };
 
-    const sections = (toDraftContent(values) as { sections: Record<string, unknown>[] }).sections;
+    const saved = (toDraftContent(values) as { meditationAndPrayer: unknown[] })
+      .meditationAndPrayer;
 
-    expect(sections[0]).not.toHaveProperty("hidden");
-    expect(sections[1]).toMatchObject({ hidden: true });
+    expect(saved[0]).toMatchObject({ type: "doc" });
+    expect(saved[1]).toMatchObject({ hidden: true, doc: { type: "doc" } });
   });
 
-  it("감춘 가사도 저장값에 그대로 남는다 — 지운 것이 아니다", () => {
+  it("감춘 덩이도 저장값에 남는다 — 지운 것이 아니다", () => {
     const values: PraiseFormValues = {
       ...filled(),
-      sections: [{ id: "a", label: "Verse", lyrics: "1절", hidden: true }],
+      meditationBlocks: [{ id: "m1", doc: doc("감춘 덩이"), hidden: true }],
     };
 
-    const content = toPublishContent(values);
-    if (content.kind !== "PRAISE") throw new Error("PRAISE여야 한다");
+    const form = fromDraftContent(toDraftContent(values), "제목");
 
-    expect(content.sections).toEqual([{ id: "a", label: "Verse", lyrics: "1절", hidden: true }]);
+    expect(form.meditationBlocks).toHaveLength(1);
+    expect(form.meditationBlocks[0]?.hidden).toBe(true);
   });
 
-  it("이 자리가 없는 옛 글은 보이는 것으로 읽는다", () => {
+  it("표시가 없는 옛 글은 보이는 것으로 읽는다", () => {
     const form = fromDraftContent(
-      { kind: "PRAISE", sections: [{ id: "a", label: "Verse", lyrics: "1절" }] },
+      { kind: "PRAISE", sections: [], meditationAndPrayer: toTiptapDoc(doc("옛 글의 묵상")) },
       "제목",
     );
 
-    expect(form.sections[0]?.hidden).toBe(false);
+    expect(form.meditationBlocks[0]?.hidden).toBe(false);
   });
 });
 
@@ -254,7 +255,7 @@ describe("발행 게이트", () => {
   it("묵상과 기도가 비면 막는다 — 이 글의 본문이다", () => {
     const result = PraisePublishFormSchema.safeParse({
       ...filled(),
-      meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] } }],
+      meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] }, hidden: false }],
     });
 
     expect(result.success).toBe(false);
@@ -265,8 +266,8 @@ describe("발행 게이트", () => {
     const result = PraisePublishFormSchema.safeParse({
       ...filled(),
       meditationBlocks: [
-        { id: "m1", doc: doc("기다림을 배웁니다") },
-        { id: "m2", doc: { type: "doc", content: [] } },
+        { id: "m1", doc: doc("기다림을 배웁니다"), hidden: false },
+        { id: "m2", doc: { type: "doc", content: [] }, hidden: false },
       ],
     });
 
@@ -277,7 +278,7 @@ describe("발행 게이트", () => {
     expect(
       PraisePublishFormSchema.safeParse({
         ...filled(),
-        sections: [{ id: "a", label: "Interlude", lyrics: "", hidden: false }],
+        sections: [{ id: "a", label: "Interlude", lyrics: "" }],
       }).success,
     ).toBe(true);
   });
@@ -288,8 +289,8 @@ describe("저장 계약 변환 (05 §2)", () => {
     const content = toPublishContent({
       ...filled(),
       sections: [
-        { id: "a", label: "Chorus", lyrics: "", hidden: false },
-        { id: "b", label: "Refrain", lyrics: "", hidden: false },
+        { id: "a", label: "Chorus", lyrics: "" },
+        { id: "b", label: "Refrain", lyrics: "" },
       ],
     });
     if (content.kind !== "PRAISE") throw new Error("PRAISE content여야 한다");
@@ -321,7 +322,7 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
   it("직접 입력 라벨을 평평한 문자열로 되돌린다", () => {
     const saved = toDraftContent({
       ...filled(),
-      sections: [{ id: "a", label: "Tag", lyrics: "한 번 더", hidden: false }],
+      sections: [{ id: "a", label: "Tag", lyrics: "한 번 더" }],
     });
 
     const form = fromDraftContent(saved, "제목");
@@ -330,7 +331,6 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
       id: "a",
       label: "Tag",
       lyrics: "한 번 더",
-      hidden: false,
     });
   });
 
@@ -371,9 +371,9 @@ describe("묵상과 기도 — 블록 목록 (02 §5.4)", () => {
     const content = toPublishContent({
       ...filled(),
       meditationBlocks: [
-        { id: "m1", doc: doc("기다림을 배웁니다") },
-        { id: "m2", doc: { type: "doc", content: [] } },
-        { id: "m3", doc: doc("오늘도 지키소서") },
+        { id: "m1", doc: doc("기다림을 배웁니다"), hidden: false },
+        { id: "m2", doc: { type: "doc", content: [] }, hidden: false },
+        { id: "m3", doc: doc("오늘도 지키소서"), hidden: false },
       ],
     });
 
@@ -400,8 +400,8 @@ describe("묵상과 기도 — 블록 목록 (02 §5.4)", () => {
     const saved = toDraftContent({
       ...filled(),
       meditationBlocks: [
-        { id: "m1", doc: doc("첫 덩이") },
-        { id: "m2", doc: doc("둘째 덩이") },
+        { id: "m1", doc: doc("첫 덩이"), hidden: false },
+        { id: "m2", doc: doc("둘째 덩이"), hidden: false },
       ],
     });
 
@@ -426,7 +426,7 @@ describe("isEmptyForm — 서식 전환 조건", () => {
     expect(
       isEmptyForm({
         ...base,
-        sections: [{ id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false }],
+        sections: [{ id: "a", label: "Verse", lyrics: "주님의 시간에" }],
       }),
     ).toBe(false);
     expect(isEmptyForm(filled())).toBe(false);

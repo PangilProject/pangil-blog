@@ -31,6 +31,12 @@ import {
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 import { usePublishFlow } from "@/lib/editor/usePublishFlow";
 import { parseYouTubeId, youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/praise/youtube";
+import { cn } from "@/lib/utils";
+
+/** 접근성 이름. 블록이 하나뿐이면 번호를 붙이지 않는다 — 없는 둘째 블록을 암시한다 */
+function blockName(index: number, total: number): string {
+  return total > 1 ? `묵상과 기도 ${index + 1}` : "묵상과 기도";
+}
 
 /**
  * A-06 찬양 에디터 (02 §5.4 · 04 §2.5).
@@ -167,7 +173,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
   const items = sections.fields.map((field, index) => ({
     key: field.id,
-    value: watchedSections[index] ?? { id: field.id, label: "Verse", lyrics: "", hidden: false },
+    value: watchedSections[index] ?? { id: field.id, label: "Verse", lyrics: "" },
   }));
 
   return (
@@ -260,7 +266,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
           <div className="flex flex-col gap-2">
             <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
-              가사 · 엔터 2회로 다음 섹션, Alt+↑↓로 순서 이동, 숨김은 공개 지면에만 적용돼요
+              가사 · 엔터 2회로 다음 섹션, Alt+↑↓로 순서 이동
             </span>
             <PraiseSectionList
               items={items}
@@ -270,9 +276,6 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
               onLyricsChange={(index, lyrics) =>
                 setValue(`sections.${index}.lyrics`, lyrics, { shouldDirty: true })
               }
-              onHiddenChange={(index, hidden) =>
-                setValue(`sections.${index}.hidden`, hidden, { shouldDirty: true })
-              }
               onAppendAfter={(index, label) => sections.insert(index + 1, newSection(label))}
               onRemove={(index) => sections.remove(index)}
               onMove={(from, to) => sections.move(from, to)}
@@ -281,23 +284,55 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
           <div ref={meditationRef} className="flex flex-col gap-2">
             <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
-              묵상과 기도 · 엔터 2회로 다음 블록
+              묵상과 기도 · 엔터 2회로 다음 블록, 숨김은 공개 지면에만 적용돼요
             </span>
 
             {meditation.fields.map((field, index) => (
               <div
                 key={field.id}
                 data-meditation-block={index}
-                className="border border-edge bg-card"
+                className="group border border-edge bg-card"
               >
+                {/* 숨김 표시만 있는 얇은 줄. 손이 오기 전에는 흐리다 — 쓰는 동안 눈에
+                    걸리면 거기서 타이핑이 멈춘다(에디터 불변식: 방해 요소 제로) */}
+                <Controller
+                  control={control}
+                  name={`meditationBlocks.${index}.hidden`}
+                  render={({ field: flag }) => (
+                    <div
+                      className={cn(
+                        "flex justify-end border-edge border-b border-dashed px-2 py-1 opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100",
+                        flag.value && "opacity-100",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={flag.value === true}
+                        aria-label={
+                          flag.value
+                            ? `${blockName(index, meditation.fields.length)} 공개 지면에 보이기`
+                            : `${blockName(index, meditation.fields.length)} 공개 지면에서 숨기기`
+                        }
+                        onClick={() => flag.onChange(!flag.value)}
+                        className={cn(
+                          "border px-1.5 font-typewriter text-[11px]",
+                          flag.value
+                            ? "border-edge text-(--accent)"
+                            : "border-transparent text-faint hover:border-edge hover:text-ink",
+                        )}
+                      >
+                        {flag.value ? "숨김" : "보임"}
+                      </button>
+                    </div>
+                  )}
+                />
+
                 <Controller
                   control={control}
                   name={`meditationBlocks.${index}.doc`}
                   render={({ field: block }) => (
                     <RichTextField
-                      ariaLabel={
-                        meditation.fields.length > 1 ? `묵상과 기도 ${index + 1}` : "묵상과 기도"
-                      }
+                      ariaLabel={blockName(index, meditation.fields.length)}
                       variant="slim"
                       value={block.value}
                       onChange={block.onChange}

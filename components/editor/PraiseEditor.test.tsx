@@ -39,8 +39,8 @@ function filled(): PraiseFormValues {
     title: "마커스워십 - 주님의 시간에",
     youtubeUrl: YOUTUBE_URL,
     sections: [
-      { id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false },
-      { id: "b", label: "Chorus", lyrics: "찬양하리", hidden: false },
+      { id: "a", label: "Verse", lyrics: "주님의 시간에" },
+      { id: "b", label: "Chorus", lyrics: "찬양하리" },
     ],
     meditationBlocks: [
       {
@@ -49,6 +49,7 @@ function filled(): PraiseFormValues {
           type: "doc",
           content: [{ type: "paragraph", content: [{ type: "text", text: "기다림을 배웁니다" }] }],
         },
+        hidden: false,
       },
     ],
     tags: [],
@@ -143,8 +144,8 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
       initialValues: {
         ...filled(),
         sections: [
-          { id: "a", label: "Verse", lyrics: "1절", hidden: false },
-          { id: "b", label: "Verse", lyrics: "2절", hidden: false },
+          { id: "a", label: "Verse", lyrics: "1절" },
+          { id: "b", label: "Verse", lyrics: "2절" },
         ],
       },
     });
@@ -184,8 +185,8 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
       initialValues: {
         ...filled(),
         sections: [
-          { id: "a", label: "Verse", lyrics: "1절", hidden: false },
-          { id: "b", label: "Chorus", lyrics: "", hidden: false },
+          { id: "a", label: "Verse", lyrics: "1절" },
+          { id: "b", label: "Chorus", lyrics: "" },
         ],
       },
     });
@@ -201,7 +202,7 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
     renderEditor({
       initialValues: {
         ...filled(),
-        sections: [{ id: "a", label: "Verse", lyrics: "", hidden: false }],
+        sections: [{ id: "a", label: "Verse", lyrics: "" }],
       },
     });
 
@@ -224,26 +225,43 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
     expect(lyricsBoxes[1]).toHaveValue("주님의 시간에");
   });
 
-  it("숨기면 상태가 버튼에 적히고, 가사는 그대로 남는다", async () => {
-    renderEditor();
-
-    const toggle = screen.getByLabelText("Verse 공개 지면에서 숨기기");
-    expect(toggle).toHaveTextContent("보임");
-
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-
-    expect(screen.getByLabelText("Verse 공개 지면에 보이기")).toHaveTextContent("숨김");
-    expect(screen.getByLabelText("Verse 가사")).toHaveValue("주님의 시간에");
-  });
-
   it("라벨을 바꿔도 가사는 남는다", async () => {
     renderEditor();
 
     // 라벨 입력을 직접 입력 상태로 바꾸는 것은 Select 상호작용이므로, 여기서는 값 보존만 본다
     expect(screen.getByLabelText("Verse 가사")).toHaveValue("주님의 시간에");
     expect(screen.getByLabelText("섹션 1 라벨")).toBeInTheDocument();
+  });
+});
+
+describe("PraiseEditor — 묵상 덩이 숨김 (02 §5.4)", () => {
+  it("숨기면 상태가 버튼에 적히고, 적어둔 글은 그대로 남는다", async () => {
+    renderEditor();
+
+    const toggle = screen.getByLabelText("묵상과 기도 공개 지면에서 숨기기");
+    expect(toggle).toHaveTextContent("보임");
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(screen.getByLabelText("묵상과 기도 공개 지면에 보이기")).toHaveTextContent("숨김");
+    expect(screen.getByText("기다림을 배웁니다")).toBeInTheDocument();
+  });
+
+  it("덩이가 여럿이면 이름에 번호가 붙는다 — 어느 덩이를 감추는지 알아야 한다", () => {
+    renderEditor({
+      initialValues: {
+        ...filled(),
+        meditationBlocks: [
+          { id: "m1", doc: { type: "doc", content: [] }, hidden: false },
+          { id: "m2", doc: { type: "doc", content: [] }, hidden: false },
+        ],
+      },
+    });
+
+    expect(screen.getByLabelText("묵상과 기도 1 공개 지면에서 숨기기")).toBeInTheDocument();
+    expect(screen.getByLabelText("묵상과 기도 2 공개 지면에서 숨기기")).toBeInTheDocument();
   });
 });
 
@@ -263,7 +281,7 @@ describe("PraiseEditor — 발행", () => {
     renderEditor({
       initialValues: {
         ...filled(),
-        meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] } }],
+        meditationBlocks: [{ id: "m1", doc: { type: "doc", content: [] }, hidden: false }],
       },
     });
 

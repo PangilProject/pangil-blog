@@ -66,6 +66,31 @@ export function tiptapToPlainText(doc: TiptapDoc | null | undefined): string {
   return normalizeWhitespace(parts.join(""));
 }
 
+/**
+ * 붙여넣기용 평문 — **줄바꿈을 살린다** (04 §3.1 평문 타깃).
+ *
+ * 색인용(`tiptapToPlainText`)은 공백을 전부 한 칸으로 눕힌다. 검색은 어디서 끊겼는지를
+ * 묻지 않기 때문이다. 반대로 옮겨 적으려고 복사한 글은 **문단이 곧 의미**라, 여기서는
+ * 줄을 남기고 빈 줄만 하나로 줄인다.
+ */
+export function tiptapToCopyText(doc: TiptapDoc | null | undefined): string {
+  if (!doc) return "";
+
+  const parts: string[] = [];
+  walk(doc.content, parts);
+
+  return (
+    parts
+      .join("")
+      .replace(/[^\S\n]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      // 순회가 문단·목록마다 줄을 하나씩 넣어서 겹친다. 문단 하나 = 줄 하나로 눕힌다 —
+      // 덩이 사이를 빈 줄로 끊는 것은 부르는 쪽의 일이다
+      .replace(/\n{2,}/g, "\n")
+      .trim()
+  );
+}
+
 /** 검색 색인에 넣기 전 공백 정리 — 줄바꿈·연속 공백을 한 칸으로 */
 export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();

@@ -58,56 +58,60 @@ describe("PraiseView", () => {
     expect(screen.getAllByTestId("body")).toHaveLength(2);
   });
 
-  it("감춘 섹션은 나가지 않는다 (02 §5.4)", () => {
+  it("감춘 묵상 덩이는 나가지 않는다", () => {
     render(
       <PraiseView
         content={{
           ...content,
-          sections: [
-            { id: "a", label: "Verse", lyrics: "1절", hidden: true },
-            { id: "b", label: "Verse", lyrics: "2절" },
+          meditationAndPrayer: [
+            { type: "doc", content: [] },
+            { doc: { type: "doc", content: [] }, hidden: true },
           ],
         }}
         title="손잡고 함께 가세"
       />,
     );
 
-    expect(screen.queryByText("1절")).toBeNull();
-    expect(screen.getByText("2절")).toBeInTheDocument();
+    expect(screen.getAllByTestId("body")).toHaveLength(1);
   });
 
-  it("감춰도 남은 절의 번호는 그대로다 — 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다", () => {
+  it("다 감추면 묵상과 기도 소제목도 세우지 않는다", () => {
     render(
       <PraiseView
         content={{
           ...content,
-          sections: [
-            { id: "a", label: "Verse", lyrics: "1절" },
-            { id: "b", label: "Verse", lyrics: "2절", hidden: true },
-            { id: "c", label: "Verse", lyrics: "3절" },
-          ],
+          meditationAndPrayer: [{ doc: { type: "doc", content: [] }, hidden: true }],
         }}
         title="손잡고 함께 가세"
       />,
     );
 
-    expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.queryByText("2")).toBeNull();
+    expect(screen.queryByText("묵상과 기도")).toBeNull();
   });
 
-  it("다 감추면 가사 판 자체를 세우지 않는다 — 빈 상자만 남는다", () => {
+  it("묵상과 기도에 복사 버튼이 선다 — 발행된 글을 옮겨 적을 수 있어야 한다", () => {
     render(
       <PraiseView
         content={{
           ...content,
-          sections: [{ id: "a", label: "Verse", lyrics: "1절", hidden: true }],
+          meditationAndPrayer: {
+            type: "doc",
+            content: [
+              { type: "paragraph", content: [{ type: "text", text: "기다림을 배웁니다" }] },
+            ],
+          },
         }}
         title="손잡고 함께 가세"
       />,
     );
 
-    expect(screen.queryByText("Verse")).toBeNull();
+    expect(screen.getByLabelText("묵상과 기도 복사")).toBeInTheDocument();
+  });
+
+  it("옮겨 적을 글자가 없으면 복사 버튼도 세우지 않는다", () => {
+    render(<PraiseView content={content} title="손잡고 함께 가세" />);
+
+    expect(screen.queryByLabelText("묵상과 기도 복사")).toBeNull();
   });
 
   it("영상은 클릭 전 썸네일이다", () => {

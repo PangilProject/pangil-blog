@@ -87,15 +87,17 @@ function body(content: PostContent): string {
 
       for (const section of content.sections) {
         const label = typeof section.label === "string" ? section.label : section.label.custom;
-        // 내보내기는 내가 쓴 것을 다 담는다(§3 lock-in 방어). 감춘 절도 넣되 그렇다고 적어 둔다 —
-        // 안 적으면 지면과 다른 파일이 되고, 왜 다른지는 파일만 봐서는 알 수 없다
-        parts.push(section.hidden === true ? `### ${label} (숨김)` : `### ${label}`);
+        parts.push(`### ${label}`);
         if (section.lyrics) parts.push(section.lyrics);
       }
 
       // 블록 사이는 빈 줄로 끊는다 — 마크다운에서 문단이 갈리는 유일한 표시다
+      // 감춘 블록도 담는다. 어느 덩이가 안 나갔는지는 앞에 적어 둔다
       const meditation = praiseMeditationBlocks(content.meditationAndPrayer)
-        .map((block) => tiptapToMarkdown(block))
+        .map((block) => {
+          const text = tiptapToMarkdown(block.doc);
+          return text !== "" && block.hidden ? `*(숨김)* ${text}` : text;
+        })
         .filter((text) => text !== "")
         .join("\n\n");
       if (meditation) parts.push("## 묵상과 기도", meditation);
