@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { SimpleColumns } from "@/components/admin/SimpleColumns";
 import { BarLegend, SITE_BAR, StatBar } from "@/components/admin/StatBars";
-import { SimpleColumns, StatColumns } from "@/components/admin/StatColumns";
+import { StatLine } from "@/components/admin/StatLine";
 import { EmptyState, formatSeconds, Panel, Tile, UnitTabs } from "@/components/admin/StatShell";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
@@ -131,7 +132,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             */}
             <Panel
               title="조회"
-              note="큰 숫자는 공개 지면에 적히는 값(내 방문 포함)이고, 아래 작은 줄이 밖에서 온 것만이에요"
+              note="큰 숫자는 공개 지면에 적히는 값이에요. 아래 줄은 내 방문을 뺀 값이에요"
             >
               {/*
                 **한 기간 = 한 칸.** 전에는 본인 제외 4칸 아래에 "공개 지면 표시" 3개와
@@ -140,18 +141,26 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 기간마다 두 값을 한 칸에 짝지으면 비교가 칸 안에서 끝난다.
               */}
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Tile label="오늘" value={views.all.today} sub={outside(views.others.today)} />
+                <Tile
+                  label="오늘"
+                  value={views.all.today}
+                  sub={excludingMine(views.others.today)}
+                />
                 <Tile
                   label="어제"
                   value={views.all.yesterday}
-                  sub={outside(views.others.yesterday)}
+                  sub={excludingMine(views.others.yesterday)}
                 />
                 <Tile
                   label="이번 주"
                   value={views.all.thisWeek}
-                  sub={outside(views.others.thisWeek)}
+                  sub={excludingMine(views.others.thisWeek)}
                 />
-                <Tile label="통산" value={views.all.total} sub={outside(views.others.total)} />
+                <Tile
+                  label="통산"
+                  value={views.all.total}
+                  sub={excludingMine(views.others.total)}
+                />
               </section>
             </Panel>
 
@@ -162,7 +171,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             */}
             <Panel
               title="방문자"
-              note={`밖에서 몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요 · 수집 ${collectedDays}일째`}
+              note="몇 사람이 왔는지예요(내 방문 제외). 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요"
             >
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Tile
@@ -171,7 +180,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                   previous={visitors.yesterday}
                   previousLabel="어제"
                 />
-                <Tile label="통산" value={visitors.total} />
+                <Tile label="통산" value={visitors.total} sub={`수집 ${collectedDays}일째`} />
               </section>
             </Panel>
 
@@ -193,7 +202,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 />
               }
             >
-              <StatColumns points={series} unit={unit} />
+              <StatLine points={series} unit={unit} />
             </Panel>
 
             {topPosts.length > 0 && (
@@ -386,9 +395,14 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
 }
 
 /** KST 날짜 기준 경과일. 자정 경계를 넘긴 횟수를 세므로 시:분에 흔들리지 않는다 */
-/** 칸 아래 작은 줄 — 밖에서 온 것만 */
-function outside(value: number): string {
-  return `밖에서 ${value.toLocaleString("ko-KR")}`;
+/**
+ * 칸 아래 작은 줄.
+ *
+ * `밖에서 39`라고 적었다가 고쳤다 — 한국어로 읽히지 않았다. 티스토리에 **"내 방문 수 제외"**
+ * 라는 설정이 있어서 그 말이 익숙하고, 무엇을 뺐는지도 그대로 말한다(03 §7.2).
+ */
+function excludingMine(value: number): string {
+  return `내 방문 제외 ${value.toLocaleString("ko-KR")}`;
 }
 
 function kstDaysBetween(from: Date, to: Date): number {
