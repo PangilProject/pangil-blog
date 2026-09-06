@@ -138,6 +138,7 @@ model StatEvent {
   referrer    String?
   utmSource   String?
   visitorHash String // 무상태 일일 로테이션 해시 (05 §4.2)
+  isOwner     Boolean       @default(false) // 운영자 본인의 방문인가 (05 §4.1)
   device      Device
   durationMs  Int? // LEAVE 이벤트의 체류 시간
   occurredAt  DateTime      @default(now())

@@ -2,8 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { recordStatEvent } from "@/lib/db/statEvents";
 import { siteHostsFromEnv } from "@/lib/site/resolveSite";
-import { STAT_OPT_OUT_COOKIE } from "@/lib/stats/optOut";
 import { isAllowedOrigin } from "@/lib/stats/origin";
+import { STAT_OWNER_COOKIE } from "@/lib/stats/owner";
 import { isRateLimited } from "@/lib/stats/rateLimit";
 import { StatPayloadSchema } from "@/lib/stats/statSchema";
 import { clientIpOf, deviceOf, isBotUserAgent, visitorHash } from "@/lib/stats/visitor";
@@ -30,9 +30,14 @@ export async function POST(request: NextRequest) {
   const userAgent = headers.get("user-agent");
   if (isBotUserAgent(userAgent)) return NO_CONTENT;
 
-  // 관리자 본인 방문 제외 (07 M6 DoD). 비콘도 스스로 입을 닫지만 서버에서 한 번 더 본다 —
-  // 캐시된 옛 HTML이 남아 있는 동안에도 내 조회가 새지 않아야 한다
-  if (request.cookies.get(STAT_OPT_OUT_COOKIE)?.value === "1") return NO_CONTENT;
+  /**
+   * 운영자 본인의 방문인가 (05 §4.1).
+   *
+   * **막지 않고 표시한다.** 전에는 여기서 돌려보냈는데, 그러면 내 방문은 기록이 아예 남지
+   * 않아서 나중에 "본인 포함하면 몇이야"를 물을 수 없다. 반대로 그냥 다 받으면 이번엔
+   * 영원히 섞인다. 표시해 두면 읽을 때 고를 수 있다.
+   */
+  const isOwner = request.cookies.get(STAT_OWNER_COOKIE)?.value === "1";
 
   const ip = clientIpOf(headers);
 
@@ -69,6 +74,7 @@ export async function POST(request: NextRequest) {
       payload: { ...parsed.data, referrer },
       visitorHash: visitorHash({ salt, now: new Date(), ip, userAgent }),
       device: deviceOf(userAgent),
+      isOwner,
     });
   } catch (error) {
     // 통계 실패가 방문자에게 보이는 일은 없어야 한다

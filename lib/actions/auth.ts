@@ -9,7 +9,7 @@ import { ADMIN_UI_COOKIE } from "@/lib/auth/adminUiHint";
 import { safeNextPath } from "@/lib/auth/nextPath";
 import { isAdminEmail } from "@/lib/auth/supabaseEnv";
 import { createSupabaseServerClient } from "@/lib/auth/supabaseServer";
-import { optOutCookieDomain } from "@/lib/stats/optOut";
+import { ownerCookieDomain } from "@/lib/stats/owner";
 
 /**
  * A-00 로그인 (05 §3.2 — Supabase Auth 이메일/비번 단일 관리자 계정).
@@ -54,7 +54,7 @@ export async function signOut(): Promise<void> {
   jar.set(ADMIN_UI_COOKIE, "", {
     maxAge: 0,
     path: "/",
-    domain: optOutCookieDomain(process.env.SITE_HOST_ROOT),
+    domain: ownerCookieDomain(process.env.SITE_HOST_ROOT),
   });
 
   redirect(ADMIN_LOGIN_PATH);

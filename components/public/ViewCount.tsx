@@ -15,6 +15,9 @@ import { findViewTotals } from "@/lib/db/statSummary";
  *
  * 방문자 수가 사라진 것은 아니다. 관리 화면이 두 값을 이름과 함께 나란히 보여준다(A-09).
  *
+ * **본인 방문도 여기 들어간다.** 웹사이트를 열어 글을 읽은 것이면 누가 읽었든 1회다.
+ * 밖에서 얼마나 오는지는 관리 화면이 `본인 제외`로 따로 답한다(05 §4.1).
+ *
  * **요청 시점에 그린다.** 지면 자체는 정적으로 캐시되므로(04 §1.1) 이 숫자를 껍데기에
  * 넣으면 그 지면이 다시 발행될 때까지 굳는다 — 어제 숫자가 오늘도 붙어 있게 된다.
  * 그래서 Suspense 안의 조각으로 떼어낸다. DB 부담은 조회 쪽의 짧은 캐시가 맡는다.
@@ -22,7 +25,9 @@ import { findViewTotals } from "@/lib/db/statSummary";
 export async function ViewCount() {
   await connection();
 
-  const { today, yesterday, total } = await findViewTotals();
+  // 공개 지면은 본인 것도 센다 — 웹사이트를 열어 글을 읽은 것이면 누가 읽었든 1회다.
+  // 밖에서 얼마나 오는지는 관리 화면이 따로 답한다(05 §4.1)
+  const { today, yesterday, total } = (await findViewTotals()).all;
 
   return (
     <section className="flex items-baseline gap-4 border-edge border-y py-2.5">

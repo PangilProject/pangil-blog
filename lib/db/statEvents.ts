@@ -18,12 +18,15 @@ export type StatEventInput = {
   payload: StatPayload;
   visitorHash: string;
   device: "MOBILE" | "DESKTOP";
+  /** 운영자 본인의 방문인가 (05 §4.1). 버리지 않고 표시해 둔다 — 읽을 때 고른다 */
+  isOwner: boolean;
 };
 
 export async function recordStatEvent({
   payload,
   visitorHash,
   device,
+  isOwner,
 }: StatEventInput): Promise<void> {
   await prisma.statEvent.create({
     data: {
@@ -36,6 +39,7 @@ export async function recordStatEvent({
       visitorHash,
       device: Device[device],
       durationMs: payload.durationMs ?? null,
+      isOwner,
     },
   });
 }

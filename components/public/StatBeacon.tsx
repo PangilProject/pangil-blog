@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import type { SiteKey } from "@/lib/site/resolveSite";
-import { STAT_OPT_OUT_COOKIE } from "@/lib/stats/optOut";
 
 /**
  * 통계 비콘 (05 §4).
@@ -30,10 +29,6 @@ type StatBeaconProps = { site: SiteKey };
  */
 const MIN_DURATION_MS = 500;
 
-function hasOptedOut(): boolean {
-  return document.cookie.split("; ").includes(`${STAT_OPT_OUT_COOKIE}=1`);
-}
-
 /**
  * 글 상세 지면은 본문 컨테이너에 `data-post-id`를 달아 둔다. 레이아웃에서 비콘을 한 번만
  * 놓고도 글 단위 통계가 되게 하는 장치다 — 지면마다 비콘을 놓으면 언젠가 두 번 발화한다.
@@ -56,8 +51,8 @@ export function StatBeacon({ site }: StatBeaconProps) {
   const sentLeave = useRef(false);
 
   useEffect(() => {
-    if (hasOptedOut()) return;
-
+    // 본인 방문도 보낸다. 서버가 쿠키를 보고 표시만 남긴다(05 §4.1) — 여기서 입을 닫으면
+    // 그 방문은 기록이 아예 없어서 나중에 "본인 포함"을 셀 수 없다
     const postId = currentPostId();
     const path = pathname;
     const enteredAt = Date.now();
