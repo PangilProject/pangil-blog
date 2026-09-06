@@ -12,7 +12,6 @@ import {
   findDwellTimes,
   findFirstEventAt,
   findHourly,
-  findKpis,
   findRecentEvents,
   findReferrers,
   findSeries,
@@ -22,9 +21,9 @@ import {
   findWeekdays,
 } from "@/lib/db/statSummary";
 import { postHref } from "@/lib/site/publicUrl";
-import type { ViewTotals } from "@/lib/stats/ownerSplit";
 import { parseUnit, UNIT_WINDOW_DAYS } from "@/lib/stats/range";
 import { REFERRER_KIND_LABELS, referrerKind } from "@/lib/stats/referrer";
+import { cn } from "@/lib/utils";
 
 /**
  * A-09 통계 (05 §4 · Backlog 2순위 승격, 2026-08-25 사용자 결정).
@@ -58,7 +57,6 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
 
   const [
     firstAt,
-    kpis,
     visitors,
     views,
     series,
@@ -71,7 +69,6 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
     recent,
   ] = await Promise.all([
     findFirstEventAt(),
-    findKpis(),
     findVisitorTotals(),
     findViewTotals(),
     findSeries(unit),
@@ -111,7 +108,8 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
     <div className="flex min-h-full flex-col bg-paper">
       <AdminNav />
 
-      <main className="mx-auto flex w-full max-w-[880px] flex-col gap-8 px-[5%] py-8">
+      {/* 880px에서는 30칸 그래프의 날짜 라벨이 겹쳐 솎아내야 했다 — 한 화면에 더 담기게 넓힌다 */}
+      <main className="mx-auto flex w-full max-w-[1040px] flex-col gap-8 px-[5%] py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-serif text-lg">통계</h1>
           {/* 화면의 유일한 조작 장치다(lib/stats/range 주석) */}
@@ -122,40 +120,39 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
           <EmptyState />
         ) : (
           <>
-            {/* KPI — 티스토리 통계처럼 오늘·이번 주를 앞에 둔다. 비교 대상(어제·지난주)은
-                별도 칸이 아니라 증감선에 함께 적는다(components/admin/StatShell 주석).
-                주는 일요일에 시작한다 — 02 §3.1의 요일 카드와 같은 주여야 나란히 볼 수 있다. */}
             {/*
               **무엇을 센 숫자인지 적는다.** 전에는 칸에 `오늘`이라고만 적혀 있어서, 공개
               지면 사이드바의 `오늘`(방문자)과 같은 값으로 읽혔다 — 둘 다 맞는 값인데
               이름이 없어서 어느 쪽이 틀렸다고 느껴졌다.
-            */}
-            <Panel title="조회" note="몇 번 읽혔는지예요. 아래 칸은 내 방문을 뺀 값이에요">
-              <div className="flex flex-col gap-3">
-                <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Tile
-                    label="오늘"
-                    value={kpis.today}
-                    previous={kpis.yesterday}
-                    previousLabel="어제"
-                  />
-                  <Tile
-                    label="이번 주"
-                    value={kpis.thisWeek}
-                    previous={kpis.lastWeek}
-                    previousLabel="지난주"
-                  />
-                  <Tile label="최근 30일" value={kpis.month} />
-                  <Tile label="통산" value={kpis.total} sub={`수집 ${collectedDays}일째`} />
-                </section>
 
-                {/*
-                  **공개 지면에 적히는 그 숫자를 여기 그대로 둔다.** 위 칸은 내 방문을 뺀
-                  값이라 사이드바와 다르고, 그 차이를 각주로만 적어두면 "둘 중 뭐가 맞나"가
-                  다시 시작된다. 나란히 보이면 그건 차이가 아니라 **내가 몇 번 열었나**다.
-                */}
-                <OwnCounts all={views.all} others={views.others} />
-              </div>
+              주는 일요일에 시작한다 — 02 §3.1의 요일 카드와 같은 주여야 나란히 볼 수 있다.
+              `최근 30일`과 지난주 증감선은 뺐다: 한 패널의 숫자를 줄이는 것이 이 개편의
+              목적이고, 어제 칸이 옆에 있으면 증감은 눈으로 읽힌다.
+            */}
+            <Panel
+              title="조회"
+              note="큰 숫자는 공개 지면에 적히는 값(내 방문 포함)이고, 아래 작은 줄이 밖에서 온 것만이에요"
+            >
+              {/*
+                **한 기간 = 한 칸.** 전에는 본인 제외 4칸 아래에 "공개 지면 표시" 3개와
+                "그중 내 방문" 3개를 줄로 더 깔았다 — 한 패널에 숫자가 열 개였고, 무엇과
+                무엇을 비교해야 하는지가 보이지 않았다.
+                기간마다 두 값을 한 칸에 짝지으면 비교가 칸 안에서 끝난다.
+              */}
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Tile label="오늘" value={views.all.today} sub={outside(views.others.today)} />
+                <Tile
+                  label="어제"
+                  value={views.all.yesterday}
+                  sub={outside(views.others.yesterday)}
+                />
+                <Tile
+                  label="이번 주"
+                  value={views.all.thisWeek}
+                  sub={outside(views.others.thisWeek)}
+                />
+                <Tile label="통산" value={views.all.total} sub={outside(views.others.total)} />
+              </section>
             </Panel>
 
             {/*
@@ -165,7 +162,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             */}
             <Panel
               title="방문자"
-              note="밖에서 몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요"
+              note={`밖에서 몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요 · 수집 ${collectedDays}일째`}
             >
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Tile
@@ -204,7 +201,14 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
                 <ol className="flex flex-col gap-2">
                   {topPosts.map((row, rank) => (
                     <li key={row.id} className="flex items-center gap-3">
-                      <span className="w-[16px] flex-none font-typewriter text-[10.5px] text-faint">
+                      {/* 순위가 이 목록의 요점이다 — 흐린 10.5px로는 몇 번째인지 눈에 안 든다.
+                          위 세 칸만 액센트를 준다: 그 아래는 순서보다 "이만큼 읽혔다"가 중요하다 */}
+                      <span
+                        className={cn(
+                          "w-[18px] flex-none text-right font-typewriter text-[12px] tabular-nums",
+                          rank < 3 ? "font-bold text-(--accent)" : "text-faint",
+                        )}
+                      >
                         {rank + 1}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-[13px]">
@@ -382,43 +386,9 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
 }
 
 /** KST 날짜 기준 경과일. 자정 경계를 넘긴 횟수를 세므로 시:분에 흔들리지 않는다 */
-/**
- * 공개 지면에 적히는 조회 수와, 그중 내가 만든 몫.
- *
- * 위 칸(본인 제외)과 사이드바(본인 포함)가 다른 값이라, 그 차이를 각주로만 적으면
- * "둘 중 뭐가 맞나"가 다시 시작된다. 세 숫자를 나란히 두면 **차이가 곧 내 몫**이 된다.
- *
- * `내 방문`은 빼서 구한다 — 따로 세어 오지 않으므로 세 숫자가 어긋날 수 없다.
- */
-function OwnCounts({ all, others }: { all: ViewTotals; others: ViewTotals }) {
-  const mine = {
-    today: all.today - others.today,
-    yesterday: all.yesterday - others.yesterday,
-    total: all.total - others.total,
-  };
-  const count = (value: number) => value.toLocaleString("ko-KR");
-
-  return (
-    <dl className="flex flex-wrap gap-x-5 gap-y-1 border-edge border-t pt-2.5 font-typewriter text-[10.5px] text-faint">
-      <Row
-        label="공개 지면 표시"
-        value={`오늘 ${count(all.today)} · 어제 ${count(all.yesterday)} · 통산 ${count(all.total)}`}
-      />
-      <Row
-        label="그중 내 방문"
-        value={`오늘 ${count(mine.today)} · 어제 ${count(mine.yesterday)} · 통산 ${count(mine.total)}`}
-      />
-    </dl>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <dt>{label}</dt>
-      <dd className="text-ink-soft">{value}</dd>
-    </div>
-  );
+/** 칸 아래 작은 줄 — 밖에서 온 것만 */
+function outside(value: number): string {
+  return `밖에서 ${value.toLocaleString("ko-KR")}`;
 }
 
 function kstDaysBetween(from: Date, to: Date): number {
