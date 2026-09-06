@@ -1,6 +1,7 @@
 import { RichTextBody } from "@/components/public/RichTextBody";
 import { ScriptureBlock } from "@/components/record/ScriptureBlock";
 import type { PostContent } from "@/lib/content/schema";
+import { toScriptureVerses } from "@/lib/record/scriptureVerses";
 
 /**
  * F-03 설교 상세 (02 §2.3 · 03 §5.2).
@@ -16,9 +17,16 @@ export function SermonView({ content }: { content: Extract<PostContent, { kind: 
         <p className="font-serif font-bold text-[17px] leading-body">{content.sermonTitle}</p>
       )}
 
-      <ScriptureBlock variant="sermon" reference={content.scriptureRef}>
-        {content.scriptureBody}
-      </ScriptureBlock>
+      {/*
+        **큐티와 같은 길로 쪼갠다.** 전에는 본문 문자열을 통째로 넘겼는데, 그러면 줄바꿈이
+        HTML에서 공백으로 접혀 **절이 한 줄로 이어져 나왔다.** 조판은 둘 다 같은 모양이어야
+        하고(03 §5.2), 그 규칙은 이미 `toScriptureVerses`에 있었다 — 설교만 안 쓰고 있었다.
+      */}
+      <ScriptureBlock
+        variant="sermon"
+        reference={content.scriptureRef}
+        verses={toScriptureVerses(content.scriptureBody)}
+      />
 
       <RichTextBody doc={content.body} />
 
