@@ -13,7 +13,7 @@ import {
   siteRewritePath,
   staleSiteRedirect,
 } from "@/lib/site/resolveSite";
-import { optOutCookieDomain, STAT_OPT_OUT_COOKIE, STAT_OPT_OUT_MAX_AGE } from "@/lib/stats/optOut";
+import { ownerCookieDomain, STAT_OWNER_COOKIE, STAT_OWNER_MAX_AGE } from "@/lib/stats/owner";
 
 /**
  * 3호스트 분기 (04 §1.3).
@@ -50,17 +50,17 @@ export async function proxy(request: NextRequest) {
         sameSite: "lax",
         httpOnly: false,
         secure: request.nextUrl.protocol === "https:",
-        domain: optOutCookieDomain(process.env.SITE_HOST_ROOT),
+        domain: ownerCookieDomain(process.env.SITE_HOST_ROOT),
       });
 
-      response.cookies.set(STAT_OPT_OUT_COOKIE, "1", {
-        maxAge: STAT_OPT_OUT_MAX_AGE,
+      response.cookies.set(STAT_OWNER_COOKIE, "1", {
+        maxAge: STAT_OWNER_MAX_AGE,
         path: "/",
         sameSite: "lax",
-        // httpOnly가 아니다. 비콘이 읽어야 하고, 값에 비밀이 없다(lib/stats/optOut 주석)
+        // httpOnly가 아니다. 비콘이 읽어야 하고, 값에 비밀이 없다(lib/stats/owner 주석)
         httpOnly: false,
         secure: request.nextUrl.protocol === "https:",
-        domain: optOutCookieDomain(process.env.SITE_HOST_ROOT),
+        domain: ownerCookieDomain(process.env.SITE_HOST_ROOT),
       });
       return response;
     }

@@ -4,6 +4,7 @@ import { cacheLife } from "next/cache";
 
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
+import { type OwnerRow, type SplitTotals, splitOf } from "@/lib/stats/ownerSplit";
 import { UNIT_BUCKETS, UNIT_WINDOW_DAYS, type Unit } from "@/lib/stats/range";
 import { referrerHost } from "@/lib/stats/referrer";
 
@@ -75,7 +76,7 @@ async function dailySeries(): Promise<SeriesPoint[]> {
                               AND "site"::text = 'FAITH')::int AS "faithViews",
            count(DISTINCT "visitorHash")::int AS visitors
     FROM "StatEvent"
-    WHERE "occurredAt" >= ${since(UNIT_WINDOW_DAYS.day)}
+    WHERE NOT "isOwner" AND "occurredAt" >= ${since(UNIT_WINDOW_DAYS.day)}
     GROUP BY 1`;
 
   return fillDays(rows, UNIT_WINDOW_DAYS.day);
@@ -94,7 +95,7 @@ async function weeklySeries(): Promise<SeriesPoint[]> {
                               AND "site"::text = 'FAITH')::int AS "faithViews",
            0::int AS visitors
     FROM "StatEvent"
-    WHERE "occurredAt" >= ${since(UNIT_WINDOW_DAYS.week + 7)}
+    WHERE NOT "isOwner" AND "occurredAt" >= ${since(UNIT_WINDOW_DAYS.week + 7)}
     GROUP BY 1
     ORDER BY 1 DESC
     LIMIT ${UNIT_BUCKETS.week}`;
@@ -119,6 +120,7 @@ async function monthlySeries(): Promise<SeriesPoint[]> {
                               AND "site"::text = 'FAITH')::int AS "faithViews",
            0::int AS visitors
     FROM "StatEvent"
+    WHERE NOT "isOwner"
     GROUP BY 1
     ORDER BY 1 DESC
     LIMIT ${UNIT_BUCKETS.month}`;
@@ -172,7 +174,7 @@ export async function findTopPosts(days = 30, limit = 10): Promise<TopPost[]> {
     -- LEFT JOIN이다. 지워진 글의 조회도 남는다(postId는 FK가 아니다, 05 §1.4) —
     -- 그 행을 빼면 "지난달에 뭐가 읽혔나"가 조용히 줄어든다
     LEFT JOIN "Post" p ON p.id = s."postId"
-    WHERE s."eventType"::text = 'PAGEVIEW'
+    WHERE s."eventType"::text = 'PAGEVIEW' AND NOT s."isOwner"
       AND s."postId" IS NOT NULL
       AND s."occurredAt" >= ${since(days)}
     GROUP BY 1, 2, 3, 4
@@ -190,7 +192,7 @@ export async function findReferrers(days = 30, limit = 8): Promise<ReferrerStat[
   const rows = await prisma.$queryRaw<{ referrer: string | null; views: number }[]>`
     SELECT "referrer", count(*)::int AS views
     FROM "StatEvent"
-    WHERE "eventType"::text = 'PAGEVIEW' AND "occurredAt" >= ${since(days)}
+    WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner" AND "occurredAt" >= ${since(days)}
     GROUP BY 1`;
 
   return topHosts(rows, limit);
@@ -217,7 +219,7 @@ export async function findDevices(days = 30): Promise<DeviceStat[]> {
   return prisma.$queryRaw<DeviceStat[]>`
     SELECT "device"::text AS device, count(*)::int AS views
     FROM "StatEvent"
-    WHERE "eventType"::text = 'PAGEVIEW' AND "occurredAt" >= ${since(days)}
+    WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner" AND "occurredAt" >= ${since(days)}
     GROUP BY 1
     ORDER BY 2 DESC`;
 }
@@ -236,7 +238,7 @@ export async function findDwellTimes(days = 30, limit = 8): Promise<DwellStat[]>
            count(*)::int AS samples
     FROM "StatEvent" s
     LEFT JOIN "Post" p ON p.id = s."postId"
-    WHERE s."eventType"::text = 'LEAVE'
+    WHERE s."eventType"::text = 'LEAVE' AND NOT s."isOwner"
       AND s."postId" IS NOT NULL
       AND s."durationMs" IS NOT NULL
       AND s."occurredAt" >= ${since(days)}
@@ -272,7 +274,7 @@ export async function findKpis(): Promise<Kpis> {
     WITH days AS (
       SELECT ("occurredAt" + interval '9 hours')::date AS day
       FROM "StatEvent"
-      WHERE "eventType"::text = 'PAGEVIEW'
+      WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner"
     ),
     anchor AS (
       SELECT d AS today, d - extract(dow from d)::int AS week_start
@@ -301,7 +303,8 @@ export async function findAllTimeTotals(): Promise<AllTimeTotals> {
   const rows = await prisma.$queryRaw<AllTimeTotals[]>`
     SELECT count(*) FILTER (WHERE "eventType"::text = 'PAGEVIEW')::int AS views,
            count(DISTINCT ("occurredAt" + interval '9 hours')::date)::int AS days
-    FROM "StatEvent"`;
+    FROM "StatEvent"
+    WHERE NOT "isOwner"`;
 
   return rows[0] ?? { views: 0, days: 0 };
 }
@@ -314,6 +317,9 @@ export type VisitorTotals = { today: number; yesterday: number; total: number };
  * **누적은 "순방문자의 누적"이 아니라 날마다 센 순방문자의 합이다.** 해시 솔트가 날마다
  * 바뀌므로(05 §4.2) 여러 날에 걸친 같은 사람을 이을 수 없다 — 같은 사람이 사흘 오면 3으로
  * 센다. 그 한계를 감추지 않되 화면에서는 통계 용어로 말하지 않는다(03 §7.3).
+ *
+ * **본인 방문은 빼고 센다.** 이 값이 답하는 질문은 "밖에서 몇 사람이 왔나"이고, 거기에
+ * 나를 더하면 그 질문이 흐려진다 — 공개 지면의 조회 수는 반대로 전부 센다(05 §4.1).
  *
  * **어제를 나란히 둔다.** 오늘 숫자만 있으면 그게 많은 건지 적은 건지 알 수 없다 — 아침에는
  * 늘 작아 보이고 밤에는 늘 커 보인다. 비교 대상 하나가 있어야 그 숫자가 뜻을 가진다.
@@ -332,7 +338,7 @@ export async function findVisitorTotals(): Promise<VisitorTotals> {
       SELECT ("occurredAt" + interval '9 hours')::date AS day,
              count(DISTINCT "visitorHash")::int AS visitors
       FROM "StatEvent"
-      WHERE "eventType"::text = 'PAGEVIEW'
+      WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner"
       GROUP BY 1
     ),
     anchor AS (
@@ -348,8 +354,6 @@ export async function findVisitorTotals(): Promise<VisitorTotals> {
   return rows[0] ?? { today: 0, yesterday: 0, total: 0 };
 }
 
-export type ViewTotals = { today: number; yesterday: number; total: number };
-
 /**
  * 공개 지면 사이드바의 조회 수 (05 §4).
  *
@@ -358,34 +362,35 @@ export type ViewTotals = { today: number; yesterday: number; total: number };
  * 사흘 오면 3이다(05 §4.2). 설명 없이는 틀린 숫자처럼 보이는 값을 지면에 적을 이유가 없다.
  * 조회는 몇 번 읽혔는지, 그게 전부다.
  *
- * 관리자 본인의 방문은 여기 없다 — 옵트아웃 쿠키가 있으면 비콘도 안 쏘고 서버도 안 받는다
- * (05 §4.1). 그래서 직접 돌아다녀도 숫자가 부풀지 않는다.
- *
- * 방문자 수는 그대로 남는다. 관리 화면이 두 값을 나란히 보여준다(A-09).
+ * **본인 방문도 센다**(`all`). 웹사이트를 열어 글을 읽은 것이면 누가 읽었든 1회다. 대신
+ * 버리지 않고 표시해 두었으므로(`isOwner`) 밖에서 온 것만도 함께 낸다(`others`) — 관리
+ * 화면이 그 둘을 나란히 본다(05 §4.1).
  *
  * `use cache` + 짧은 수명인 이유는 findVisitorTotals와 같다 — 이 값은 방문자 행동으로
  * 바뀌므로 발행 태그로 만료시킬 수 없다.
  */
-export async function findViewTotals(): Promise<ViewTotals> {
+export async function findViewTotals(): Promise<SplitTotals> {
   "use cache";
   cacheLife("minutes");
 
-  const rows = await prisma.$queryRaw<ViewTotals[]>`
+  const rows = await prisma.$queryRaw<OwnerRow[]>`
     WITH anchor AS (
       SELECT ((now() AT TIME ZONE 'UTC') + interval '9 hours')::date AS today
     ),
     days AS (
-      SELECT ("occurredAt" + interval '9 hours')::date AS day
+      SELECT ("occurredAt" + interval '9 hours')::date AS day, "isOwner"
       FROM "StatEvent"
       WHERE "eventType"::text = 'PAGEVIEW'
     )
     SELECT
+      "isOwner",
       count(*) FILTER (WHERE day = (SELECT today FROM anchor))::int AS today,
       count(*) FILTER (WHERE day = (SELECT today FROM anchor) - 1)::int AS yesterday,
       count(*)::int AS total
-    FROM days`;
+    FROM days
+    GROUP BY "isOwner"`;
 
-  return rows[0] ?? { today: 0, yesterday: 0, total: 0 };
+  return splitOf(rows);
 }
 
 export type HourlyStat = { hour: number; views: number };
@@ -396,7 +401,7 @@ export async function findHourly(days: number): Promise<HourlyStat[]> {
     SELECT extract(hour from "occurredAt" + interval '9 hours')::int AS hour,
            count(*)::int AS views
     FROM "StatEvent"
-    WHERE "eventType"::text = 'PAGEVIEW' AND "occurredAt" >= ${since(days)}
+    WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner" AND "occurredAt" >= ${since(days)}
     GROUP BY 1`;
 
   const byHour = new Map(rows.map((row) => [row.hour, row.views]));
@@ -411,7 +416,7 @@ export async function findWeekdays(days: number): Promise<WeekdayStat[]> {
     SELECT extract(dow from "occurredAt" + interval '9 hours')::int AS weekday,
            count(*)::int AS views
     FROM "StatEvent"
-    WHERE "eventType"::text = 'PAGEVIEW' AND "occurredAt" >= ${since(days)}
+    WHERE "eventType"::text = 'PAGEVIEW' AND NOT "isOwner" AND "occurredAt" >= ${since(days)}
     GROUP BY 1`;
 
   const byDay = new Map(rows.map((row) => [row.weekday, row.views]));
@@ -441,6 +446,7 @@ export async function findRecentEvents(limit = 20): Promise<RecentEvent[]> {
            p.title, p.type::text AS type, p.slug
     FROM "StatEvent" s
     LEFT JOIN "Post" p ON p.id = s."postId"
+    WHERE NOT s."isOwner"
     ORDER BY s.id DESC
     LIMIT ${limit}`;
 }
@@ -473,7 +479,7 @@ export async function findPostStatSummary(postId: string): Promise<PostStatSumma
              AS "avgSeconds",
            count(*) FILTER (WHERE "eventType"::text = 'LEAVE')::int AS "dwellSamples"
     FROM "StatEvent"
-    WHERE "postId" = ${postId}`;
+    WHERE "postId" = ${postId} AND NOT "isOwner"`;
 
   return (
     rows[0] ?? { views: 0, firstSeen: null, lastSeen: null, avgSeconds: null, dwellSamples: 0 }
@@ -487,7 +493,7 @@ export async function findPostDaily(postId: string, days: number): Promise<PostD
     SELECT to_char("occurredAt" + interval '9 hours', 'YYYY-MM-DD') AS day,
            count(*)::int AS views
     FROM "StatEvent"
-    WHERE "postId" = ${postId}
+    WHERE "postId" = ${postId} AND NOT "isOwner"
       AND "eventType"::text = 'PAGEVIEW'
       AND "occurredAt" >= ${since(days)}
     GROUP BY 1
@@ -498,7 +504,7 @@ export async function findPostReferrers(postId: string, limit = 8): Promise<Refe
   const rows = await prisma.$queryRaw<{ referrer: string | null; views: number }[]>`
     SELECT "referrer", count(*)::int AS views
     FROM "StatEvent"
-    WHERE "postId" = ${postId} AND "eventType"::text = 'PAGEVIEW'
+    WHERE "postId" = ${postId} AND NOT "isOwner" AND "eventType"::text = 'PAGEVIEW'
     GROUP BY 1`;
 
   return topHosts(rows, limit);
@@ -508,7 +514,7 @@ export async function findPostDevices(postId: string): Promise<DeviceStat[]> {
   return prisma.$queryRaw<DeviceStat[]>`
     SELECT "device"::text AS device, count(*)::int AS views
     FROM "StatEvent"
-    WHERE "postId" = ${postId} AND "eventType"::text = 'PAGEVIEW'
+    WHERE "postId" = ${postId} AND NOT "isOwner" AND "eventType"::text = 'PAGEVIEW'
     GROUP BY 1
     ORDER BY 2 DESC`;
 }

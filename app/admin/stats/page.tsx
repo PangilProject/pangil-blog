@@ -17,6 +17,7 @@ import {
   findReferrers,
   findSeries,
   findTopPosts,
+  findViewTotals,
   findVisitorTotals,
   findWeekdays,
 } from "@/lib/db/statSummary";
@@ -58,6 +59,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
     firstAt,
     kpis,
     visitors,
+    views,
     series,
     topPosts,
     referrers,
@@ -70,6 +72,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
     findFirstEventAt(),
     findKpis(),
     findVisitorTotals(),
+    findViewTotals(),
     findSeries(unit),
     findTopPosts(days, 10),
     findReferrers(days, 8),
@@ -128,7 +131,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             */}
             <Panel
               title="조회"
-              note="몇 번 읽혔는지예요. 한 사람이 여러 글을 보면 여러 번으로 세요"
+              note={`몇 번 읽혔는지예요. 공개 지면에는 통산 ${views.all.total.toLocaleString("ko-KR")}이 적혀요 — 아래는 내 방문을 뺀 값이에요`}
             >
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Tile
@@ -155,7 +158,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             */}
             <Panel
               title="방문자"
-              note="몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요"
+              note="밖에서 몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요"
             >
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Tile
