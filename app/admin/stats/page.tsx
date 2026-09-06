@@ -17,6 +17,7 @@ import {
   findReferrers,
   findSeries,
   findTopPosts,
+  findVisitorTotals,
   findWeekdays,
 } from "@/lib/db/statSummary";
 import { postHref } from "@/lib/site/publicUrl";
@@ -53,19 +54,31 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
   const unit = parseUnit((await searchParams).unit);
   const days = UNIT_WINDOW_DAYS[unit];
 
-  const [firstAt, kpis, series, topPosts, referrers, devices, dwell, hourly, weekdays, recent] =
-    await Promise.all([
-      findFirstEventAt(),
-      findKpis(),
-      findSeries(unit),
-      findTopPosts(days, 10),
-      findReferrers(days, 8),
-      findDevices(days),
-      findDwellTimes(days),
-      findHourly(days),
-      findWeekdays(days),
-      findRecentEvents(20),
-    ]);
+  const [
+    firstAt,
+    kpis,
+    visitors,
+    series,
+    topPosts,
+    referrers,
+    devices,
+    dwell,
+    hourly,
+    weekdays,
+    recent,
+  ] = await Promise.all([
+    findFirstEventAt(),
+    findKpis(),
+    findVisitorTotals(),
+    findSeries(unit),
+    findTopPosts(days, 10),
+    findReferrers(days, 8),
+    findDevices(days),
+    findDwellTimes(days),
+    findHourly(days),
+    findWeekdays(days),
+    findRecentEvents(20),
+  ]);
 
   // "수집 N일째" — 경과일이다. 조회가 있던 날의 수가 아니다(빈 날도 수집은 돌고 있었다)
   const collectedDays = firstAt === null ? 0 : kstDaysBetween(firstAt, new Date()) + 1;
@@ -108,22 +121,52 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             {/* KPI — 티스토리 통계처럼 오늘·이번 주를 앞에 둔다. 비교 대상(어제·지난주)은
                 별도 칸이 아니라 증감선에 함께 적는다(components/admin/StatShell 주석).
                 주는 일요일에 시작한다 — 02 §3.1의 요일 카드와 같은 주여야 나란히 볼 수 있다. */}
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Tile
-                label="오늘"
-                value={kpis.today}
-                previous={kpis.yesterday}
-                previousLabel="어제"
-              />
-              <Tile
-                label="이번 주"
-                value={kpis.thisWeek}
-                previous={kpis.lastWeek}
-                previousLabel="지난주"
-              />
-              <Tile label="최근 30일" value={kpis.month} />
-              <Tile label="통산" value={kpis.total} sub={`수집 ${collectedDays}일째`} />
-            </section>
+            {/*
+              **무엇을 센 숫자인지 적는다.** 전에는 칸에 `오늘`이라고만 적혀 있어서, 공개
+              지면 사이드바의 `오늘`(방문자)과 같은 값으로 읽혔다 — 둘 다 맞는 값인데
+              이름이 없어서 어느 쪽이 틀렸다고 느껴졌다.
+            */}
+            <Panel
+              title="조회"
+              note="몇 번 읽혔는지예요. 한 사람이 여러 글을 보면 여러 번으로 세요"
+            >
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Tile
+                  label="오늘"
+                  value={kpis.today}
+                  previous={kpis.yesterday}
+                  previousLabel="어제"
+                />
+                <Tile
+                  label="이번 주"
+                  value={kpis.thisWeek}
+                  previous={kpis.lastWeek}
+                  previousLabel="지난주"
+                />
+                <Tile label="최근 30일" value={kpis.month} />
+                <Tile label="통산" value={kpis.total} sub={`수집 ${collectedDays}일째`} />
+              </section>
+            </Panel>
+
+            {/*
+              사이드바에 적히는 그 숫자다. 여기 나란히 두어야 "둘이 다르다"가 "둘은 다른
+              것을 센다"로 읽힌다. 주·월 방문자는 없다 — 날마다 세는 값이라 여러 날에 걸쳐
+              같은 사람을 이을 수 없다(05 §4.2).
+            */}
+            <Panel
+              title="방문자"
+              note="몇 사람이 왔는지예요. 날마다 세어 더하므로 같은 사람이 사흘 오면 3이에요"
+            >
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Tile
+                  label="오늘"
+                  value={visitors.today}
+                  previous={visitors.yesterday}
+                  previousLabel="어제"
+                />
+                <Tile label="통산" value={visitors.total} />
+              </section>
+            </Panel>
 
             <Panel
               title="조회 추이"
