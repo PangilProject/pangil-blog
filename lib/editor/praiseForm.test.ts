@@ -143,6 +143,38 @@ describe("loadableSources — 가사 불러오기 (02 §5.4)", () => {
   });
 });
 
+describe("불러오기 시나리오 — Verse 2를 가져온 자리는 Verse 2다", () => {
+  it("빈 섹션을 더하면 3이지만, Verse 2를 가져오는 순간 2가 된다", () => {
+    const typed = [
+      { label: "Verse", lyrics: "1절" },
+      { label: "Verse", lyrics: "2절" },
+    ];
+
+    // + 섹션 → 아직 빈 칸이라 제 번호를 받는다
+    const added = [...typed, { label: "Verse", lyrics: "" }];
+    expect(sectionOrdinals(added)).toEqual([1, 2, 3]);
+
+    // 그 칸의 불러오기 목록에서 "Verse 2"를 고른다
+    const picked = loadableSources(added, 2).find((source) => source.name === "Verse 2");
+    if (!picked) throw new Error("Verse 2를 가져올 수 있어야 한다");
+
+    const loaded = added.map((section, at) =>
+      at === 2 ? { label: picked.label, lyrics: picked.lyrics } : section,
+    );
+    expect(sectionOrdinals(loaded)).toEqual([1, 2, 2]);
+  });
+
+  it("가져오고 나면 원본은 목록에서 빠진다 — 같은 것을 또 가져올 일이 없다", () => {
+    const loaded = [
+      { label: "Verse", lyrics: "1절" },
+      { label: "Verse", lyrics: "2절" },
+      { label: "Verse", lyrics: "2절" },
+    ];
+
+    expect(loadableSources(loaded, 2).map((source) => source.name)).toEqual(["Verse 1"]);
+  });
+});
+
 describe("emptyPraiseForm", () => {
   it("Intro · Verse가 놓인 상태로 열린다 — 곡은 거의 늘 전주로 시작한다", () => {
     expect(emptyPraiseForm().sections.map((section) => section.label)).toEqual(["Intro", "Verse"]);
