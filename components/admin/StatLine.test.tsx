@@ -78,14 +78,25 @@ describe("StatLine", () => {
     expect(axis(container)).toEqual(["8/30", "31", "9/1", "2"]);
   });
 
-  it("지금 칸은 테두리로 구별한다", () => {
+  /** 전부 채우면 30개가 같은 무게로 늘어서 어느 날을 보고 있는지가 선에 묻힌다 */
+  it("평소는 빈 원, 오늘만 채운 원이다", () => {
     const { container } = render(
       <StatLine points={[point("2026-09-05", 3), point("2026-09-06", 4)]} unit="day" />,
     );
 
     const dots = [...container.querySelectorAll("span.rounded-full")];
-    expect(dots.at(-1)?.className).toContain("border-2");
-    expect(dots[0]?.className).not.toContain("border-2");
+    expect(dots[0]?.className).toContain("bg-card");
+    expect(dots.at(-1)?.className).toContain("bg-(--accent)");
+  });
+
+  /** 솎아내면 어느 점이 며칠인지 세어야 한다 — 그건 읽는 일이다 */
+  it("모든 날짜를 적는다", () => {
+    const many = Array.from({ length: 28 }, (_, index) =>
+      point(`2026-09-${String(index + 1).padStart(2, "0")}`, index),
+    );
+    const { container } = render(<StatLine points={many} unit="day" />);
+
+    expect(axis(container).filter((text) => text !== "")).toHaveLength(28);
   });
 
   it("툴팁이 지면별 구성을 말한다 — 선은 총합 하나만 그린다", () => {
@@ -141,7 +152,7 @@ describe("StatLine", () => {
   });
 });
 
-describe("StatLine — 방문자 선", () => {
+describe("StatLine — 두 선", () => {
   const day = (key: string, views: number, visitors: number | null) => ({
     key,
     label: key.slice(5),
@@ -151,33 +162,40 @@ describe("StatLine — 방문자 선", () => {
     visitors,
   });
 
-  /** 한 사람이 열 편을 본 날과 열 사람이 한 편씩 본 날은 조회 선에서 같은 높이다 */
-  it("방문자를 그리면 그 값이 선이 된다", () => {
+  /**
+   * 조회만 보면 "많이 읽혔다"와 "많이들 왔다"가 구별되지 않는다 — 두 선의 **간격**이 그
+   * 답이고, 나란한 두 판으로 나눠 그리면 그 간격이 안 보인다.
+   */
+  it("조회와 방문자를 한 판에 겹쳐 그린다", () => {
     const { container } = render(
-      <StatLine
-        points={[day("2026-09-05", 100, 2), day("2026-09-06", 10, 9)]}
-        unit="day"
-        metric="visitors"
-      />,
+      <StatLine points={[day("2026-09-05", 100, 2), day("2026-09-06", 10, 9)]} unit="day" />,
     );
 
-    const ys = (container.querySelector("polyline")?.getAttribute("points") ?? "")
-      .split(" ")
-      .map((pair) => Number(pair.split(",")[1]));
-
-    // 방문자는 2 → 9로 늘었다. 조회로 그렸다면 반대로 내려갔을 것이다
-    expect(ys[0]).toBeGreaterThan(ys[1] as number);
+    expect(container.querySelectorAll("polyline")).toHaveLength(2);
   });
 
-  it("방문자가 없는 칸은 0으로 둔다 — 없는 값을 이어 그리지 않는다", () => {
+  /** 눈금은 조회에 맞춘다 — 방문자는 언제나 조회 이하라 위로 넘치지 않는다 */
+  it("두 선이 같은 눈금을 쓴다", () => {
     const { container } = render(
-      <StatLine
-        points={[day("2026-09-05", 5, null), day("2026-09-06", 5, 4)]}
-        unit="day"
-        metric="visitors"
-      />,
+      <StatLine points={[day("2026-09-05", 10, 10), day("2026-09-06", 20, 10)]} unit="day" />,
     );
 
-    expect(container.querySelectorAll("span.rounded-full")).toHaveLength(2);
+    const [visitors, views] = [...container.querySelectorAll("polyline")].map((node) =>
+      (node.getAttribute("points") ?? "").split(" ").map((pair) => Number(pair.split(",")[1])),
+    );
+
+    // 첫 칸은 조회 10 · 방문자 10으로 같으므로 두 선이 같은 높이여야 한다
+    expect(visitors?.[0]).toBeCloseTo(views?.[0] as number, 5);
+    // 둘째 칸은 조회 20 · 방문자 10 — 방문자가 아래에 있다(값이 작을수록 y가 크다)
+    expect(visitors?.[1]).toBeGreaterThan(views?.[1] as number);
+  });
+
+  it("방문자가 없는 단위에서는 한 선만 그린다", () => {
+    const { container } = render(
+      <StatLine points={[day("2026-08", 40, null), day("2026-09", 50, null)]} unit="month" />,
+    );
+
+    expect(container.querySelectorAll("polyline")).toHaveLength(1);
+    expect(container.textContent).not.toContain("방문자");
   });
 });

@@ -15,34 +15,37 @@ import { cn } from "@/lib/utils";
  * **여전히 클라이언트 JS가 0이다.** 선은 SVG `polyline` 하나, 점은 div, 툴팁은 CSS hover다.
  * 툴팁을 직접 만들면 그 순간 이 화면에 상태가 생기고 아일랜드가 하나 늘어난다.
  *
- * 축은 일자만 적는다. 월은 **달이 바뀌는 자리와 맨 왼쪽에만** 붙인다 — 30칸에 `9/8`을 서른
- * 번 적으면 그 숫자들이 서로를 가린다.
+ * 축은 **모든 날짜**를 적는다. 솎아내면 어느 점이 며칠인지 세어야 한다. 월은 맨 왼쪽과
+ * 달이 바뀌는 자리에만 붙인다 — 30칸에 `9/8`을 서른 번 적으면 숫자들이 서로를 가린다.
  */
 
 /** 그래프 안쪽 여백(%). 위를 비워야 가장 큰 점이 잘리지 않고, 아래는 0인 날의 점 자리다 */
 const TOP_PAD = 8;
 const BOTTOM_PAD = 6;
 
-export type LineMetric = "views" | "visitors";
+export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }) {
+  /**
+   * **두 선이 한 판에 겹친다.** 조회만 보면 "많이 읽혔다"와 "많이들 왔다"가 구별되지 않는다 —
+   * 한 사람이 열 편을 본 날과 열 사람이 한 편씩 본 날은 조회 선에서 같은 높이다. 두 선의
+   * **간격**이 그 답이고, 나란한 두 판으로 나눠 그리면 그 간격이 안 보인다.
+   *
+   * 눈금은 조회에 맞춘다. 방문자는 언제나 조회 이하이므로(한 사람이 최소 한 번은 본다)
+   * 한 눈금에 둘을 얹어도 방문자 선이 위로 넘치지 않는다.
+   */
+  const max = Math.max(...points.map((point) => point.views), 0);
 
-export function StatLine({
-  points,
-  unit,
-  metric = "views",
-}: {
-  points: SeriesPoint[];
-  unit: Unit;
-  /** 어떤 값을 선으로 그릴지. 툴팁은 어느 쪽이든 그날의 두 값을 함께 보여준다 */
-  metric?: LineMetric;
-}) {
-  const max = Math.max(...points.map((point) => metricOf(point, metric)), 0);
-
-  // 칸이 많으면 라벨을 솎는다. 다만 **달이 바뀌는 자리와 마지막 칸은 언제나 적는다** —
-  // 그 둘이 축을 읽는 기준점이다
-  const labelEvery = points.length > 24 ? 3 : points.length > 12 ? 2 : 1;
+  // 방문자는 하루 단위에만 있다(05 §4.2). 없는 단위에서는 선을 그리지 않는다 —
+  // 0으로 눕힌 선을 그리면 "아무도 안 왔다"로 읽힌다
+  const hasVisitors = points.some((point) => point.visitors !== null);
 
   return (
     <div className="flex flex-col gap-2">
+      {/* 두 선이 겹쳐 있으므로 어느 쪽이 무엇인지 여기서 말한다 */}
+      <div className="flex items-center gap-3 font-typewriter text-[10px] text-faint">
+        <Legend label="조회" className="bg-(--accent)" />
+        {hasVisitors && <Legend label="방문자" className="bg-ink-soft" dashed />}
+      </div>
+
       <div className="relative h-[168px]">
         {/*
           선. `preserveAspectRatio="none"`로 칸 수·높이에 맞춰 늘리고, 선 굵기만
@@ -51,17 +54,30 @@ export function StatLine({
         {points.length > 1 && (
           <svg
             aria-hidden
-            className="absolute inset-0 h-full w-full text-(--accent)"
+            className="absolute inset-0 h-full w-full"
             viewBox={`0 0 ${points.length} 100`}
             preserveAspectRatio="none"
           >
+            {/* 방문자를 먼저 그린다 — 겹치는 자리에서 조회 선이 위에 오게 */}
+            {hasVisitors && (
+              <polyline
+                points={pathOf(points, "visitors", max)}
+                fill="none"
+                className="text-ink-soft"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+
             <polyline
-              points={points
-                .map((point, index) => `${xOf(index)},${yOf(metricOf(point, metric), max)}`)
-                .join(" ")}
+              points={pathOf(points, "views", max)}
               fill="none"
+              className="text-(--accent)"
               stroke="currentColor"
-              strokeWidth={1.5}
+              strokeWidth={2.5}
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
             />
@@ -75,18 +91,27 @@ export function StatLine({
             return (
               <div key={point.key} className="group relative min-w-0 flex-1">
                 {/*
-                  점. 칸의 가운데에 놓고 값 높이만큼 올린다 — 선의 x좌표(칸 인덱스)와 같은
-                  자리여야 선과 점이 어긋나지 않는다.
+                  점. 칸의 가운데에 놓고 값 높이만큼 올린다 — 선의 x좌표와 같은 자리여야
+                  선과 점이 어긋나지 않는다.
+                */}
+                {hasVisitors && (
+                  <span
+                    className="absolute left-1/2 size-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-ink-soft bg-card"
+                    style={{ top: `${yOf(point.visitors ?? 0, max)}%` }}
+                  />
+                )}
+
+                {/*
+                  **평소는 빈 원, 오늘만 채운 원.** 전부 채우면 30개가 같은 무게로 늘어서
+                  어느 날을 보고 있는지가 선에 묻힌다 — 채움을 하나만 남겨 그 자리를 만든다.
                 */}
                 <span
                   className={cn(
                     "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full",
-                    // 마지막 칸이 지금이다. 테두리를 둘러 "여기가 오늘"을 말한다
-                    isLast
-                      ? "size-[9px] border-2 border-(--accent) bg-card"
-                      : "size-[5px] bg-(--accent)",
+                    "border-[1.5px] border-(--accent)",
+                    isLast ? "size-[8px] bg-(--accent)" : "size-[7px] bg-card",
                   )}
-                  style={{ top: `${yOf(metricOf(point, metric), max)}%` }}
+                  style={{ top: `${yOf(point.views, max)}%` }}
                 />
 
                 <div
@@ -96,7 +121,7 @@ export function StatLine({
                     "mt-[-12px] hidden w-max border border-edge bg-card px-2.5 py-2",
                     "font-typewriter text-[10.5px] text-ink shadow-card group-hover:block",
                   )}
-                  style={{ top: `${yOf(metricOf(point, metric), max)}%` }}
+                  style={{ top: `${yOf(point.views, max)}%` }}
                 >
                   <Tooltip point={point} previous={points[index - 1]} unit={unit} />
                 </div>
@@ -109,10 +134,11 @@ export function StatLine({
         </div>
       </div>
 
-      <div className="flex gap-[1px] font-typewriter text-[9.5px] text-faint">
+      {/* **모든 날짜를 적는다.** 솎아내면 어느 점이 며칠인지 세어야 한다 — 그건 읽는 일이다 */}
+      <div className="flex gap-[1px] font-typewriter text-[9px] text-faint">
         {points.map((point, index) => (
           <span key={point.key} className="min-w-0 flex-1 text-center">
-            {showsLabel(points, index, labelEvery) ? labelOf(points, index, unit) : " "}
+            {labelOf(points, index, unit)}
           </span>
         ))}
       </div>
@@ -131,22 +157,45 @@ function xOf(index: number): number {
   return index + 0.5;
 }
 
-/** 선으로 그릴 값. 방문자는 하루 단위에만 있으므로 없는 칸은 0으로 둔다(05 §4.2) */
-function metricOf(point: SeriesPoint, metric: LineMetric): number {
-  return metric === "visitors" ? (point.visitors ?? 0) : point.views;
+/** 한 계열의 polyline 좌표. 방문자가 없는 칸은 0으로 둔다 */
+function pathOf(points: SeriesPoint[], metric: "views" | "visitors", max: number): string {
+  return points
+    .map((point, index) => {
+      const value = metric === "visitors" ? (point.visitors ?? 0) : point.views;
+      return `${xOf(index)},${yOf(value, max)}`;
+    })
+    .join(" ");
+}
+
+function Legend({
+  label,
+  className,
+  dashed,
+}: {
+  label: string;
+  className: string;
+  dashed?: boolean;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        aria-hidden
+        className={cn("h-[2px] w-[14px]", className, dashed && "opacity-70")}
+        style={
+          dashed
+            ? { maskImage: "repeating-linear-gradient(to right, #000 0 3px, transparent 3px 6px)" }
+            : undefined
+        }
+      />
+      {label}
+    </span>
+  );
 }
 
 /** 값 → 위에서부터의 거리(%). 0이면 바닥, 최대면 위쪽 여백 아래 */
 function yOf(views: number, max: number): number {
   const ratio = max > 0 ? views / max : 0;
   return TOP_PAD + (100 - TOP_PAD - BOTTOM_PAD) * (1 - ratio);
-}
-
-/** 달이 바뀌는 자리와 마지막 칸은 솎지 않는다 — 축을 읽는 기준점이다 */
-function showsLabel(points: SeriesPoint[], index: number, every: number): boolean {
-  return (
-    index === 0 || index === points.length - 1 || startsMonth(points, index) || index % every === 0
-  );
 }
 
 function startsMonth(points: SeriesPoint[], index: number): boolean {
