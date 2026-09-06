@@ -17,6 +17,9 @@ import { publishPost } from "@/lib/actions/posts";
  * - 진행 중에는 `isPublishing`이 참이고, 버튼이 그 사실을 글자로 말한다
  * - **성공하면 되돌리지 않는다.** 이동이 끝나면 이 화면 자체가 사라진다
  * - 실패·예외에서만 되돌린다. 되돌리지 않으면 다시 시도할 길이 없다
+ *
+ * **저장이 끝났는지 확인하고 발행한다.** `flush()`가 정상 종료했다는 것은 저장이 성공했다는
+ * 뜻이 아니다(아래 참조) — 그걸 믿고 넘어가면 옛 content가 발행된다.
  */
 
 /** 화면 쪽 발행 게이트 — 각 폼의 `*PublishFormSchema` */
@@ -44,6 +47,8 @@ export type PublishFlowOptions<TValues> = {
   gate: PublishGate;
   /** 발행 전에 저장을 마친다 — 서버는 저장된 content로 게이트를 통과시킨다 */
   flush: () => Promise<void>;
+  /** 그 저장이 실제로 끝났는가 (autosave.isDirty) */
+  isDirty: () => boolean;
   clearMirror: () => void;
   /**
    * 초안 id. ref에서 읽어야 한다 — 첫 저장이 이 클릭 안에서 끝나면 상태로 읽은 값은
@@ -57,6 +62,7 @@ export type PublishFlowOptions<TValues> = {
 export function usePublishFlow<TValues>({
   gate,
   flush,
+  isDirty,
   clearMirror,
   currentId,
 }: PublishFlowOptions<TValues>) {
@@ -75,6 +81,23 @@ export function usePublishFlow<TValues>({
 
     try {
       await flush();
+
+      /**
+       * **`flush()`는 저장이 실패해도 정상 종료한다.** 상태 기계가 재시도를 걸 뿐 다시
+       * 던지지 않는다(lib/editor/autosave의 catch). 그래서 여기까지 왔다고 저장이 끝난 것이
+       * 아니다.
+       *
+       * 그대로 두면 `publishPost`가 **DB에서 content를 다시 읽어** 발행한다 — 방금 쓴 문단이
+       * 빠진 옛 내용이 나가고, 발행 게이트도 그 옛 내용으로 판단해서 아무도 막지 않는다.
+       * 반대로 저장된 것이 아직 비어 있으면 다 써놓고도 "덜 채웠다"로 거절당한다.
+       *
+       * 유실은 아니다 — 재시도가 나중에 올린다. 막아야 하는 것은 **그 사이에 나가는 발행**이다.
+       */
+      if (isDirty()) {
+        setError("아직 저장되지 않은 내용이 있어요. 저장을 마친 뒤에 다시 눌러주세요");
+        setIsPublishing(false);
+        return;
+      }
 
       const target = currentId();
       if (!target) {

@@ -121,6 +121,7 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
   } = usePublishFlow<QtFormValues>({
     gate: QtPublishFormSchema,
     flush: autosave.flush,
+    isDirty: autosave.isDirty,
     clearMirror: autosave.clearMirror,
     // 상태가 아니라 ref다 — 첫 저장이 이 클릭 안에서 끝나는 경우가 있다
     currentId: () => idRef.current,
