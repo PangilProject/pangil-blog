@@ -29,11 +29,12 @@ import {
 } from "@/components/ui/select";
 import { PRAISE_SECTION_LABELS } from "@/lib/content/schema";
 import { isComposing } from "@/lib/editor/ime";
-import type { PraiseSectionFormValue } from "@/lib/editor/praiseForm";
+import type { LoadableSource, PraiseSectionFormValue } from "@/lib/editor/praiseForm";
 import {
   DEFAULT_SECTION_LABEL,
   formatBarCount,
   isBarOnlyLabel,
+  loadableSources,
   parseBarCount,
   sectionOrdinals,
 } from "@/lib/editor/praiseForm";
@@ -53,6 +54,11 @@ import { cn } from "@/lib/utils";
 
 const CUSTOM_OPTION = "__custom__";
 
+/** 라벨 7종 안인가. 밖이면 드롭다운이 아니라 직접 입력 칸으로 연다 */
+function isKnown(label: string): boolean {
+  return PRAISE_SECTION_LABELS.some((candidate) => candidate === label);
+}
+
 export type PraiseSectionListProps = {
   /** RHF useFieldArray의 fields — key는 RHF가 만든 값이고 순서는 배열 그대로다 */
   items: { key: string; value: PraiseSectionFormValue }[];
@@ -71,7 +77,8 @@ export function PraiseSectionList({
   onRemove,
   onMove,
 }: PraiseSectionListProps) {
-  const ordinals = sectionOrdinals(items.map((item) => item.value));
+  const values = items.map((item) => item.value);
+  const ordinals = sectionOrdinals(values);
   const [pendingFocus, setPendingFocus] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -92,27 +99,6 @@ export function PraiseSectionList({
     // pendingFocus는 섹션을 추가·삭제한 그 이벤트에서 함께 정해진다. 이 effect는 커밋 뒤에
     // 돌기 때문에 새 textarea가 이미 DOM에 있다
   }, [pendingFocus]);
-
-  /**
-   * 값을 가져올 수 있는 다른 섹션들. 후렴은 같은 가사가 여러 번 나오는데, 그때마다 다시
-   * 치는 것이 이 화면에서 제일 잦은 반복이었다.
-   *
-   * 참조가 아니라 **복사**다 — 참조를 두면 원본이 바뀔 때 따라가는 규칙, 원본을 지웠을 때의
-   * 규칙이 줄줄이 붙는데 저장 계약에는 그 참조를 둘 자리가 없다.
-   */
-  const sourcesFor = (index: number) =>
-    items
-      .map((item, at) => ({
-        index: at,
-        name: ordinals[at] ? `${item.value.label} ${ordinals[at]}` : item.value.label,
-        lyrics: item.value.lyrics,
-      }))
-      .filter(
-        (candidate) =>
-          candidate.index !== index &&
-          candidate.lyrics.trim() !== "" &&
-          !isBarOnlyLabel(items[candidate.index]?.value.label ?? ""),
-      );
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -140,7 +126,7 @@ export function PraiseSectionList({
               index={index}
               section={item.value}
               ordinal={ordinals[index]}
-              sources={sourcesFor(index)}
+              sources={loadableSources(values, index)}
               canRemove={items.length > 1}
               onLabelChange={onLabelChange}
               onLyricsChange={onLyricsChange}
@@ -192,7 +178,7 @@ function SortableSection({
   index: number;
   section: PraiseSectionFormValue;
   ordinal?: number;
-  sources: { index: number; name: string; lyrics: string }[];
+  sources: LoadableSource[];
   canRemove: boolean;
   total: number;
   onLabelChange: (index: number, label: string) => void;
@@ -204,9 +190,8 @@ function SortableSection({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
   });
-  const isKnownLabel = PRAISE_SECTION_LABELS.some((label) => label === section.label);
   // 저장된 라벨이 7종 밖이면 직접 입력 상태로 열린다
-  const [isCustom, setIsCustom] = useState(!isKnownLabel);
+  const [isCustom, setIsCustom] = useState(!isKnown(section.label));
   const name = ordinal ? `${section.label} ${ordinal}` : section.label;
 
   // 마디 수 칸은 연주 구간 라벨이면서, 적힌 값이 마디 표기일 때만 연다.
@@ -348,7 +333,15 @@ function SortableSection({
               value=""
               onValueChange={(value) => {
                 const picked = sources.find((source) => String(source.index) === value);
-                if (picked) onLyricsChange(index, picked.lyrics);
+                if (!picked) return;
+
+                // 라벨 → 가사 순서다. 가사를 먼저 넣으면 그 사이 한 번은 옛 라벨에 새 가사가
+                // 붙은 상태로 그려진다
+                if (picked.label !== section.label) {
+                  setIsCustom(!isKnown(picked.label));
+                  onLabelChange(index, picked.label);
+                }
+                onLyricsChange(index, picked.lyrics);
               }}
             >
               <SelectTrigger

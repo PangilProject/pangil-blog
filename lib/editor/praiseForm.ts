@@ -55,6 +55,9 @@ export type PraiseFormValues = {
   tags: string[];
 };
 
+/** 번호를 매기는 데 필요한 것만. 공개 지면은 폼 값이 아니라 저장값을 들고 온다 */
+export type SectionNumbering = { label: string; lyrics: string };
+
 export const DEFAULT_SECTION_LABEL = "Verse";
 
 /**
@@ -130,20 +133,84 @@ export function emptyPraiseForm(): PraiseFormValues {
 }
 
 /**
- * 같은 라벨이 두 번 이상 나올 때만 번호를 매긴다 (04 §2.5 파생 계산).
- * Verse가 하나뿐인 곡에 "Verse 1"이라 적으면 없는 Verse 2를 암시한다.
+ * Verse 번호 (04 §2.5 파생 계산 — 저장하지 않는다).
+ *
+ * 세는 것은 **자리가 아니라 서로 다른 절**이다. 같은 라벨에 가사까지 같은 섹션은 되풀이라서
+ * 같은 번호를 받는다 — Verse 2를 한 번 더 부르는 곡에서 그 자리가 Verse 3이 되면 없는 절이
+ * 생긴다. 악보도 되풀이에 새 번호를 붙이지 않는다.
+ *
+ * 가사가 빈 섹션은 서로 묶지 않는다. 타이핑 중에는 늘 빈 섹션이 하나 열려 있어서, 그것까지
+ * 묶으면 새 Verse가 앞 절의 번호를 달고 있다가 한 글자 치는 순간 번호가 바뀐다.
+ *
+ * 번호는 서로 다른 절이 둘 이상일 때만 매긴다. Verse가 하나뿐인 곡에 "Verse 1"이라 적으면
+ * 없는 Verse 2를 암시한다 — 되풀이만 있는 곡도 마찬가지다.
  */
-export function sectionOrdinals(sections: PraiseSectionFormValue[]): (number | undefined)[] {
-  const totals = new Map<string, number>();
-  for (const section of sections) {
-    totals.set(section.label, (totals.get(section.label) ?? 0) + 1);
-  }
+export function sectionOrdinals(sections: SectionNumbering[]): (number | undefined)[] {
+  const assigned = new Map<string, number>();
+  const distinct = new Map<string, number>();
 
-  const seen = new Map<string, number>();
-  return sections.map((section) => {
-    const next = (seen.get(section.label) ?? 0) + 1;
-    seen.set(section.label, next);
-    return (totals.get(section.label) ?? 0) > 1 ? next : undefined;
+  const numbers = sections.map((section, index) => {
+    const lyrics = section.lyrics.trim();
+    // 빈 섹션은 제 자리 번호를 열쇠로 삼아 저희끼리도 묶이지 않는다
+    const key = `${section.label}\u0000${lyrics === "" ? `@${index}` : lyrics}`;
+
+    const already = assigned.get(key);
+    if (already !== undefined) return already;
+
+    const next = (distinct.get(section.label) ?? 0) + 1;
+    distinct.set(section.label, next);
+    assigned.set(key, next);
+    return next;
+  });
+
+  return numbers.map((number, index) => {
+    const label = sections[index]?.label ?? "";
+    return (distinct.get(label) ?? 0) > 1 ? number : undefined;
+  });
+}
+
+/** 한 섹션이 가져올 수 있는 다른 섹션 하나 */
+export type LoadableSource = {
+  /** 원본의 자리 번호. 화면에서 고른 값을 되찾는 열쇠다 */
+  index: number;
+  /** 화면에 적히는 이름 — 번호가 있으면 "Verse 2" */
+  name: string;
+  label: string;
+  lyrics: string;
+};
+
+/**
+ * `index` 자리에서 가져올 수 있는 섹션들 (02 §5.4).
+ *
+ * 후렴은 같은 가사가 여러 번 나오는데, 그때마다 다시 치는 것이 이 화면에서 제일 잦은
+ * 반복이었다. 참조가 아니라 **복사**다 — 참조를 두면 원본이 바뀔 때 따라가는 규칙, 원본을
+ * 지웠을 때의 규칙이 줄줄이 붙는데 저장 계약에는 그 참조를 둘 자리가 없다.
+ *
+ * 빼는 것 셋: 제 자신, 아직 빈 섹션, 연주 구간(마디 수만 있는 칸이라 가져올 가사가 없다).
+ * 그리고 **이미 되풀이된 절은 한 번만 세운다** — 같은 이름·같은 가사가 두 줄로 서면 어느
+ * 쪽을 골라야 하는지 묻는 꼴인데, 둘은 같은 것이다.
+ */
+export function loadableSources(sections: SectionNumbering[], index: number): LoadableSource[] {
+  const ordinals = sectionOrdinals(sections);
+  const seen = new Set<string>();
+
+  return sections.flatMap((section, at) => {
+    const lyrics = section.lyrics.trim();
+    if (at === index || lyrics === "" || isBarOnlyLabel(section.label)) return [];
+
+    const key = `${section.label}\u0000${lyrics}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+
+    const ordinal = ordinals[at];
+    return [
+      {
+        index: at,
+        name: ordinal ? `${section.label} ${ordinal}` : section.label,
+        label: section.label,
+        lyrics: section.lyrics,
+      },
+    ];
   });
 }
 

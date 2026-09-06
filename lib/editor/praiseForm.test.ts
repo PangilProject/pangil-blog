@@ -7,6 +7,7 @@ import {
   fromDraftContent,
   isBarOnlyLabel,
   isEmptyForm,
+  loadableSources,
   newSection,
   type PraiseFormValues,
   PraisePublishFormSchema,
@@ -46,6 +47,99 @@ describe("sectionOrdinals — Verse 넘버링은 파생 계산이다 (04 §2.5)"
     if (!verse1 || !chorus || !verse2) throw new Error("fixture");
 
     expect(sectionOrdinals([verse2, chorus, verse1])).toEqual([1, undefined, 2]);
+  });
+
+  it("되풀이되는 절은 같은 번호다 — 2절을 한 번 더 부른 자리가 3절이 되면 없는 절이 생긴다", () => {
+    const numbers = sectionOrdinals([
+      { label: "Verse", lyrics: "1절" },
+      { label: "Verse", lyrics: "2절" },
+      { label: "Chorus", lyrics: "후렴" },
+      { label: "Verse", lyrics: "2절" },
+    ]);
+
+    expect(numbers).toEqual([1, 2, undefined, 2]);
+  });
+
+  it("가사 앞뒤 공백은 같은 절로 본다 — 불러온 가사에 줄바꿈이 하나 더 붙는 일이 있다", () => {
+    expect(
+      sectionOrdinals([
+        { label: "Verse", lyrics: "1절" },
+        { label: "Verse", lyrics: "2절" },
+        { label: "Verse", lyrics: "  2절\n" },
+      ]),
+    ).toEqual([1, 2, 2]);
+  });
+
+  it("되풀이뿐이면 번호를 안 매긴다 — 서로 다른 절이 하나면 2절은 없다", () => {
+    expect(
+      sectionOrdinals([
+        { label: "Verse", lyrics: "1절" },
+        { label: "Verse", lyrics: "1절" },
+      ]),
+    ).toEqual([undefined, undefined]);
+  });
+
+  it("빈 섹션끼리는 묶지 않는다 — 타이핑 중에는 늘 빈 칸이 하나 열려 있다", () => {
+    expect(
+      sectionOrdinals([
+        { label: "Verse", lyrics: "1절" },
+        { label: "Verse", lyrics: "" },
+        { label: "Verse", lyrics: "" },
+      ]),
+    ).toEqual([1, 2, 3]);
+  });
+
+  it("라벨이 다르면 가사가 같아도 남남이다", () => {
+    expect(
+      sectionOrdinals([
+        { label: "Verse", lyrics: "같은 말" },
+        { label: "Chorus", lyrics: "같은 말" },
+      ]),
+    ).toEqual([undefined, undefined]);
+  });
+});
+
+describe("loadableSources — 가사 불러오기 (02 §5.4)", () => {
+  const song = [
+    { label: "Intro", lyrics: "4 Bar" },
+    { label: "Verse", lyrics: "1절" },
+    { label: "Chorus", lyrics: "후렴" },
+    { label: "Verse", lyrics: "2절" },
+    { label: "Verse", lyrics: "" },
+  ];
+
+  it("이름에 번호가 따라온다 — 무엇을 가져오는지가 이름 하나로 정해져야 한다", () => {
+    expect(loadableSources(song, 4).map((source) => source.name)).toEqual([
+      "Verse 1",
+      "Chorus",
+      "Verse 2",
+    ]);
+  });
+
+  it("라벨을 함께 들고 온다 — 가져오는 것은 그 절이지 글자만이 아니다", () => {
+    const chorus = loadableSources(song, 4).find((source) => source.label === "Chorus");
+
+    expect(chorus).toMatchObject({ label: "Chorus", lyrics: "후렴" });
+  });
+
+  it("제 자신·빈 섹션·연주 구간은 세우지 않는다", () => {
+    const names = loadableSources(song, 2).map((source) => source.name);
+
+    expect(names).toEqual(["Verse 1", "Verse 2"]);
+  });
+
+  it("이미 되풀이된 절은 한 번만 세운다 — 두 줄 다 같은 것이다", () => {
+    const repeated = [
+      { label: "Verse", lyrics: "1절" },
+      { label: "Verse", lyrics: "2절" },
+      { label: "Verse", lyrics: "2절" },
+      { label: "Chorus", lyrics: "" },
+    ];
+
+    expect(loadableSources(repeated, 3).map((source) => source.name)).toEqual([
+      "Verse 1",
+      "Verse 2",
+    ]);
   });
 });
 
