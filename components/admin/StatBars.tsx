@@ -68,17 +68,3 @@ export const SITE_BAR = {
   faith: "bg-accent-faith",
   plain: "bg-(--accent)",
 } as const;
-
-/** 범례. 색만 있고 이름이 없으면 무슨 색인지 매번 추측하게 된다 */
-export function BarLegend({ items }: { items: { label: string; className: string }[] }) {
-  return (
-    <ul className="flex flex-wrap gap-3 font-typewriter text-[10px] text-faint">
-      {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-1.5">
-          <span aria-hidden className={cn("inline-block h-2 w-2.5", item.className)} />
-          {item.label}
-        </li>
-      ))}
-    </ul>
-  );
-}

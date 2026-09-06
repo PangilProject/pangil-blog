@@ -35,10 +35,15 @@ describe("StatLine", () => {
       />,
     );
 
+    // **점은 칸의 가운데에 있다.** 선의 x가 칸 인덱스면 양 끝에서 반 칸씩 벌어져
+    // 선이 점을 지나가지 않는다 — viewBox 폭을 칸 수로 맞추고 0.5를 더해야 같은 자리다
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 3 100");
+
     const xs = (container.querySelector("polyline")?.getAttribute("points") ?? "")
       .split(" ")
       .map((pair) => pair.split(",")[0]);
-    expect(xs).toEqual(["0", "1", "2"]);
+    expect(xs).toEqual(["0.5", "1.5", "2.5"]);
   });
 
   it("칸이 하나면 선을 그리지 않는다", () => {
@@ -133,5 +138,46 @@ describe("StatLine", () => {
     );
 
     expect(container.textContent).not.toContain("방문자");
+  });
+});
+
+describe("StatLine — 방문자 선", () => {
+  const day = (key: string, views: number, visitors: number | null) => ({
+    key,
+    label: key.slice(5),
+    views,
+    devViews: 0,
+    faithViews: 0,
+    visitors,
+  });
+
+  /** 한 사람이 열 편을 본 날과 열 사람이 한 편씩 본 날은 조회 선에서 같은 높이다 */
+  it("방문자를 그리면 그 값이 선이 된다", () => {
+    const { container } = render(
+      <StatLine
+        points={[day("2026-09-05", 100, 2), day("2026-09-06", 10, 9)]}
+        unit="day"
+        metric="visitors"
+      />,
+    );
+
+    const ys = (container.querySelector("polyline")?.getAttribute("points") ?? "")
+      .split(" ")
+      .map((pair) => Number(pair.split(",")[1]));
+
+    // 방문자는 2 → 9로 늘었다. 조회로 그렸다면 반대로 내려갔을 것이다
+    expect(ys[0]).toBeGreaterThan(ys[1] as number);
+  });
+
+  it("방문자가 없는 칸은 0으로 둔다 — 없는 값을 이어 그리지 않는다", () => {
+    const { container } = render(
+      <StatLine
+        points={[day("2026-09-05", 5, null), day("2026-09-06", 5, 4)]}
+        unit="day"
+        metric="visitors"
+      />,
+    );
+
+    expect(container.querySelectorAll("span.rounded-full")).toHaveLength(2);
   });
 });

@@ -23,8 +23,19 @@ import { cn } from "@/lib/utils";
 const TOP_PAD = 8;
 const BOTTOM_PAD = 6;
 
-export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }) {
-  const max = Math.max(...points.map((point) => point.views), 0);
+export type LineMetric = "views" | "visitors";
+
+export function StatLine({
+  points,
+  unit,
+  metric = "views",
+}: {
+  points: SeriesPoint[];
+  unit: Unit;
+  /** 어떤 값을 선으로 그릴지. 툴팁은 어느 쪽이든 그날의 두 값을 함께 보여준다 */
+  metric?: LineMetric;
+}) {
+  const max = Math.max(...points.map((point) => metricOf(point, metric)), 0);
 
   // 칸이 많으면 라벨을 솎는다. 다만 **달이 바뀌는 자리와 마지막 칸은 언제나 적는다** —
   // 그 둘이 축을 읽는 기준점이다
@@ -41,11 +52,13 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
           <svg
             aria-hidden
             className="absolute inset-0 h-full w-full text-(--accent)"
-            viewBox={`0 0 ${points.length - 1} 100`}
+            viewBox={`0 0 ${points.length} 100`}
             preserveAspectRatio="none"
           >
             <polyline
-              points={points.map((point, index) => `${index},${yOf(point.views, max)}`).join(" ")}
+              points={points
+                .map((point, index) => `${xOf(index)},${yOf(metricOf(point, metric), max)}`)
+                .join(" ")}
               fill="none"
               stroke="currentColor"
               strokeWidth={1.5}
@@ -73,7 +86,7 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
                       ? "size-[9px] border-2 border-(--accent) bg-card"
                       : "size-[5px] bg-(--accent)",
                   )}
-                  style={{ top: `${yOf(point.views, max)}%` }}
+                  style={{ top: `${yOf(metricOf(point, metric), max)}%` }}
                 />
 
                 <div
@@ -83,7 +96,7 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
                     "mt-[-12px] hidden w-max border border-edge bg-card px-2.5 py-2",
                     "font-typewriter text-[10.5px] text-ink shadow-card group-hover:block",
                   )}
-                  style={{ top: `${yOf(point.views, max)}%` }}
+                  style={{ top: `${yOf(metricOf(point, metric), max)}%` }}
                 >
                   <Tooltip point={point} previous={points[index - 1]} unit={unit} />
                 </div>
@@ -105,6 +118,22 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
       </div>
     </div>
   );
+}
+
+/**
+ * 점의 x좌표. **칸의 가운데다.**
+ *
+ * 처음에는 viewBox를 `0 0 (n-1) 100`으로 두고 x를 칸 인덱스로 썼는데, 점은 flex 칸의
+ * 가운데(`(i+0.5)/n`)에 있고 선은 `i/(n-1)`에 있어서 **선이 점을 지나가지 않았다** —
+ * 양 끝에서 반 칸씩 벌어졌다. viewBox 폭을 칸 수로 맞추고 x에 0.5를 더하면 둘이 같은 자리다.
+ */
+function xOf(index: number): number {
+  return index + 0.5;
+}
+
+/** 선으로 그릴 값. 방문자는 하루 단위에만 있으므로 없는 칸은 0으로 둔다(05 §4.2) */
+function metricOf(point: SeriesPoint, metric: LineMetric): number {
+  return metric === "visitors" ? (point.visitors ?? 0) : point.views;
 }
 
 /** 값 → 위에서부터의 거리(%). 0이면 바닥, 최대면 위쪽 여백 아래 */

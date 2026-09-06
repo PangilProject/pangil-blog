@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SimpleColumns } from "@/components/admin/SimpleColumns";
-import { BarLegend, SITE_BAR, StatBar } from "@/components/admin/StatBars";
-import { StatLine } from "@/components/admin/StatLine";
+import { SITE_BAR, StatBar } from "@/components/admin/StatBars";
+import { type LineMetric, StatLine } from "@/components/admin/StatLine";
 import { EmptyState, formatSeconds, Panel, Tile, UnitTabs } from "@/components/admin/StatShell";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
@@ -20,9 +20,10 @@ import {
   findViewTotals,
   findVisitorTotals,
   findWeekdays,
+  type SeriesPoint,
 } from "@/lib/db/statSummary";
 import { postHref } from "@/lib/site/publicUrl";
-import { parseUnit, UNIT_WINDOW_DAYS } from "@/lib/stats/range";
+import { parseUnit, UNIT_WINDOW_DAYS, type Unit } from "@/lib/stats/range";
 import { REFERRER_KIND_LABELS, referrerKind } from "@/lib/stats/referrer";
 import { cn } from "@/lib/utils";
 
@@ -185,24 +186,30 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
             </Panel>
 
             <Panel
-              title="조회 추이"
+              title="추이"
               note={
                 unit === "day"
-                  ? `최근 ${days}일 · 막대에 올리면 그날의 수치가 나와요`
+                  ? `최근 ${days}일 · 점에 올리면 그날의 수치가 나와요`
                   : unit === "week"
                     ? "최근 12주"
                     : "최근 12개월"
               }
-              action={
-                <BarLegend
-                  items={[
-                    { label: "기술", className: SITE_BAR.dev },
-                    { label: "묵상", className: SITE_BAR.faith },
-                  ]}
-                />
-              }
             >
-              <StatLine points={series} unit={unit} />
+              {/*
+                **조회와 방문자를 나란히 둔다.** 한 선만 보면 "많이 읽혔다"와 "많이들 왔다"가
+                구별되지 않는다 — 한 사람이 열 편을 본 날과 열 사람이 한 편씩 본 날은 완전히
+                다른 신호인데 조회 선에서는 같은 높이다.
+
+                방문자 선은 **일별에만** 있다. 주·월은 여러 날에 걸쳐 같은 사람을 이을 수
+                없으므로(05 §4.2) 그 선을 그리면 없는 값을 그린 것이 된다.
+              */}
+              <div className="flex flex-col gap-6">
+                <Series label="일간 조회" points={series} unit={unit} />
+
+                {unit === "day" && (
+                  <Series label="일간 방문자" points={series} unit={unit} metric="visitors" />
+                )}
+              </div>
             </Panel>
 
             {topPosts.length > 0 && (
@@ -390,6 +397,31 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+/**
+ * 선 하나 + 그 위 작은 이름.
+ *
+ * 두 선을 같은 패널에 두므로 어느 선이 무엇인지 각자 말해야 한다 — 패널 제목 하나로는
+ * 둘을 가리킬 수 없다.
+ */
+function Series({
+  label,
+  points,
+  unit,
+  metric,
+}: {
+  label: string;
+  points: SeriesPoint[];
+  unit: Unit;
+  metric?: LineMetric;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="font-typewriter text-[10px] tracking-[0.14em] text-faint">{label}</p>
+      <StatLine points={points} unit={unit} metric={metric} />
     </div>
   );
 }
