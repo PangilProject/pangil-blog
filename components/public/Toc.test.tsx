@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Toc } from "@/components/public/Toc";
@@ -53,5 +53,61 @@ describe("Toc", () => {
       "aria-current",
       "location",
     );
+  });
+});
+
+describe("Toc — 누른 줄", () => {
+  /**
+   * 관찰 띠가 화면의 10~30%였을 때, 목차를 누르면 그 제목이 **맨 위(0%)** 로 올라가 띠 밖에
+   * 놓였다 — 관찰자는 대신 띠에 들어온 다음 제목을 잡았고, 눌렀는데 다른 줄에 불이 들어왔다.
+   */
+  it("누르면 그 줄이 활성이 된다", async () => {
+    render(<Toc headings={headings} />);
+
+    const target = screen.getAllByRole("link", { name: "태그 체계" })[0] as HTMLElement;
+    await act(async () => {
+      target.click();
+    });
+
+    expect(target).toHaveAttribute("aria-current", "location");
+  });
+
+  it("누르기 전에는 첫 줄이 활성이다", () => {
+    render(<Toc headings={headings} />);
+
+    expect(screen.getAllByRole("link", { name: "정리" })[0]).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
+  });
+
+  /** 띠가 화면 맨 위에서 시작해야 눌러서 올라온 제목이 그 안에 든다 */
+  it("관찰 띠가 화면 맨 위에서 시작한다", () => {
+    const margins: string[] = [];
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(_fn: unknown, options?: { rootMargin?: string }) {
+          margins.push(options?.rootMargin ?? "");
+        }
+        observe = vi.fn();
+        disconnect = vi.fn();
+        unobserve = vi.fn();
+        takeRecords = vi.fn(() => []);
+        root = null;
+        rootMargin = "";
+        thresholds = [];
+      },
+    );
+
+    // 관찰자는 실제 제목 요소를 찾았을 때만 만들어진다
+    const article = document.createElement("div");
+    article.innerHTML = `<h2 id="${first.id}"></h2><h3 id="태그-체계"></h3>`;
+    document.body.append(article);
+
+    render(<Toc headings={headings} />);
+
+    expect(margins[0]).toMatch(/^0px/);
+    article.remove();
   });
 });
