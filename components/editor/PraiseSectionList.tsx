@@ -109,7 +109,13 @@ export function PraiseSectionList({
 
   return (
     <div ref={listRef} className="flex flex-col gap-2.5">
+      {/*
+        id를 손으로 준다. dnd-kit은 안 주면 마운트 순서로 번호를 매기는데, 서버에서 그린
+        HTML과 브라우저에서 매긴 번호가 어긋나 `aria-describedby`에서 하이드레이션 경고가
+        났다(DndDescribedBy-0 대 -2). 이 목록은 한 화면에 하나뿐이라 고정 이름이면 된다.
+      */}
       <DndContext
+        id="praise-sections"
         sensors={sensors}
         collisionDetection={closestCenter}
         modifiers={[restrictToVerticalAxis, restrictToParentElement]}

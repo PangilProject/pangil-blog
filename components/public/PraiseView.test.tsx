@@ -58,6 +58,58 @@ describe("PraiseView", () => {
     expect(screen.getAllByTestId("body")).toHaveLength(2);
   });
 
+  it("감춘 섹션은 나가지 않는다 (02 §5.4)", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          sections: [
+            { id: "a", label: "Verse", lyrics: "1절", hidden: true },
+            { id: "b", label: "Verse", lyrics: "2절" },
+          ],
+        }}
+        title="손잡고 함께 가세"
+      />,
+    );
+
+    expect(screen.queryByText("1절")).toBeNull();
+    expect(screen.getByText("2절")).toBeInTheDocument();
+  });
+
+  it("감춰도 남은 절의 번호는 그대로다 — 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          sections: [
+            { id: "a", label: "Verse", lyrics: "1절" },
+            { id: "b", label: "Verse", lyrics: "2절", hidden: true },
+            { id: "c", label: "Verse", lyrics: "3절" },
+          ],
+        }}
+        title="손잡고 함께 가세"
+      />,
+    );
+
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.queryByText("2")).toBeNull();
+  });
+
+  it("다 감추면 가사 판 자체를 세우지 않는다 — 빈 상자만 남는다", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          sections: [{ id: "a", label: "Verse", lyrics: "1절", hidden: true }],
+        }}
+        title="손잡고 함께 가세"
+      />,
+    );
+
+    expect(screen.queryByText("Verse")).toBeNull();
+  });
+
   it("영상은 클릭 전 썸네일이다", () => {
     const { container } = render(<PraiseView content={content} title="손잡고 함께 가세" />);
 

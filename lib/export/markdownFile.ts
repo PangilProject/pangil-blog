@@ -87,7 +87,9 @@ function body(content: PostContent): string {
 
       for (const section of content.sections) {
         const label = typeof section.label === "string" ? section.label : section.label.custom;
-        parts.push(`### ${label}`);
+        // 내보내기는 내가 쓴 것을 다 담는다(§3 lock-in 방어). 감춘 절도 넣되 그렇다고 적어 둔다 —
+        // 안 적으면 지면과 다른 파일이 되고, 왜 다른지는 파일만 봐서는 알 수 없다
+        parts.push(section.hidden === true ? `### ${label} (숨김)` : `### ${label}`);
         if (section.lyrics) parts.push(section.lyrics);
       }
 

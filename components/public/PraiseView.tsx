@@ -33,27 +33,38 @@ export function PraiseView({
     })),
   );
 
+  /**
+   * **번호를 먼저 매기고 감춘다.** 감춘 절까지 세고 나서 걸러야 남은 절이 제 번호를 지킨다 —
+   * 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다. 에디터와도 같은 이름이어야 한다.
+   */
+  const visible = content.sections
+    .map((section, at) => ({ section, ordinal: ordinals[at] }))
+    .filter((entry) => entry.section.hidden !== true);
+
   return (
     <>
       {videoId && <YouTubeLite videoId={videoId} title={title} />}
 
-      <div className="flex flex-col gap-2.5">
-        {content.sections.map((section, index) => {
-          const label = typeof section.label === "string" ? section.label : section.label.custom;
+      {/* 다 감춘 곡은 가사 판 자체를 세우지 않는다 — 빈 상자만 남는다 */}
+      {visible.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          {visible.map(({ section, ordinal }) => {
+            const label = typeof section.label === "string" ? section.label : section.label.custom;
 
-          return (
-            <SectionBlock
-              key={section.id}
-              label={label}
-              ordinal={ordinals[index]}
-              lyrics={section.lyrics}
-              // 공개 지면에는 에디터 안내 문구를 두지 않는다 — 빈 섹션은 연주 구간이고
-              // "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다
-              emptyLabel={null}
-            />
-          );
-        })}
-      </div>
+            return (
+              <SectionBlock
+                key={section.id}
+                label={label}
+                ordinal={ordinal}
+                lyrics={section.lyrics}
+                // 공개 지면에는 에디터 안내 문구를 두지 않는다 — 빈 섹션은 연주 구간이고
+                // "가사를 적어보세요"는 읽는 사람에게 할 말이 아니다
+                emptyLabel={null}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <section className="border-edge border-t pt-5">
         <h2 className="mb-2 font-serif font-bold text-[15px]">묵상과 기도</h2>

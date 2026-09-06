@@ -97,6 +97,16 @@ const PraiseSectionSchema = z.object({
   id: z.string(), // nanoid. 순서는 배열 인덱스가 유일한 진실(04 §2.5)
   label: z.union([z.enum(PRAISE_SECTION_LABELS), z.object({ custom: z.string() })]),
   lyrics: z.string().default(""), // 빈 섹션 허용 — 연주 메모만 있는 섹션이 있다
+  /**
+   * 공개 지면에서 감출까 (02 §5.4).
+   *
+   * 선택 필드다 — 이미 발행된 글에는 이 자리가 없고, 없으면 보이는 것이다. 감출 때만
+   * 적으므로 저장값에 `false`가 줄줄이 쌓이지 않는다.
+   *
+   * **지우는 것이 아니라 감추는 것이다.** 가사는 에디터에 그대로 남아 있고, 되풀이 번호도
+   * 감춘 절까지 세어서 매긴다 — 2절을 감췄다고 3절이 2절이 되면 곡이 달라진다.
+   */
+  hidden: z.boolean().optional(),
 });
 
 /**
