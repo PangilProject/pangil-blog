@@ -31,6 +31,8 @@ export type PraiseSectionFormValue = {
   label: string;
   /** 빈 섹션 허용 — "16 Bar"처럼 연주 메모만 있는 섹션이 실제로 있다(02 §5.4) */
   lyrics: string;
+  /** 공개 지면에서 감출까. 감추는 것이지 지우는 것이 아니다 — 가사는 여기 그대로 남는다 */
+  hidden: boolean;
 };
 
 /**
@@ -103,7 +105,7 @@ export function formatBarCount(count: string): string {
  * 저장값 복원의 id는 자리 번호로 결정적으로 만든다.
  */
 export function newSection(label: string = DEFAULT_SECTION_LABEL): PraiseSectionFormValue {
-  return { id: nanoid(), label, lyrics: "" };
+  return { id: nanoid(), label, lyrics: "", hidden: false };
 }
 
 /** 자리 번호로 만드는 결정적 id — 서버에서 만들어도 안전하다 */
@@ -131,8 +133,8 @@ export function newMeditationBlock(): PraiseMeditationBlockFormValue {
  */
 export function defaultSections(): PraiseSectionFormValue[] {
   return [
-    { id: sectionIdAt(0), label: "Intro", lyrics: "" },
-    { id: sectionIdAt(1), label: DEFAULT_SECTION_LABEL, lyrics: "" },
+    { id: sectionIdAt(0), label: "Intro", lyrics: "", hidden: false },
+    { id: sectionIdAt(1), label: DEFAULT_SECTION_LABEL, lyrics: "", hidden: false },
   ];
 }
 
@@ -265,6 +267,8 @@ function toContentSections(values: PraiseFormValues) {
     id: section.id,
     label: toContentLabel(section.label),
     lyrics: section.lyrics,
+    // 감출 때만 적는다. 보이는 것이 기본이라 `false`를 저장값에 줄줄이 쌓을 이유가 없다
+    ...(section.hidden ? { hidden: true } : {}),
   }));
 }
 
@@ -293,7 +297,7 @@ export const PraisePublishFormSchema = z.object({
     .trim()
     .refine((value) => parseYouTubeId(value) !== null, "유튜브 주소를 확인해 주세요"),
   sections: z
-    .array(z.object({ id: z.string(), label: z.string(), lyrics: z.string() }))
+    .array(z.object({ id: z.string(), label: z.string(), lyrics: z.string(), hidden: z.boolean() }))
     .min(1, "가사 섹션이 하나는 있어야 해요"),
   meditationBlocks: z
     .array(z.object({ id: z.string(), doc: z.custom<RichTextValue>() }))
@@ -322,6 +326,8 @@ export function fromDraftContent(
     id: section.id ?? sectionIdAt(index),
     label: fromContentLabel(section.label),
     lyrics: section.lyrics ?? "",
+    // 이 자리가 없는 옛 글은 보이는 것으로 읽는다
+    hidden: section.hidden === true,
   }));
 
   const blocks = praiseMeditationBlocks(content.meditationAndPrayer).map((doc, index) => ({

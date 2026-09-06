@@ -110,6 +110,21 @@ describe("extractSearchText — 05 §4A", () => {
     expect(text).toContain("가사를 묵상하며");
   });
 
+  it("감춘 절은 담지 않는다 — 지면에서 뺐는데 검색어로 찾아지면 감춘 것이 아니다", () => {
+    const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
+      kind: "PRAISE",
+      youtubeUrl: "https://youtu.be/x",
+      sections: [
+        { id: "a", label: "Verse", lyrics: "내 마음의 노래를" },
+        { id: "b", label: "Verse", lyrics: "감춘 절입니다", hidden: true },
+      ],
+      meditationAndPrayer: doc("가사를 묵상하며"),
+    });
+
+    expect(text).toContain("내 마음의 노래를");
+    expect(text).not.toContain("감춘 절입니다");
+  });
+
   it("묵상이 블록 여러 개여도 전부 담는다 — 뒤쪽 블록으로도 글을 찾는다", () => {
     const text = extractSearchText("마커스워십 - 주의 노래 가득해", {
       kind: "PRAISE",

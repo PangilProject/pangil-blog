@@ -28,9 +28,9 @@ function filled(): PraiseFormValues {
     title: "마커스워십 - 주님의 시간에",
     youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     sections: [
-      { id: "a", label: "Verse", lyrics: "주님의 시간에" },
-      { id: "b", label: "Chorus", lyrics: "내가 주를 찬양하리" },
-      { id: "c", label: "Verse", lyrics: "" },
+      { id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false },
+      { id: "b", label: "Chorus", lyrics: "내가 주를 찬양하리", hidden: false },
+      { id: "c", label: "Verse", lyrics: "", hidden: false },
     ],
     meditationBlocks: [{ id: "m1", doc: doc("기다림을 배웁니다") }],
     tags: [],
@@ -175,6 +175,44 @@ describe("불러오기 시나리오 — Verse 2를 가져온 자리는 Verse 2�
   });
 });
 
+describe("섹션 숨김 — 감추는 것이지 지우는 것이 아니다 (02 §5.4)", () => {
+  it("감출 때만 저장값에 적는다 — 보이는 것이 기본이라 false를 쌓지 않는다", () => {
+    const values: PraiseFormValues = {
+      ...filled(),
+      sections: [
+        { id: "a", label: "Verse", lyrics: "1절", hidden: false },
+        { id: "b", label: "Verse", lyrics: "2절", hidden: true },
+      ],
+    };
+
+    const sections = (toDraftContent(values) as { sections: Record<string, unknown>[] }).sections;
+
+    expect(sections[0]).not.toHaveProperty("hidden");
+    expect(sections[1]).toMatchObject({ hidden: true });
+  });
+
+  it("감춘 가사도 저장값에 그대로 남는다 — 지운 것이 아니다", () => {
+    const values: PraiseFormValues = {
+      ...filled(),
+      sections: [{ id: "a", label: "Verse", lyrics: "1절", hidden: true }],
+    };
+
+    const content = toPublishContent(values);
+    if (content.kind !== "PRAISE") throw new Error("PRAISE여야 한다");
+
+    expect(content.sections).toEqual([{ id: "a", label: "Verse", lyrics: "1절", hidden: true }]);
+  });
+
+  it("이 자리가 없는 옛 글은 보이는 것으로 읽는다", () => {
+    const form = fromDraftContent(
+      { kind: "PRAISE", sections: [{ id: "a", label: "Verse", lyrics: "1절" }] },
+      "제목",
+    );
+
+    expect(form.sections[0]?.hidden).toBe(false);
+  });
+});
+
 describe("emptyPraiseForm", () => {
   it("Intro · Verse가 놓인 상태로 열린다 — 곡은 거의 늘 전주로 시작한다", () => {
     expect(emptyPraiseForm().sections.map((section) => section.label)).toEqual(["Intro", "Verse"]);
@@ -239,7 +277,7 @@ describe("발행 게이트", () => {
     expect(
       PraisePublishFormSchema.safeParse({
         ...filled(),
-        sections: [{ id: "a", label: "Interlude", lyrics: "" }],
+        sections: [{ id: "a", label: "Interlude", lyrics: "", hidden: false }],
       }).success,
     ).toBe(true);
   });
@@ -250,8 +288,8 @@ describe("저장 계약 변환 (05 §2)", () => {
     const content = toPublishContent({
       ...filled(),
       sections: [
-        { id: "a", label: "Chorus", lyrics: "" },
-        { id: "b", label: "Refrain", lyrics: "" },
+        { id: "a", label: "Chorus", lyrics: "", hidden: false },
+        { id: "b", label: "Refrain", lyrics: "", hidden: false },
       ],
     });
     if (content.kind !== "PRAISE") throw new Error("PRAISE content여야 한다");
@@ -283,12 +321,17 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
   it("직접 입력 라벨을 평평한 문자열로 되돌린다", () => {
     const saved = toDraftContent({
       ...filled(),
-      sections: [{ id: "a", label: "Tag", lyrics: "한 번 더" }],
+      sections: [{ id: "a", label: "Tag", lyrics: "한 번 더", hidden: false }],
     });
 
     const form = fromDraftContent(saved, "제목");
 
-    expect(form.sections[0]).toMatchObject({ id: "a", label: "Tag", lyrics: "한 번 더" });
+    expect(form.sections[0]).toMatchObject({
+      id: "a",
+      label: "Tag",
+      lyrics: "한 번 더",
+      hidden: false,
+    });
   });
 
   it("섹션이 없는 초안은 첫 섹션이 놓인 채 열린다", () => {
@@ -381,7 +424,10 @@ describe("isEmptyForm — 서식 전환 조건", () => {
 
     expect(isEmptyForm({ ...base, youtubeUrl: "https://youtu.be/x" })).toBe(false);
     expect(
-      isEmptyForm({ ...base, sections: [{ id: "a", label: "Verse", lyrics: "주님의 시간에" }] }),
+      isEmptyForm({
+        ...base,
+        sections: [{ id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false }],
+      }),
     ).toBe(false);
     expect(isEmptyForm(filled())).toBe(false);
   });

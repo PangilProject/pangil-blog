@@ -101,6 +101,30 @@ describe("toMarkdownFile", () => {
     expect(file.text).toContain("## 오늘의 요약");
   });
 
+  it("감춘 절도 내보내되 감췄다고 적어 둔다 — 내보내기는 내가 쓴 것을 다 담는다", () => {
+    const file = toMarkdownFile({
+      ...base,
+      type: "PRAISE",
+      title: "마커스워십 - 주의 노래 가득해",
+      content: {
+        ok: true,
+        content: {
+          kind: "PRAISE",
+          youtubeUrl: "https://youtu.be/x",
+          sections: [
+            { id: "a", label: "Verse", lyrics: "보이는 절" },
+            { id: "b", label: "Verse", lyrics: "감춘 절", hidden: true },
+          ],
+          meditationAndPrayer: doc("가사를 묵상하며"),
+        },
+      },
+    } as ExportPost);
+
+    expect(file.text).toContain("### Verse\n");
+    expect(file.text).toContain("### Verse (숨김)");
+    expect(file.text).toContain("감춘 절");
+  });
+
   it("스키마를 통과하지 못한 글도 원문을 담아 내보낸다", () => {
     const file = toMarkdownFile({
       ...base,

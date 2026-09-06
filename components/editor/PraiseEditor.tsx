@@ -167,7 +167,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
   const items = sections.fields.map((field, index) => ({
     key: field.id,
-    value: watchedSections[index] ?? { id: field.id, label: "Verse", lyrics: "" },
+    value: watchedSections[index] ?? { id: field.id, label: "Verse", lyrics: "", hidden: false },
   }));
 
   return (
@@ -260,7 +260,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
           <div className="flex flex-col gap-2">
             <span className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">
-              가사 · 엔터 2회로 다음 섹션, Alt+↑↓로 순서 이동
+              가사 · 엔터 2회로 다음 섹션, Alt+↑↓로 순서 이동, 숨김은 공개 지면에만 적용돼요
             </span>
             <PraiseSectionList
               items={items}
@@ -269,6 +269,9 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
               }
               onLyricsChange={(index, lyrics) =>
                 setValue(`sections.${index}.lyrics`, lyrics, { shouldDirty: true })
+              }
+              onHiddenChange={(index, hidden) =>
+                setValue(`sections.${index}.hidden`, hidden, { shouldDirty: true })
               }
               onAppendAfter={(index, label) => sections.insert(index + 1, newSection(label))}
               onRemove={(index) => sections.remove(index)}

@@ -39,8 +39,8 @@ function filled(): PraiseFormValues {
     title: "마커스워십 - 주님의 시간에",
     youtubeUrl: YOUTUBE_URL,
     sections: [
-      { id: "a", label: "Verse", lyrics: "주님의 시간에" },
-      { id: "b", label: "Chorus", lyrics: "찬양하리" },
+      { id: "a", label: "Verse", lyrics: "주님의 시간에", hidden: false },
+      { id: "b", label: "Chorus", lyrics: "찬양하리", hidden: false },
     ],
     meditationBlocks: [
       {
@@ -143,8 +143,8 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
       initialValues: {
         ...filled(),
         sections: [
-          { id: "a", label: "Verse", lyrics: "1절" },
-          { id: "b", label: "Verse", lyrics: "2절" },
+          { id: "a", label: "Verse", lyrics: "1절", hidden: false },
+          { id: "b", label: "Verse", lyrics: "2절", hidden: false },
         ],
       },
     });
@@ -184,8 +184,8 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
       initialValues: {
         ...filled(),
         sections: [
-          { id: "a", label: "Verse", lyrics: "1절" },
-          { id: "b", label: "Chorus", lyrics: "" },
+          { id: "a", label: "Verse", lyrics: "1절", hidden: false },
+          { id: "b", label: "Chorus", lyrics: "", hidden: false },
         ],
       },
     });
@@ -199,7 +199,10 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
 
   it("마지막 섹션은 지우지 않는다 — 섹션 0개는 발행 불가 상태다", async () => {
     renderEditor({
-      initialValues: { ...filled(), sections: [{ id: "a", label: "Verse", lyrics: "" }] },
+      initialValues: {
+        ...filled(),
+        sections: [{ id: "a", label: "Verse", lyrics: "", hidden: false }],
+      },
     });
 
     await act(async () => {
@@ -219,6 +222,20 @@ describe("PraiseEditor — 섹션 (02 §5.4 · 04 §2.5)", () => {
     const lyricsBoxes = screen.getAllByRole("textbox", { name: /가사$/ });
     expect(lyricsBoxes[0]).toHaveValue("찬양하리");
     expect(lyricsBoxes[1]).toHaveValue("주님의 시간에");
+  });
+
+  it("숨기면 상태가 버튼에 적히고, 가사는 그대로 남는다", async () => {
+    renderEditor();
+
+    const toggle = screen.getByLabelText("Verse 공개 지면에서 숨기기");
+    expect(toggle).toHaveTextContent("보임");
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(screen.getByLabelText("Verse 공개 지면에 보이기")).toHaveTextContent("숨김");
+    expect(screen.getByLabelText("Verse 가사")).toHaveValue("주님의 시간에");
   });
 
   it("라벨을 바꿔도 가사는 남는다", async () => {
