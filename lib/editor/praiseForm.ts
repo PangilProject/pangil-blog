@@ -120,12 +120,28 @@ export function newMeditationBlock(): PraiseMeditationBlockFormValue {
   return { id: nanoid(), doc: EMPTY_RICH_TEXT };
 }
 
+/**
+ * 빈 폼이 열어 두는 섹션 (02 §5.4).
+ *
+ * **Intro 다음 Verse**다. 곡은 거의 늘 전주로 시작하고, 그 다음 칸은 첫 절이다 — 처음 두 번은
+ * 늘 같은 손놀림이었다(라벨을 Intro로 바꾸고, 섹션을 더하고, 라벨을 Verse로 되돌린다).
+ * Intro는 마디 수만 받는 칸으로 열리므로(BAR_ONLY_LABELS) 가사 칸이 비어 남지 않는다.
+ *
+ * id는 자리 번호로 짓는다 — 서버 프리렌더에서는 난수를 쓸 수 없다(ADR-003).
+ */
+export function defaultSections(): PraiseSectionFormValue[] {
+  return [
+    { id: sectionIdAt(0), label: "Intro", lyrics: "" },
+    { id: sectionIdAt(1), label: DEFAULT_SECTION_LABEL, lyrics: "" },
+  ];
+}
+
 export function emptyPraiseForm(): PraiseFormValues {
   return {
     title: "",
     youtubeUrl: "",
     // 빈 화면을 주지 않는다. 첫 섹션은 늘 놓여 있다
-    sections: [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
+    sections: defaultSections(),
     // 빈 화면을 주지 않는다. 첫 블록은 늘 놓여 있다 — 가사 섹션과 같다
     meditationBlocks: [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
     tags: defaultTagsFor("PRAISE"),
@@ -310,10 +326,7 @@ export function fromDraftContent(
   return {
     title,
     youtubeUrl: content.youtubeUrl ?? "",
-    sections:
-      sections.length > 0
-        ? sections
-        : [{ id: sectionIdAt(0), label: DEFAULT_SECTION_LABEL, lyrics: "" }],
+    sections: sections.length > 0 ? sections : defaultSections(),
     // 문서 하나로 저장된 옛 글은 블록 하나로 열린다(praiseMeditationBlocks)
     meditationBlocks:
       blocks.length > 0 ? blocks : [{ id: meditationBlockIdAt(0), doc: EMPTY_RICH_TEXT }],
