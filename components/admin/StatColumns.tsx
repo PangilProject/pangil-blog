@@ -64,6 +64,18 @@ export function StatColumns({ points, unit }: { points: SeriesPoint[]; unit: Uni
                 style={{ height: shareOf(point.devViews, point.views) }}
                 className="w-full bg-accent-dev"
               />
+              {/*
+                두 지면이 아닌 조회 — 소개 지면이다. **이 칸이 없으면 막대가 짧게 그려진다**:
+                상자 높이는 그날의 전체 조회로 잡는데 칠하는 것은 둘뿐이라, 소개를 본 날마다
+                그 차이만큼 위가 비었다.
+
+                빼서 구한다. 지면을 하나 더 조회해 오는 것보다 이쪽이 **어긋날 수 없다** —
+                칠한 것의 합이 언제나 상자를 채운다.
+              */}
+              <div
+                style={{ height: shareOf(otherViews(point), point.views) }}
+                className="w-full bg-edge-strong"
+              />
             </div>
 
             {/* 0인 칸도 바닥선을 남긴다 — 칸이 사라지면 "그날은 없었다"로 읽힌다 */}
@@ -96,6 +108,16 @@ function stackHeight(views: number, max: number): string {
   return `max(3px, ${(views / Math.max(max, 1)) * 100}%)`;
 }
 
+/**
+ * 기술도 묵상도 아닌 조회 — 소개 지면(hub)이다.
+ *
+ * 지면을 따로 세어 오지 않고 **빼서 구한다.** 그래야 세 조각의 합이 언제나 그날의 전체
+ * 조회와 같고, 나중에 지면이 늘어도 막대가 조용히 짧아지지 않는다.
+ */
+function otherViews(point: SeriesPoint): number {
+  return Math.max(0, point.views - point.faithViews - point.devViews);
+}
+
 /** 묶음 안에서 지면이 차지하는 비율 */
 function shareOf(value: number, total: number): string {
   if (value <= 0 || total <= 0) return "0";
@@ -107,6 +129,7 @@ function tooltipOf(point: SeriesPoint, unit: Unit): string {
 
   if (point.devViews > 0) parts.push(`기술 ${point.devViews}`);
   if (point.faithViews > 0) parts.push(`묵상 ${point.faithViews}`);
+  if (otherViews(point) > 0) parts.push(`소개 ${otherViews(point)}`);
   if (point.visitors !== null) parts.push(`방문자 ${point.visitors}`);
   if (unit === "week") parts.push("주 시작일 기준");
 
