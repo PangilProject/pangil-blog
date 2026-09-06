@@ -22,6 +22,7 @@ import {
   findWeekdays,
 } from "@/lib/db/statSummary";
 import { postHref } from "@/lib/site/publicUrl";
+import type { ViewTotals } from "@/lib/stats/ownerSplit";
 import { parseUnit, UNIT_WINDOW_DAYS } from "@/lib/stats/range";
 import { REFERRER_KIND_LABELS, referrerKind } from "@/lib/stats/referrer";
 
@@ -129,26 +130,32 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
               지면 사이드바의 `오늘`(방문자)과 같은 값으로 읽혔다 — 둘 다 맞는 값인데
               이름이 없어서 어느 쪽이 틀렸다고 느껴졌다.
             */}
-            <Panel
-              title="조회"
-              note={`몇 번 읽혔는지예요. 공개 지면에는 통산 ${views.all.total.toLocaleString("ko-KR")}이 적혀요 — 아래는 내 방문을 뺀 값이에요`}
-            >
-              <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Tile
-                  label="오늘"
-                  value={kpis.today}
-                  previous={kpis.yesterday}
-                  previousLabel="어제"
-                />
-                <Tile
-                  label="이번 주"
-                  value={kpis.thisWeek}
-                  previous={kpis.lastWeek}
-                  previousLabel="지난주"
-                />
-                <Tile label="최근 30일" value={kpis.month} />
-                <Tile label="통산" value={kpis.total} sub={`수집 ${collectedDays}일째`} />
-              </section>
+            <Panel title="조회" note="몇 번 읽혔는지예요. 아래 칸은 내 방문을 뺀 값이에요">
+              <div className="flex flex-col gap-3">
+                <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Tile
+                    label="오늘"
+                    value={kpis.today}
+                    previous={kpis.yesterday}
+                    previousLabel="어제"
+                  />
+                  <Tile
+                    label="이번 주"
+                    value={kpis.thisWeek}
+                    previous={kpis.lastWeek}
+                    previousLabel="지난주"
+                  />
+                  <Tile label="최근 30일" value={kpis.month} />
+                  <Tile label="통산" value={kpis.total} sub={`수집 ${collectedDays}일째`} />
+                </section>
+
+                {/*
+                  **공개 지면에 적히는 그 숫자를 여기 그대로 둔다.** 위 칸은 내 방문을 뺀
+                  값이라 사이드바와 다르고, 그 차이를 각주로만 적어두면 "둘 중 뭐가 맞나"가
+                  다시 시작된다. 나란히 보이면 그건 차이가 아니라 **내가 몇 번 열었나**다.
+                */}
+                <OwnCounts all={views.all} others={views.others} />
+              </div>
             </Panel>
 
             {/*
@@ -375,6 +382,45 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
 }
 
 /** KST 날짜 기준 경과일. 자정 경계를 넘긴 횟수를 세므로 시:분에 흔들리지 않는다 */
+/**
+ * 공개 지면에 적히는 조회 수와, 그중 내가 만든 몫.
+ *
+ * 위 칸(본인 제외)과 사이드바(본인 포함)가 다른 값이라, 그 차이를 각주로만 적으면
+ * "둘 중 뭐가 맞나"가 다시 시작된다. 세 숫자를 나란히 두면 **차이가 곧 내 몫**이 된다.
+ *
+ * `내 방문`은 빼서 구한다 — 따로 세어 오지 않으므로 세 숫자가 어긋날 수 없다.
+ */
+function OwnCounts({ all, others }: { all: ViewTotals; others: ViewTotals }) {
+  const mine = {
+    today: all.today - others.today,
+    yesterday: all.yesterday - others.yesterday,
+    total: all.total - others.total,
+  };
+  const count = (value: number) => value.toLocaleString("ko-KR");
+
+  return (
+    <dl className="flex flex-wrap gap-x-5 gap-y-1 border-edge border-t pt-2.5 font-typewriter text-[10.5px] text-faint">
+      <Row
+        label="공개 지면 표시"
+        value={`오늘 ${count(all.today)} · 어제 ${count(all.yesterday)} · 통산 ${count(all.total)}`}
+      />
+      <Row
+        label="그중 내 방문"
+        value={`오늘 ${count(mine.today)} · 어제 ${count(mine.yesterday)} · 통산 ${count(mine.total)}`}
+      />
+    </dl>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt>{label}</dt>
+      <dd className="text-ink-soft">{value}</dd>
+    </div>
+  );
+}
+
 function kstDaysBetween(from: Date, to: Date): number {
   const KST = 9 * 60 * 60 * 1000;
   const day = 24 * 60 * 60 * 1000;
