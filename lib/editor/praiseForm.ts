@@ -203,20 +203,26 @@ export type LoadableSource = {
  * 지웠을 때의 규칙이 줄줄이 붙는데 저장 계약에는 그 참조를 둘 자리가 없다.
  *
  * 빼는 것 셋: 제 자신, 아직 빈 섹션, 연주 구간(마디 수만 있는 칸이라 가져올 가사가 없다).
- * 그리고 **이미 되풀이된 절은 한 번만 세운다** — 같은 이름·같은 가사가 두 줄로 서면 어느
- * 쪽을 골라야 하는지 묻는 꼴인데, 둘은 같은 것이다.
+ * 그리고 **같은 절은 한 번만 세운다** — 여기에는 제가 이미 들고 있는 것도 들어간다. 방금
+ * 가져온 원본이 목록에 남아 있으면 골라도 아무 일이 안 일어나는 줄이 하나 생긴다.
  */
 export function loadableSources(sections: SectionNumbering[], index: number): LoadableSource[] {
   const ordinals = sectionOrdinals(sections);
-  const seen = new Set<string>();
+  const key = (section: SectionNumbering) => `${section.label}\u0000${section.lyrics.trim()}`;
+
+  /**
+   * 제 자신의 열쇠를 미리 넣어 둔다 — 이미 가져온 절은 목록에서 빠진다. 안 그러면 방금
+   * 가져온 원본이 제 이름("Verse 2")을 달고 그대로 서 있어서, 고르면 아무 일도 안 일어나는
+   * 줄이 하나 남는다.
+   */
+  const here = sections[index];
+  const seen = new Set<string>(here && here.lyrics.trim() !== "" ? [key(here)] : []);
 
   return sections.flatMap((section, at) => {
-    const lyrics = section.lyrics.trim();
-    if (at === index || lyrics === "" || isBarOnlyLabel(section.label)) return [];
+    if (at === index || section.lyrics.trim() === "" || isBarOnlyLabel(section.label)) return [];
 
-    const key = `${section.label}\u0000${lyrics}`;
-    if (seen.has(key)) return [];
-    seen.add(key);
+    if (seen.has(key(section))) return [];
+    seen.add(key(section));
 
     const ordinal = ordinals[at];
     return [
