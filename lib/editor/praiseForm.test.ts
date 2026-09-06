@@ -144,9 +144,12 @@ describe("loadableSources — 가사 불러오기 (02 §5.4)", () => {
 });
 
 describe("emptyPraiseForm", () => {
-  it("첫 섹션이 놓인 상태로 열린다 — 빈 화면을 주지 않는다", () => {
-    expect(emptyPraiseForm().sections).toHaveLength(1);
-    expect(emptyPraiseForm().sections[0]?.label).toBe("Verse");
+  it("Intro · Verse가 놓인 상태로 열린다 — 곡은 거의 늘 전주로 시작한다", () => {
+    expect(emptyPraiseForm().sections.map((section) => section.label)).toEqual(["Intro", "Verse"]);
+  });
+
+  it("열린 섹션에는 아무것도 안 적혀 있다 — 빈 폼이라는 판정이 흔들리면 서식 전환이 막힌다", () => {
+    expect(isEmptyForm(emptyPraiseForm())).toBe(true);
   });
 
   it("섹션 id는 서로 다르다 — 재정렬 키다", () => {
@@ -259,7 +262,7 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
   it("섹션이 없는 초안은 첫 섹션이 놓인 채 열린다", () => {
     const form = fromDraftContent({ kind: "PRAISE" }, "제목");
 
-    expect(form.sections).toHaveLength(1);
+    expect(form.sections.map((section) => section.label)).toEqual(["Intro", "Verse"]);
     expect(form.youtubeUrl).toBe("");
   });
 });
