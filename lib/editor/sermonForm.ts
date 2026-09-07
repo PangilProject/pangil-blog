@@ -79,7 +79,18 @@ export const SermonPublishFormSchema = z.object({
     (value) => !isEmptyDoc(value as RichTextValue),
     "설교 본문이 비어 있어요",
   ),
-  summary: z.custom<RichTextValue>(() => true),
+  /**
+   * **선택이 아니라 필수다.** 라이브 속기는 들은 것을 옮긴 것이고, 요약은 그중 무엇이
+   * 남았는지를 적는 자리다 — 그것 없이 발행하면 다시 안 적게 된다.
+   *
+   * 저장 계약에서는 여전히 optional이다. 이관해 온 설교에는 요약이 없고, 필수로 두면 그
+   * 글들이 렌더링 전 검증에서 떨어져 원문 폴백으로 그려진다(04 §2.4 · sermonTitle과 같은
+   * 사정). 막는 것은 **새로 쓰는 글**뿐이다.
+   */
+  summary: z.custom<RichTextValue>(
+    (value) => !isEmptyDoc(value as RichTextValue),
+    "예배 후 요약을 적어주세요",
+  ),
 });
 
 /** 발행용 content. 폼이 검증을 통과한 뒤에만 부른다 */

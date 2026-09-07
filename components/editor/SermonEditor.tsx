@@ -17,6 +17,7 @@ import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
+import { isEmptyDoc } from "@/lib/editor/richText";
 import {
   emptySermonForm,
   isEmptyForm,
@@ -50,6 +51,7 @@ export type SermonEditorProps = {
 export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   /**
    * 초안 id는 ref로도 들고 있는다. 첫 저장이 발행 클릭 안에서(flush) 끝나면 setId의 결과가
    * 이 클로저에 보이지 않아 "아직 저장되지 않았어요"로 막힌다 — 방금 저장에 성공했는데도.
@@ -113,7 +115,14 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
     currentId: () => idRef.current,
   });
 
-  const onPublish = handleSubmit(publish);
+  /**
+   * 요약이 비어 발행이 막힐 상황이면 그 칸을 먼저 펴 둔다 — 게이트 메시지가 뜨는 순간
+   * 적을 자리가 보여야 한다. 게이트는 스키마 한 곳이고 여기서는 접힘만 다룬다.
+   */
+  const onPublish = handleSubmit((values) => {
+    if (isEmptyDoc(values.summary)) setIsSummaryOpen(true);
+    return publish(values);
+  });
 
   return (
     <EditorFocusProvider>
@@ -227,9 +236,20 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
             )}
           />
 
-          <details className="border-edge border-t pt-4">
+          {/*
+            접힌 채로 연다. 예배 중에 쓰는 것은 본문이고 요약은 예배 뒤의 일이라, 펴 둔
+            빈 칸이 속기하는 동안 눈에 걸린다(방해 요소 제로).
+
+            대신 **발행이 이것 때문에 막히면 펴 준다.** 필수로 올린 칸이 접힌 채로 막으면
+            "적어주세요"라는 말만 있고 적을 자리가 안 보인다.
+          */}
+          <details
+            open={isSummaryOpen}
+            onToggle={(event) => setIsSummaryOpen(event.currentTarget.open)}
+            className="border-edge border-t pt-4"
+          >
             <summary className="cursor-pointer font-typewriter text-[11px] text-faint">
-              예배 후 요약 (선택)
+              예배 후 요약
             </summary>
             <Controller
               control={control}

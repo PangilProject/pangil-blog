@@ -73,7 +73,7 @@ describe("SermonEditor — 방해 요소 제로 (02 §5.3)", () => {
     expect(screen.getByLabelText("말씀 범위")).toBeInTheDocument();
     expect(screen.getByLabelText("말씀 본문")).toBeInTheDocument();
     expect(screen.getByLabelText("설교 본문")).toBeInTheDocument();
-    expect(screen.getByText("예배 후 요약 (선택)")).toBeInTheDocument();
+    expect(screen.getByText("예배 후 요약")).toBeInTheDocument();
   });
 
   it("본문에 기록 조판이 붙는다 — 없으면 서식이 적용돼도 본문과 똑같이 보인다", () => {
@@ -220,7 +220,7 @@ describe("SermonEditor — 발행", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("글 제목을 적어주세요");
   });
 
-  it("갖춰지면 발행하고 그 글의 공개 지면으로 간다 (02 §3.2)", async () => {
+  it("요약이 없으면 막고, 접혀 있던 그 칸을 펴 준다", async () => {
     render(
       <SermonEditor
         postId="post-1"
@@ -231,6 +231,38 @@ describe("SermonEditor — 발행", () => {
           scriptureBody: "너는 가서",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
           summary: { type: "doc", content: [] },
+          tags: [],
+        }}
+      />,
+    );
+
+    // 예배 중에는 접혀 있다 — 펴 둔 빈 칸이 속기하는 동안 눈에 걸린다
+    expect(screen.getByText("예배 후 요약").closest("details")?.open).toBe(false);
+
+    await act(async () => {
+      screen.getByRole("button", { name: "발행" }).click();
+    });
+
+    expect(publishPost).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("예배 후 요약을 적어주세요");
+    // "적어주세요"라는 말만 있고 적을 자리가 안 보이면 안 된다
+    expect(screen.getByText("예배 후 요약").closest("details")?.open).toBe(true);
+  });
+
+  it("갖춰지면 발행하고 그 글의 공개 지면으로 간다 (02 §3.2)", async () => {
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={{
+          title: "오늘이라는 선물",
+          sermonTitle: "하나님의 편에 서라",
+          scriptureRef: "전도서 9장 7~10절",
+          scriptureBody: "너는 가서",
+          body: { type: "doc", content: [{ type: "text", text: "속기" }] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
@@ -258,7 +290,10 @@ describe("SermonEditor — 발행", () => {
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
-          summary: { type: "doc", content: [] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
@@ -286,7 +321,10 @@ describe("SermonEditor — 발행", () => {
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
-          summary: { type: "doc", content: [] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
@@ -312,7 +350,10 @@ describe("SermonEditor — 발행", () => {
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
-          summary: { type: "doc", content: [] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
@@ -343,7 +384,10 @@ describe("SermonEditor — 발행", () => {
           scriptureRef: "전도서 9장 7~10절",
           scriptureBody: "너는 가서",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
-          summary: { type: "doc", content: [] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
@@ -369,7 +413,10 @@ describe("SermonEditor — 발행", () => {
           scriptureRef: "전도서",
           scriptureBody: "본문",
           body: { type: "doc", content: [{ type: "text", text: "속기" }] },
-          summary: { type: "doc", content: [] },
+          summary: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "예배 후 정리" }] }],
+          },
           tags: [],
         }}
       />,
