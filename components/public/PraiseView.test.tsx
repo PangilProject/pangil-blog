@@ -21,6 +21,11 @@ vi.mock("@/lib/actions/praise", () => ({
 
 const { PraiseView } = await import("@/components/public/PraiseView");
 
+const doc = (text: string) => ({
+  type: "doc" as const,
+  content: [{ type: "paragraph", content: [{ type: "text", text }] }],
+});
+
 /**
  * 공개 지면은 읽는 사람의 자리다. 에디터의 안내 문구가 여기 새어 나오면 안 된다 —
  * 실제로 빈 섹션에 "가사를 적어보세요"가 공개 지면에 찍혔다.
@@ -133,6 +138,22 @@ describe("PraiseView", () => {
     );
 
     expect(screen.getByLabelText("묵상과 기도 복사")).toBeInTheDocument();
+  });
+
+  it("덩이마다 복사가 붙는다 — 끊어 쓴 자리가 곧 복사 단위다", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          meditationAndPrayer: [doc("묵상 덩이"), doc("기도 덩이")],
+        }}
+        title="손잡고 함께 가세"
+        postId="post-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("묵상과 기도 1 복사")).toBeInTheDocument();
+    expect(screen.getByLabelText("묵상과 기도 2 복사")).toBeInTheDocument();
   });
 
   it("옮겨 적을 글자가 없으면 복사 버튼도 세우지 않는다", () => {
