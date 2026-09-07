@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import type { TransactionClient } from "@/lib/db/transaction";
 import type { RecordType } from "@/lib/record/callNumber";
 import { normalizeTagNames } from "@/lib/record/tagNames";
 import { Site } from "@/prisma/generated/enums";
@@ -20,7 +21,15 @@ function siteEnumOf(type: RecordType): Site {
   return type === "TECH" ? Site.DEV : Site.FAITH;
 }
 
-export async function setPostTags(
+/**
+ * 이미 열린 트랜잭션 안에서 태그를 맞춘다.
+ *
+ * 크롤러가 초안을 만들 때 필요하다 — 글을 만드는 트랜잭션 안에서 태그까지 놓아야 "글은
+ * 있는데 태그는 없는" 초안이 남지 않는다. 트랜잭션 안에서 `prisma.$transaction`을 또
+ * 부르면 다른 연결을 잡으므로 같은 원자 단위가 되지 않는다.
+ */
+export async function setPostTagsWith(
+  tx: TransactionClient,
   postId: string,
   type: RecordType,
   names: string[],
@@ -28,31 +37,37 @@ export async function setPostTags(
   const site = siteEnumOf(type);
   const wanted = normalizeTagNames(names);
 
-  return prisma.$transaction(async (tx) => {
-    const tags = await Promise.all(
-      wanted.map((name) =>
-        tx.tag.upsert({
-          where: { site_name: { site, name } },
-          create: { site, name },
-          update: {},
-          select: { id: true, name: true },
-        }),
-      ),
-    );
+  const tags = await Promise.all(
+    wanted.map((name) =>
+      tx.tag.upsert({
+        where: { site_name: { site, name } },
+        create: { site, name },
+        update: {},
+        select: { id: true, name: true },
+      }),
+    ),
+  );
 
-    const keepIds = tags.map((tag) => tag.id);
+  const keepIds = tags.map((tag) => tag.id);
 
-    await tx.postTag.deleteMany({
-      where: { postId, ...(keepIds.length > 0 ? { tagId: { notIn: keepIds } } : {}) },
-    });
-
-    if (keepIds.length > 0) {
-      await tx.postTag.createMany({
-        data: keepIds.map((tagId) => ({ postId, tagId })),
-        skipDuplicates: true,
-      });
-    }
-
-    return tags.map((tag) => tag.name);
+  await tx.postTag.deleteMany({
+    where: { postId, ...(keepIds.length > 0 ? { tagId: { notIn: keepIds } } : {}) },
   });
+
+  if (keepIds.length > 0) {
+    await tx.postTag.createMany({
+      data: keepIds.map((tagId) => ({ postId, tagId })),
+      skipDuplicates: true,
+    });
+  }
+
+  return tags.map((tag) => tag.name);
+}
+
+export async function setPostTags(
+  postId: string,
+  type: RecordType,
+  names: string[],
+): Promise<string[]> {
+  return prisma.$transaction((tx) => setPostTagsWith(tx, postId, type, names));
 }

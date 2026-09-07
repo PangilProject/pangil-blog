@@ -3,6 +3,8 @@ import "server-only";
 import type { PostContent } from "@/lib/content/schema";
 import { shouldKeepPost } from "@/lib/crawler/userEdited";
 import { prisma } from "@/lib/db/prisma";
+import { setPostTagsWith } from "@/lib/db/tags";
+import { defaultTagsFor } from "@/lib/record/defaultTags";
 import { kstDateKeyAsUtcMidnight } from "@/lib/record/kst";
 import { CrawlStatus, PostStatus, PostType } from "@/prisma/generated/enums";
 
@@ -129,6 +131,18 @@ export async function recordCrawlSuccess({
       data: { type: PostType.QT, status: PostStatus.DRAFT, title, content },
       select: { id: true },
     });
+
+    /**
+     * 기본 태그를 여기서 놓는다 (02 §5.2).
+     *
+     * 다른 두 묵상은 빈 폼에서 시작하니 폼이 놓아준다. **큐티는 거의 늘 이 초안으로
+     * 열리므로 그 자리를 지나쳤고, 그래서 큐티에만 기본 태그가 없었다.**
+     *
+     * 만드는 트랜잭션 안에서 함께 놓는다 — "글은 있는데 태그는 없는" 초안이 남지 않는다.
+     * 새로 만들 때만이다. 이미 있는 초안에는 손대지 않는다 — 일부러 지운 태그가
+     * 되살아나면 그건 고장이다.
+     */
+    await setPostTagsWith(tx, created.id, "QT", defaultTagsFor("QT"));
 
     await tx.crawlRun.upsert({
       where: { runDate },
