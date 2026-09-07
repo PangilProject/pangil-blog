@@ -8,6 +8,7 @@ import {
   isEmptyForm,
   type QtFormValues,
   QtPublishFormSchema,
+  toCopyText,
   toDraftContent,
   toPublishContent,
 } from "@/lib/editor/qtForm";
@@ -114,6 +115,51 @@ describe("저장 계약 변환 (05 §2)", () => {
     if (content.kind !== "QT") throw new Error("QT content여야 한다");
 
     expect(content.annotations).toEqual([{ term: "공의", body: "되돌아옴" }]);
+  });
+});
+
+describe("toCopyText — 한 번에 다 복사 (A-05)", () => {
+  /** 붙여넣는 쪽이 사람이 아니라 도구다. 무엇이 빠지면 요약이 어긋나므로 다 들어가야 한다 */
+  function answered(): QtFormValues {
+    const form = crawled();
+    return {
+      ...form,
+      questionGroups: form.questionGroups.map((group, index) => ({
+        ...group,
+        questions: group.questions.map((question) => ({
+          ...question,
+          text: `${group.group} 질문 ${question.label}`,
+          answer: index === 3 ? doc(`답 ${question.label}`) : question.answer,
+        })),
+      })),
+      summary: doc("오늘의 요약입니다"),
+    };
+  }
+
+  it("제목·말씀·주석·네 그룹·요약이 다 들어간다", () => {
+    const text = toCopyText(answered());
+
+    expect(text).toContain("# 주님이 네 악을 네 머리로 돌려보내시리라");
+    expect(text).toContain("열왕기상 2장 41~46절");
+    expect(text).toContain("44. 네가 네 마음으로 아는 모든 악");
+    expect(text).toContain("**네 악을 네 머리로** (44절) — 하나님의 공의로운 판단");
+    for (const group of ["내용관찰", "연구와 묵상", "느낀 점", "결단과 적용"]) {
+      expect(text).toContain(`## ${group}`);
+    }
+    expect(text).toContain("답 5-1");
+    expect(text).toContain("오늘의 요약입니다");
+  });
+
+  it("답을 안 쓴 질문도 남긴다 — 무엇을 건너뛰었는지가 기록이다 (02 §5.2)", () => {
+    const text = toCopyText(answered());
+
+    expect(text).toContain("**1. 내용관찰 질문 1**");
+  });
+
+  it("제목이 비면 제목 줄을 넣지 않는다 — 빈 제목 표시가 붙어 나가지 않는다", () => {
+    const text = toCopyText({ ...answered(), title: "  " });
+
+    expect(text.startsWith("#")).toBe(false);
   });
 });
 

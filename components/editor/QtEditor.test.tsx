@@ -11,6 +11,7 @@ const publishPost = vi.fn();
 const replace = vi.fn();
 const push = vi.fn();
 const assign = vi.fn();
+const writeText = vi.fn();
 
 // 발행 뒤 이동은 교차 출처라 라우터가 아니라 브라우저가 한다(usePublishFlow).
 // jsdom의 `location.assign`은 재정의가 막혀 있어 location 자체를 갈아끼운다 — 주소는
@@ -18,6 +19,10 @@ const assign = vi.fn();
 beforeAll(() => {
   const { href, origin, pathname } = window.location;
   vi.stubGlobal("location", { href, origin, pathname, assign });
+
+  // jsdom에는 클립보드가 없다. navigator를 통째로 갈아끼우면 testing-library가 함께
+  // 무너지므로(실제로 그랬다) 이 한 칸만 얹는다
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
 });
 
 vi.mock("@/lib/actions/posts", () => ({
@@ -114,6 +119,23 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
     });
 
     expect(enter.defaultPrevented).toBe(true);
+  });
+
+  it("전체 복사는 지금 적힌 것을 한 덩이로 넘긴다 — 요약을 다른 도구에 부탁한다", async () => {
+    writeText.mockReset().mockResolvedValue(undefined);
+    renderEditor();
+
+    await act(async () => {
+      screen.getByRole("button", { name: "전체 복사" }).click();
+    });
+
+    const copied = writeText.mock.calls[0]?.[0] as string;
+    expect(copied).toContain("# 주님이 네 악을 네 머리로 돌려보내시리라");
+    expect(copied).toContain("열왕기상 2장 41~46절");
+    expect(copied).toContain("**네 악을 네 머리로** (44절) — 하나님의 공의로운 판단");
+    expect(copied).toContain("## 내용관찰");
+    expect(copied).toContain("**1. 무엇을 지키지 않았다고 말합니까?**");
+    expect(copied).toContain("명령");
   });
 
   it("답변 칸은 질문마다 하나씩 놓인다", () => {

@@ -27,10 +27,12 @@ import {
   isEmptyForm,
   type QtFormValues,
   QtPublishFormSchema,
+  toCopyText,
   toDraftContent,
 } from "@/lib/editor/qtForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 import { usePublishFlow } from "@/lib/editor/usePublishFlow";
+import { copyLabel, useCopyText } from "@/lib/ui/useCopyText";
 
 /**
  * A-04 QT 에디터 (02 §5.2).
@@ -71,7 +73,8 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
   const [emptyAnswers, setEmptyAnswers] = useState(() => countEmptyAnswers(initialValues));
 
   const form = useForm<QtFormValues>({ defaultValues: initialValues ?? emptyQtForm() });
-  const { control, register, setValue, watch, handleSubmit } = form;
+  const { control, register, setValue, watch, handleSubmit, getValues } = form;
+  const { state: copyState, copy } = useCopyText();
 
   const annotations = useFieldArray({ control, name: "annotations" });
   // "가져옴" 표시는 실제로 가져왔을 때만 붙인다 — 손으로 적은 값에 붙으면 표시가 거짓이 된다
@@ -151,6 +154,14 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
           <>
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
+            {/*
+              **한 번에 다 복사한다.** 요약을 부탁하려고 다른 도구에 붙여넣는데, 전에는
+              제목·말씀·주석·네 그룹을 칸마다 따로 긁어 이어붙여야 했다. 조판은 내보내기
+              파일과 같은 함수가 정한다(`postToMarkdown`).
+            */}
+            <Button size="sm" type="button" onClick={() => void copy(toCopyText(getValues()))}>
+              {copyLabel(copyState, "전체 복사")}
+            </Button>
             <Button size="sm" type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>
