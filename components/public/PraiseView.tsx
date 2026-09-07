@@ -1,7 +1,13 @@
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { CopyButton } from "@/components/public/CopyButton";
+import {
+  HiddenMeditationBlocks,
+  MeditationCopyButton,
+  OwnerMeditation,
+} from "@/components/public/OwnerMeditation";
 import { RichTextBody } from "@/components/public/RichTextBody";
 import { YouTubeLite } from "@/components/public/YouTubeLite";
+import { loadHiddenMeditation } from "@/lib/actions/praise";
 import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
 import { sectionOrdinals } from "@/lib/editor/praiseForm";
 import { parseYouTubeId } from "@/lib/praise/youtube";
@@ -20,8 +26,11 @@ import { tiptapToCopyText } from "@/lib/render/plainText";
 export function PraiseView({
   content,
   title,
+  postId,
 }: {
   content: Extract<PostContent, { kind: "PRAISE" }>;
+  /** 감춘 덩이를 본인이 볼 때 따로 받아 오는 데 쓴다(OwnerMeditation) */
+  postId: string;
   /** 임베드의 접근성 이름에 쓴다 — URL을 읽어주면 아무 도움이 안 된다 */
   title: string;
 }) {
@@ -35,9 +44,9 @@ export function PraiseView({
     })),
   );
 
-  const meditation = praiseMeditationBlocks(content.meditationAndPrayer).filter(
-    (block) => !block.hidden,
-  );
+  const blocks = praiseMeditationBlocks(content.meditationAndPrayer);
+  const meditation = blocks.filter((block) => !block.hidden);
+  const hasHidden = blocks.some((block) => block.hidden);
 
   /**
    * 복사용 평문. 문단이 곧 의미라 줄바꿈을 살리고(`tiptapToCopyText`) 덩이 사이는 빈 줄로
@@ -70,25 +79,42 @@ export function PraiseView({
         })}
       </div>
 
-      {/* 다 감춘 글은 소제목도 세우지 않는다 — 빈 "묵상과 기도"만 남는다 */}
-      {meditation.length > 0 && (
-        <section className="border-edge border-t pt-5">
-          <div className="mb-2 flex items-baseline justify-between gap-3">
-            <h2 className="font-serif font-bold text-[15px]">묵상과 기도</h2>
-            {/* 복사되는 것은 **여기 보이는 것**이다. 감춘 덩이가 클립보드로 새면
-                감춘 것이 아니다. 옮겨 적을 글자가 없으면 버튼도 세우지 않는다 */}
-            {copyText !== "" && <CopyButton text={copyText} label="묵상과 기도 복사" />}
-          </div>
-          {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
-              구분선을 그으면 없는 절이 생긴다 */}
-          <div className="flex flex-col gap-4">
-            {meditation.map((block, index) => (
-              // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
-              // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
-              <RichTextBody key={index} doc={block.doc} />
-            ))}
-          </div>
-        </section>
+      {/*
+        묵상 절은 **감춘 덩이만 있는 글에서도** 세운다. 본인이 보면 그 덩이가 나오기
+        때문이다 — 공개된 덩이가 없다고 절을 지우면 내 지면에서 그 글이 사라진다.
+      */}
+      {(meditation.length > 0 || hasHidden) && (
+        <OwnerMeditation postId={postId} load={loadHiddenMeditation}>
+          <section className="border-edge border-t pt-5">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <h2 className="font-serif font-bold text-[15px]">묵상과 기도</h2>
+              {/* 읽는 사람에게는 공개된 글자만, 본인에게는 감춘 덩이까지 */}
+              <MeditationCopyButton publicText={copyText} />
+            </div>
+
+            {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
+                구분선을 그으면 없는 절이 생긴다 */}
+            <div className="flex flex-col gap-4">
+              {meditation.map((block, index) => (
+                // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
+                // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
+                <div key={index} className="flex flex-col gap-1.5">
+                  {/* 덩이마다 복사한다 — 묵상 한 덩이, 기도 한 덩이가 따로 옮겨진다.
+                      끊어 쓴 자리가 곧 복사 단위다 */}
+                  <div className="flex justify-end">
+                    <CopyButton
+                      text={tiptapToCopyText(block.doc)}
+                      label={`묵상과 기도 ${index + 1} 복사`}
+                    />
+                  </div>
+                  <RichTextBody doc={block.doc} />
+                </div>
+              ))}
+            </div>
+
+            <HiddenMeditationBlocks />
+          </section>
+        </OwnerMeditation>
       )}
     </>
   );
