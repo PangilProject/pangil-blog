@@ -20,6 +20,7 @@ import { ToolbarDock } from "@/components/editor/ToolbarDock";
 import { GroupTab } from "@/components/record/GroupTab";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
+import { isComposing } from "@/lib/editor/ime";
 import {
   countEmptyAnswers,
   emptyQtForm,
@@ -380,11 +381,22 @@ function QuestionItem({
           control={control}
           name={`questionGroups.${groupIndex}.questions.${questionIndex}.text`}
           render={({ field }) => (
-            <input
+            /*
+              **input이 아니라 자라는 textarea다.** input은 줄바꿈을 못 하므로 긴 질문이
+              칸 안에서 옆으로 밀렸다 — 날마다 솟는 샘물의 `5-2`처럼 한 문장이 긴 질문은
+              끝을 보려고 오른쪽으로 스크롤해야 했다. 질문은 크롤러가 가져오는 값이라
+              길이를 우리가 정할 수 없다.
+            */
+            <AutoGrowTextarea
               {...field}
+              rows={1}
+              onKeyDown={(event) => {
+                // 질문은 한 줄짜리 글이다. 화면에서만 접히고 값에는 줄바꿈이 들어가지 않는다
+                if (event.key === "Enter" && !isComposing(event)) event.preventDefault();
+              }}
               placeholder="질문"
               aria-label={`질문 ${label}`}
-              className="flex-1 bg-transparent font-bold text-sm text-ink outline-none placeholder:text-faint"
+              className="flex-1 bg-transparent font-bold text-sm text-ink leading-[1.7] outline-none placeholder:text-faint"
             />
           )}
         />

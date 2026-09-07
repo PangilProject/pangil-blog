@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -90,6 +90,30 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
     // 질문 원문도 고칠 수 있다 — 365qt 문구가 어색한 날이 있다
     expect(screen.getByLabelText("질문 1")).toBeEnabled();
     expect(screen.getByLabelText("주석 1 용어")).toHaveValue("네 악을 네 머리로");
+  });
+
+  /**
+   * 질문은 크롤러가 가져오는 값이라 길이를 우리가 정할 수 없다. input이던 동안 긴 질문
+   * (`5-2`처럼 한 문장이 긴 것)은 끝을 보려고 오른쪽으로 스크롤해야 했다.
+   */
+  it("질문 칸은 접히는 칸이다 — 긴 질문이 옆으로 밀리지 않는다", () => {
+    renderEditor();
+
+    const question = screen.getByLabelText("질문 1");
+    expect(question.tagName).toBe("TEXTAREA");
+  });
+
+  it("질문에서 엔터는 줄을 만들지 않는다 — 한 줄짜리 글이고 접히는 것은 화면뿐이다", async () => {
+    renderEditor();
+
+    const question = screen.getByLabelText("질문 1");
+    const enter = createEvent.keyDown(question, { key: "Enter" });
+
+    await act(async () => {
+      fireEvent(question, enter);
+    });
+
+    expect(enter.defaultPrevented).toBe(true);
   });
 
   it("답변 칸은 질문마다 하나씩 놓인다", () => {
