@@ -24,6 +24,14 @@ const hidden: HiddenMeditationBlock[] = [
 
 const load = vi.fn();
 
+/**
+ * 쿠키를 직접 대입하면 린트가 막는다(Cookie Store API를 쓰라고 한다). 여기서 필요한 것은
+ * `hasAdminUiHint`가 읽는 그 문자열 하나뿐이라 읽기 값을 갈아끼운다.
+ */
+function setCookie(value: string): void {
+  Object.defineProperty(document, "cookie", { value, configurable: true });
+}
+
 function renderIsland(publicText = "공개된 묵상") {
   return render(
     <OwnerMeditation postId="post-1" load={load}>
@@ -34,7 +42,7 @@ function renderIsland(publicText = "공개된 묵상") {
 }
 
 beforeEach(() => {
-  document.cookie = "";
+  setCookie("");
   load.mockReset().mockResolvedValue(hidden);
 });
 
@@ -48,7 +56,7 @@ describe("OwnerMeditation — 읽는 사람에게는 아무것도 없다", () =>
   });
 
   it("조회가 실패해도 지면은 조용하다 — 세션이 끊긴 것이고 읽는 사람의 일이 아니다", async () => {
-    document.cookie = "admin_ui=1";
+    setCookie("admin_ui=1");
     load.mockRejectedValue(new Error("Unauthorized"));
 
     renderIsland();
@@ -61,7 +69,7 @@ describe("OwnerMeditation — 읽는 사람에게는 아무것도 없다", () =>
 
 describe("OwnerMeditation — 본인이 볼 때", () => {
   beforeEach(() => {
-    document.cookie = "admin_ui=1";
+    setCookie("admin_ui=1");
   });
 
   it("감춘 덩이가 나오고, 안 나가는 것이라고 적는다", async () => {
