@@ -29,7 +29,12 @@ npm run test                 # Vitest 단위 테스트
 npx prisma migrate dev       # 스키마 변경 (수동 SQL·마이그레이션 편집 금지)
 npm run crawl -- --dry-run   # 크롤러 파싱 검증 (ingest POST 없이 6질문·4그룹 확인)
 npm run migrate -- --dry-run # 티스토리 마이그레이션 리포트 (DB 미기록)
+npm run release -- --dry-run # 프로덕션 배포 (검사만; 실제 배포는 플래그 없이)
 ```
+
+> `main` 머지는 배포가 아니다(Hobby가 조직 private 레포 연동을 막는다). 배포는 `npm run release`로
+> 손으로 돌린다 — 작업 트리가 더럽거나 `main`이 안 푼 커밋을 들고 있거나 CI가 실패한 커밋이면 멈춘다.
+> `scripts/deploy.mts`는 이름이 비슷하지만 다른 것이다: Vercel **빌드 안에서** 마이그레이션을 돌린다.
 
 ## 세션 운영 시 주의 (이 프로젝트 특유의 함정)
 
