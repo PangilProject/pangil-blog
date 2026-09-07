@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && node scripts/deploy.mts && next build",
+    "release": "node scripts/release.mts",
     "start": "next start",
     "typegen": "next typegen",
     "typecheck": "next typegen && tsc --noEmit",
