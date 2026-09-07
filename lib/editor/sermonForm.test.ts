@@ -21,7 +21,7 @@ const filled = {
   scriptureRef: "전도서 9장 7~10절",
   scriptureBody: "너는 가서 기쁨으로",
   body: doc("설교 속기"),
-  summary: EMPTY_TIPTAP_DOC,
+  summary: doc("예배 후 정리"),
   tags: [],
 };
 
@@ -33,13 +33,13 @@ describe("toDraftContent — 자동 저장", () => {
     if (content.kind === "SERMON") expect(content.scriptureRef).toBe("전도서");
   });
 
-  it("빈 요약은 넣지 않는다 — 예배 후 선택 항목이다", () => {
-    const content = toDraftContent(filled);
+  it("빈 요약은 넣지 않는다 — 자동 저장은 예배 첫 몇 초부터 돈다", () => {
+    const content = toDraftContent({ ...filled, summary: EMPTY_TIPTAP_DOC });
     expect("summary" in content).toBe(false);
   });
 
   it("요약을 적으면 담는다", () => {
-    const content = toDraftContent({ ...filled, summary: doc("예배 후 정리") });
+    const content = toDraftContent(filled);
     expect("summary" in content).toBe(true);
   });
 });
@@ -64,10 +64,13 @@ describe("SermonPublishFormSchema — 발행 게이트의 화면 쪽 알림", ()
     );
   });
 
-  it("요약은 없어도 통과한다", () => {
-    expect(
-      SermonPublishFormSchema.safeParse({ ...filled, summary: EMPTY_TIPTAP_DOC }).success,
-    ).toBe(true);
+  it("요약이 없으면 막는다 — 선택이 아니라 필수다", () => {
+    const result = SermonPublishFormSchema.safeParse({ ...filled, summary: EMPTY_TIPTAP_DOC });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("예배 후 요약을 적어주세요");
+    }
   });
 });
 
