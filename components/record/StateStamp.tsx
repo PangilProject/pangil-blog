@@ -15,7 +15,13 @@ import { cn } from "@/lib/utils";
  * 자리와 크기는 쓰는 쪽이 정한다. 목록 카드처럼 **찍을 빈 모서리가 없는 곳**에서는 줄 안에
  * 서야 하는데(`PostList`의 새 글 표시), 그렇다고 다른 문법을 하나 더 만들 이유는 없다.
  */
-export const STAMP_SURFACE = "border-[1.5px] bg-[rgb(255_255_255_/_60%)] font-typewriter";
+/**
+ * 바탕은 **토큰이어야 한다.** 흰색 60%를 박아 두었던 동안 다크에서 어두운 카드 위에 밝은 판이
+ * 얹혀, 그 위의 글자가 `크롤러 실패` 1.26:1 · `새 글` 1.57:1이 됐다 — 하필 03 §3이
+ * "눈에 걸리게 찍는다(프리모템 #1)"고 적어 둔 그 표시다. 카드색을 반투명으로 쓰면
+ * "종이가 비친다"는 뜻은 그대로면서 테마를 따라간다.
+ */
+export const STAMP_SURFACE = "border-[1.5px] bg-card/60 font-typewriter";
 
 export type StateStampKind = "draft-arrived" | "fresh-start" | "done" | "crawl-failed";
 
@@ -23,7 +29,8 @@ const STAMP: Record<StateStampKind, { label: string; tone: string }> = {
   "draft-arrived": { label: "초안 도착", tone: "border-(--accent) text-(--accent)" },
   "fresh-start": { label: "새로 시작", tone: "border-faint text-faint" },
   done: { label: "완료", tone: "border-ok text-ok" },
-  "crawl-failed": { label: "크롤러 실패", tone: "border-warn text-warn" },
+  // 테두리는 채움색(`--warn`), 글자는 글자색(`--warn-ink`)이다 — 종이 위의 --warn은 2.24:1이다
+  "crawl-failed": { label: "크롤러 실패", tone: "border-warn text-warn-ink" },
 };
 
 export function StateStamp({ kind, className }: { kind: StateStampKind; className?: string }) {

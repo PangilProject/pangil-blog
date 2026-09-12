@@ -22,7 +22,11 @@
   --accent-faith: #c4553b; /* 인주 빨강 */
   --accent-dev: #2f5a8f; /* 잉크 블루 */
   --ok: #3e7050; /* 저장됨·크롤러 정상 */
-  --warn: #d8a24a; /* 저장 중·동기화 대기 */
+  --warn: #d8a24a; /* 저장 중·동기화 대기 — 채움·테두리용 */
+  /* 같은 경고를 **글자로** 쓸 때. --warn은 종이 위에서 2.24:1이라 읽히지 않는다.
+     이미 손으로 고른 값이 CrawlBand에 하드코딩돼 있었고(#8a6a26), 그 값은 다크가 없어
+     어두운 지면에서 2.98:1로 뒤집혔다 — 그래서 토큰으로 올린다. */
+  --warn-ink: #966920;
   --line: #d9e3ec; /* 카드 하늘 괘선 */
   --edge: #e7e0d2; /* 보더 */
   --postit: #fbf0b8; /* 메모지 */
@@ -123,6 +127,7 @@
   --line: #3a4550;
   --edge: #3a352b;
   --edge-strong: #453f33;
+  --warn-ink: #e0b568;
   --postit: #6b6134;
   --crawl: #2b2620;
   --surface-hover: #322c23;
@@ -150,6 +155,7 @@
   --color-accent-dev: var(--accent-dev);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
   --color-line: var(--line);
   --color-edge: var(--edge);
   --color-postit: var(--postit);
