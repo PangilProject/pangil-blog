@@ -56,7 +56,7 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
       : [];
 
   return (
-    <main className="flex w-full flex-col gap-8">
+    <main className="group/page flex w-full flex-col gap-8">
       <JsonLd
         data={articleJsonLd({
           site: "dev",
@@ -70,7 +70,7 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
         })}
       />
 
-      <SiteHeader site="dev" />
+      <SiteHeader site="dev" foldsToc />
 
       {/*
         데스크탑에서는 사이드바 + 지면 + 목차 세 칸이다. 지면 폭은 본문 가독 폭(--container-measure)에
@@ -96,8 +96,11 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
           sticky는 **flex 아이템**에 걸어야 한다. 안쪽 nav에 걸면 그 부모(이 div)가 nav 높이만큼만
           커서 붙어 움직일 여지가 없다 — 목차가 스크롤을 따라오지 않던 이유다
         */}
-        {/* 폭은 이 칸이 아니라 목차 자신이 들고 있다 — 접으면 그 자리를 본문이 가져가야 한다 */}
-        <div className="order-1 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto">
+        {/*
+          접기는 헤더의 손잡이가 켠다(SiteHeader). 넓은 화면에서만 걷어내는 이유는 좁은 화면의
+          목차가 본문 위 접이식이라 이미 접혀 있어서다 — 그쪽까지 걷으면 목차가 아예 사라진다
+        */}
+        <div className="order-1 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto lg:group-has-[#toc-fold:checked]/page:hidden">
           <Toc headings={headings} />
         </div>
       </div>

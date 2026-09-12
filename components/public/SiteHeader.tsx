@@ -1,8 +1,13 @@
 import Link from "next/link";
 
+import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { editorPath } from "@/lib/record/todayCard";
 import type { PublicSite } from "@/lib/revalidate/tags";
+import { cn } from "@/lib/utils";
+
+/** 헤더의 손잡이와 목차 칸이 같은 이름을 봐야 한다 — 어긋나면 눌러도 아무 일이 없다 */
+const TOC_FOLD_ID = "toc-fold";
 
 /**
  * 공개 지면 상단 (프로토타입 `shead` · 02 §1).
@@ -23,8 +28,12 @@ import type { PublicSite } from "@/lib/revalidate/tags";
  *
  * 가는 곳은 지면이 정한다: dev는 기술 에디터, faith는 묵상 글쓰기 하나다(02 §2.4) — 그
  * 화면이 요일과 오늘 몫 초안을 보고 서식을 고른다.
+ *
+ * **목차 손잡이는 여기 선다**(`foldsToc`). 목차 칸 안에 두었을 때는 접고 펼 때마다 버튼이
+ * 칸을 따라 움직였다 — 이 줄은 글 길이와 무관하게 늘 같은 자리에 있다. 기술 글에만 목차가
+ * 있으므로 그 지면만 넘긴다. 없는 지면에 두면 눌러도 아무 일이 없는 버튼이 남는다.
  */
-export function SiteHeader({ site }: { site: PublicSite }) {
+export function SiteHeader({ site, foldsToc = false }: { site: PublicSite; foldsToc?: boolean }) {
   return (
     <header className="flex flex-wrap items-center justify-end gap-3 border-edge border-b pb-3">
       <nav className="flex items-center gap-4 font-typewriter text-[11px] text-faint">
@@ -38,7 +47,40 @@ export function SiteHeader({ site }: { site: PublicSite }) {
           글쓰기
         </Link>
         <ThemeToggle />
+        {foldsToc && <TocFold />}
       </nav>
     </header>
+  );
+}
+
+/**
+ * 목차를 접는 손잡이.
+ *
+ * 사이드바와 같은 물건이다 — 숨긴 체크박스 하나, 자바스크립트 없음(04 §3.6). 다만 켜는 것이
+ * 이 줄 밖에 있어서, 지면 라우트가 `main`에 `group/page`를 걸고 목차 칸이 그 그룹을 본다.
+ * 선택자에 id를 적는 이유는 그 지면 어딘가에 다른 체크박스가 생겨도 목차가 같이 접히지
+ * 않게 하려는 것이다.
+ *
+ * 좁은 화면에서는 숨는다. 거기서는 목차가 본문 위 접이식(`details`)이라 이 손잡이가 아무
+ * 것도 하지 않는다.
+ */
+function TocFold() {
+  return (
+    <>
+      <input id={TOC_FOLD_ID} type="checkbox" className="sr-only" />
+      <label
+        htmlFor={TOC_FOLD_ID}
+        title="목차"
+        className={cn(PANEL_TOGGLE, "hidden lg:inline-flex")}
+      >
+        <span aria-hidden className="group-has-[#toc-fold:checked]/page:hidden">
+          {FOLD_RIGHT}
+        </span>
+        <span aria-hidden className="hidden group-has-[#toc-fold:checked]/page:inline">
+          {FOLD_LEFT}
+        </span>
+        <span className="sr-only">목차 접고 펴기</span>
+      </label>
+    </>
   );
 }
