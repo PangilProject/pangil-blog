@@ -1,4 +1,5 @@
 import type { RecordCounts } from "@/lib/db/publicLists";
+import { cn } from "@/lib/utils";
 
 /**
  * 목록 상단 (03 §5.1) — 월 표기 + "이번 달 N장 · 통산 N장".
@@ -40,7 +41,18 @@ export function ListHeader({
       </div>
 
       {/* 검색은 폼 하나다 — 공개 페이지에 클라이언트 JS를 늘리지 않는다(04 §3.6) */}
-      <form action={searchAction} className="flex items-center gap-2 border-edge border-b pb-1.5">
+      {/*
+        포커스는 **괘선이 받는다.** 입력에 `outline-none`만 두었더니 키보드로 들어와도 화면에
+        아무 일이 없었다(옆의 `찾기` 버튼은 표시가 있어서 더 어긋나 보였다). 네모 링을 씌우는
+        대신 이 줄의 밑줄이 잉크색이 된다 — 종이 위의 밑줄이 이 지면의 문법이다.
+      */}
+      <form
+        action={searchAction}
+        className={cn(
+          "flex items-center gap-2 border-edge border-b pb-1.5",
+          "has-[:focus-visible]:border-(--accent)",
+        )}
+      >
         <input
           type="search"
           name="q"
