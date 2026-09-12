@@ -88,31 +88,11 @@ function applyCommand(editor: Editor, command: ToolbarCommand) {
 }
 
 /**
- * 표 조작. 커서가 표 안에 있을 때만 불린다.
- *
- * **Tab은 다음 칸으로 가지만 지우는 길은 없었다** — 행·열을 지우려면 ProseMirror 명령을
- * 부르는 수밖에 없고, 그 자리가 화면에 없었다.
+ * 표에 하는 일. **행·열은 여기 없다** — 표 위의 손잡이가 맡는다(`TableNodeView`).
+ * 툴바에 두면 "커서가 어쩌다 놓인 행"이 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다.
  */
 function applyTableCommand(editor: Editor, command: TableCommand) {
-  const chain = editor.chain().focus();
-
-  switch (command) {
-    case "addRowAfter":
-      chain.addRowAfter().run();
-      break;
-    case "deleteRow":
-      chain.deleteRow().run();
-      break;
-    case "addColumnAfter":
-      chain.addColumnAfter().run();
-      break;
-    case "deleteColumn":
-      chain.deleteColumn().run();
-      break;
-    case "deleteTable":
-      chain.deleteTable().run();
-      break;
-  }
+  if (command === "deleteTable") editor.chain().focus().deleteTable().run();
 }
 
 export function ConnectedEditorToolbar({

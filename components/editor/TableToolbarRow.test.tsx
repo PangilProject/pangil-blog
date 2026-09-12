@@ -50,12 +50,17 @@ describe("TableToolbarRow — 표 밖에서는 크기를 고른다", () => {
   });
 });
 
-describe("TableToolbarRow — 표 안에서는 행·열을 만진다", () => {
-  it("더하고 지우는 자리가 다 있다", () => {
+describe("TableToolbarRow — 표 안에서는 표 자체만 만진다", () => {
+  /**
+   * 행·열은 표 위의 손잡이가 맡는다(TableNodeView). 툴바에 두면 "커서가 어쩌다 놓인 행"이
+   * 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다. 표 삭제는 그 모호함이 없다.
+   */
+  it("표 삭제만 남는다", () => {
     render(<TableToolbarRow inTable />);
 
-    for (const label of ["행 추가", "행 삭제", "열 추가", "열 삭제", "표 삭제"]) {
-      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "표 삭제" })).toBeInTheDocument();
+    for (const gone of ["행 추가", "행 삭제", "열 추가", "열 삭제"]) {
+      expect(screen.queryByRole("button", { name: gone })).toBeNull();
     }
     // 표 안에서는 크기 격자를 내지 않는다 — 이미 표가 있다
     expect(screen.queryByRole("button", { name: "⊞ 표" })).toBeNull();
@@ -65,9 +70,9 @@ describe("TableToolbarRow — 표 안에서는 행·열을 만진다", () => {
     const onTableCommand = vi.fn();
     render(<TableToolbarRow inTable onTableCommand={onTableCommand} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "열 삭제" }));
+    fireEvent.click(screen.getByRole("button", { name: "표 삭제" }));
 
-    expect(onTableCommand).toHaveBeenCalledWith("deleteColumn");
+    expect(onTableCommand).toHaveBeenCalledWith("deleteTable");
   });
 });
 

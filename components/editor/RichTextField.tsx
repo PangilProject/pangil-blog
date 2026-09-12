@@ -2,7 +2,7 @@
 
 import { CodeBlock } from "@tiptap/extension-code-block";
 import { Image } from "@tiptap/extension-image";
-import { TableKit } from "@tiptap/extension-table";
+import { Table, TableKit } from "@tiptap/extension-table";
 import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 
 import { CodeBlockNodeView } from "@/components/editor/CodeBlockNodeView";
 import { useEditorFocus } from "@/components/editor/EditorFocusContext";
+import { TableNodeView } from "@/components/editor/TableNodeView";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
 import { BlockSplitOnDoubleEnter } from "@/lib/editor/blockSplit";
 import { CodeBlockFenceOnEnter } from "@/lib/editor/codeBlockFence";
@@ -117,10 +118,16 @@ export function RichTextField({
             }),
             CodeHighlight,
             Image.configure({ inline: false }),
-            // 표는 **툴바에 넣지 않는다**(ADR-001 최소 툴바). 그런데도 등록하는 이유는
-            // 티스토리에서 옮겨온 138편에 표가 298개 있고, 확장이 없으면 그 글을 한 번
-            // 편집하는 순간 Tiptap이 모르는 노드를 조용히 버린다 — 이관한 표를 지키는 장치다
-            TableKit.configure({ table: { resizable: false } }),
+            // 이관해 온 138편에 표가 298개 있다. 확장이 없으면 그 글을 한 번 편집하는
+            // 순간 Tiptap이 모르는 노드를 조용히 버린다 — 이관한 표를 지키는 장치이자,
+            // 이제는 툴바에서 새 표를 놓는 길이기도 하다(TableToolbarRow)
+            TableKit.configure({ table: false }),
+            // 행·열 손잡이를 표 위에 얹는다(TableNodeView). 조작 대상이 화면에 있어야 한다
+            Table.configure({ resizable: false }).extend({
+              addNodeView() {
+                return ReactNodeViewRenderer(TableNodeView);
+              },
+            }),
             // 스크린샷 붙여넣기가 기술 글의 실제 작성 경로다(04 §3.3)
             ...(uploadImage ? [ImagePaste.configure({ upload: uploadImage })] : []),
           ]
