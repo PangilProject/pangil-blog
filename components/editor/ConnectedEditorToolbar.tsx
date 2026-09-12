@@ -7,6 +7,7 @@ import {
   type BlockStyle,
   EditorToolbar,
   type EditorToolbarVariant,
+  type TableCommand,
   type ToolbarCommand,
 } from "@/components/editor/EditorToolbar";
 
@@ -83,12 +84,33 @@ function applyCommand(editor: Editor, command: ToolbarCommand) {
     case "horizontalRule":
       chain.setHorizontalRule().run();
       break;
-    case "table":
-      /*
-        표는 **켜고 끄는 것이 아니라 놓는 것**이다 — 구분선과 같은 부류라 활성 표시가 없다.
-        3×3에 머리 줄 하나로 연다. 빈 표를 크게 열면 지우는 일부터 시작하게 된다.
-      */
-      chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }
+}
+
+/**
+ * 표 조작. 커서가 표 안에 있을 때만 불린다.
+ *
+ * **Tab은 다음 칸으로 가지만 지우는 길은 없었다** — 행·열을 지우려면 ProseMirror 명령을
+ * 부르는 수밖에 없고, 그 자리가 화면에 없었다.
+ */
+function applyTableCommand(editor: Editor, command: TableCommand) {
+  const chain = editor.chain().focus();
+
+  switch (command) {
+    case "addRowAfter":
+      chain.addRowAfter().run();
+      break;
+    case "deleteRow":
+      chain.deleteRow().run();
+      break;
+    case "addColumnAfter":
+      chain.addColumnAfter().run();
+      break;
+    case "deleteColumn":
+      chain.deleteColumn().run();
+      break;
+    case "deleteTable":
+      chain.deleteTable().run();
       break;
   }
 }
@@ -112,6 +134,16 @@ export function ConnectedEditorToolbar({
       activeCommands={editor ? activeCommands(editor) : []}
       onBlockStyleChange={(style) => editor && applyBlockStyle(editor, style)}
       onCommand={(command) => editor && applyCommand(editor, command)}
+      inTable={editor?.isActive("table") ?? false}
+      onInsertTable={(rows, cols) =>
+        editor
+          ?.chain()
+          .focus()
+          // 머리 줄은 늘 붙인다 — 표의 첫 줄이 이름인 경우가 대부분이고, 아니면 지우면 된다
+          .insertTable({ rows, cols, withHeaderRow: true })
+          .run()
+      }
+      onTableCommand={(command) => editor && applyTableCommand(editor, command)}
     />
   );
 }

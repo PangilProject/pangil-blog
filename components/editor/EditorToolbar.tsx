@@ -1,5 +1,6 @@
 "use client";
 
+import { type TableCommand, TableToolbarRow } from "@/components/editor/TableToolbarRow";
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ import { cn } from "@/lib/utils";
  * 목록이므로 "떠다니는 UI 금지"(ADR-001 §5)에도 어긋나지 않는다.
  */
 
+export type { TableCommand };
+
 export type BlockStyle = "p" | "h2" | "h3" | "blockquote" | "pre";
 
 export type ToolbarCommand =
@@ -33,8 +36,7 @@ export type ToolbarCommand =
   | "bulletList"
   | "orderedList"
   | "blockquote"
-  | "horizontalRule"
-  | "table";
+  | "horizontalRule";
 
 export type EditorToolbarVariant = "full" | "slim";
 
@@ -58,11 +60,11 @@ export const MARK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarComma
 };
 
 /**
- * slim에는 번호 목록·표를 두지 않는다. 설교는 라이브 속기고 찬양은 가사 타이핑이라,
+ * slim에는 번호 목록을 두지 않는다. 표도 마찬가지다(표 줄은 full에만 붙는다). 설교는 라이브 속기고 찬양은 가사 타이핑이라,
  * 그 자리에서 손이 멈출 만한 것을 늘리지 않는다(02 §5.3 방해 요소 제로).
  */
 export const BLOCK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
-  full: ["bulletList", "orderedList", "blockquote", "horizontalRule", "table"],
+  full: ["bulletList", "orderedList", "blockquote", "horizontalRule"],
   slim: ["bulletList", "blockquote"],
 };
 
@@ -74,7 +76,6 @@ const COMMAND_LABELS: Record<ToolbarCommand, string> = {
   orderedList: "번호 목록",
   blockquote: "인용",
   horizontalRule: "구분선",
-  table: "표",
 };
 
 const COMMAND_GLYPHS: Record<ToolbarCommand, string> = {
@@ -85,7 +86,6 @@ const COMMAND_GLYPHS: Record<ToolbarCommand, string> = {
   orderedList: "1. 번호",
   blockquote: "❝ 인용",
   horizontalRule: "— 구분선",
-  table: "⊞ 표",
 };
 
 export type EditorToolbarProps = {
@@ -95,6 +95,10 @@ export type EditorToolbarProps = {
   activeCommands?: ToolbarCommand[];
   onBlockStyleChange?: (style: BlockStyle) => void;
   onCommand?: (command: ToolbarCommand) => void;
+  /** 커서가 표 안에 있는가 — 표 줄이 크기 고르기에서 행·열 조작으로 바뀐다 */
+  inTable?: boolean;
+  onInsertTable?: (rows: number, cols: number) => void;
+  onTableCommand?: (command: TableCommand) => void;
   /** 우측 힌트 — "마크다운 단축 입력도 돼요" 등 */
   hint?: string;
   className?: string;
@@ -106,6 +110,9 @@ export function EditorToolbar({
   activeCommands = [],
   onBlockStyleChange,
   onCommand,
+  inTable,
+  onInsertTable,
+  onTableCommand,
   hint,
   className,
 }: EditorToolbarProps) {
@@ -162,6 +169,15 @@ export function EditorToolbar({
           typewriter
         />
       ))}
+
+      {/* 표는 켜고 끄는 것이 아니라 크기를 고르는 것이라 제 줄을 쓴다 */}
+      {variant === "full" && (
+        <TableToolbarRow
+          inTable={inTable}
+          onInsertTable={onInsertTable}
+          onTableCommand={onTableCommand}
+        />
+      )}
 
       {hint && <span className="ml-auto font-typewriter text-[10px] text-[#a79c86]">{hint}</span>}
     </div>

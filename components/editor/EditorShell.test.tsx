@@ -17,7 +17,7 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
   it("full은 기술·큐티 구성 전체를 낸다", () => {
     render(<EditorToolbar variant="full" />);
 
-    for (const label of ["굵게", "기울임", "밑줄", "목록", "번호 목록", "인용", "구분선", "표"]) {
+    for (const label of ["굵게", "기울임", "밑줄", "목록", "번호 목록", "인용", "구분선"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
   });
