@@ -25,6 +25,11 @@ export type RecordCardProps = {
   /** 이미 포맷된 청구기호 문자열 (lib/record/callNumber). 초안이면 비워둔다 */
   callNumber?: string | null;
   /** 우상단 메타 — 날짜 또는 주기 표기 */
+  /**
+   * 청구기호 옆에 붙는 작은 표시. **도장(overlay)이 아니라 줄 안에 선다** — 카드에 빈
+   * 모서리가 없어서, 찍으면 날짜를 덮는다(실제로 덮었다).
+   */
+  badge?: ReactNode;
   aside?: string | null;
   title: ReactNode;
   /** 말씀 범위·요약 한 줄 */
@@ -57,6 +62,7 @@ export function RecordCard({
   variant = "faith",
   state = "default",
   callNumber,
+  badge,
   aside,
   title,
   subtitle,
@@ -73,9 +79,12 @@ export function RecordCard({
 
   const body = (
     <>
-      {(callNumber || aside) && (
-        <div className="flex justify-between pb-3 font-typewriter text-[10.5px] text-(--card-accent)">
-          <span>{callNumber}</span>
+      {(callNumber || aside || badge) && (
+        <div className="flex items-center justify-between gap-2 pb-3 font-typewriter text-[10.5px] text-(--card-accent)">
+          <span className="flex items-center gap-1.5">
+            {callNumber}
+            {badge}
+          </span>
           <span className="text-faint">{aside}</span>
         </div>
       )}

@@ -1,5 +1,4 @@
 import { RecordCard } from "@/components/record/RecordCard";
-import { StateStamp } from "@/components/record/StateStamp";
 import type { ListCard } from "@/lib/db/publicLists";
 import { formatCallNumber } from "@/lib/record/callNumber";
 import { freshPostIds } from "@/lib/record/freshPosts";
@@ -61,11 +60,26 @@ export function PostList({
             title={card.title}
             subtitle={card.scriptureRef ?? card.excerpt}
             meta={metaOf(card)}
-            overlay={fresh.has(card.id) ? <StateStamp kind="new" /> : undefined}
+            badge={fresh.has(card.id) ? <FreshBadge /> : undefined}
           />
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * 방금 올라온 글 표시.
+ *
+ * **도장으로 찍지 않는다.** 카드에는 빈 모서리가 없다 — 오른쪽 위는 날짜 자리라 찍으면
+ * 날짜를 덮는다(실제로 덮었다). 청구기호 옆에 서면 윗줄의 문법과도 맞는다:
+ * 왼쪽은 이 글이 무엇인가, 오른쪽은 언제인가.
+ */
+function FreshBadge() {
+  return (
+    <span className="border border-(--card-accent) px-[5px] py-px leading-none text-[9.5px]">
+      새 글
+    </span>
   );
 }
 
