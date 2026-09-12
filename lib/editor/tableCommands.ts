@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/core";
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { CellSelection } from "@tiptap/pm/tables";
 
 import { cellPosition } from "@/lib/editor/tableGeometry";
@@ -133,4 +133,78 @@ export function clearAxis(
 
   view.dispatch(tr);
   editor.commands.focus();
+}
+
+/**
+ * 칸을 합친 표인가.
+ *
+ * 합친 칸이 있으면 **순서를 바꾸지 않는다.** 3행짜리 칸을 한 줄만 옮기면 그 칸이 무엇을
+ * 덮어야 하는지 답이 없다 — 조용히 표를 망가뜨리느니 못 한다고 말하는 편이 낫다.
+ */
+export function hasMergedCells(table: ProseMirrorNode): boolean {
+  for (let rowIndex = 0; rowIndex < table.childCount; rowIndex += 1) {
+    const row = table.child(rowIndex);
+
+    for (let cellIndex = 0; cellIndex < row.childCount; cellIndex += 1) {
+      const { colspan, rowspan } = row.child(cellIndex).attrs;
+      if ((colspan ?? 1) > 1 || (rowspan ?? 1) > 1) return true;
+    }
+  }
+
+  return false;
+}
+
+/** 배열에서 하나를 빼서 다른 자리에 꽂는다 */
+function moved<T>(items: T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [picked] = next.splice(from, 1);
+  if (picked === undefined) return items;
+
+  next.splice(to, 0, picked);
+  return next;
+}
+
+/**
+ * 행·열의 자리를 바꾼다.
+ *
+ * 자리 셈을 하지 않고 **표의 내용을 다시 짜서 통째로 갈아끼운다.** 옮기는 동안 앞자리가
+ * 바뀌면 뒷자리가 밀리는데, 그 셈을 손으로 하면 한 번 틀렸을 때 표가 깨진 채로 저장된다.
+ * 되돌리기도 한 걸음이 된다.
+ */
+export function moveAxis(
+  editor: Editor,
+  table: ProseMirrorNode,
+  tablePos: number,
+  axis: Axis,
+  from: number,
+  to: number,
+): boolean {
+  if (from === to || hasMergedCells(table)) return false;
+
+  const rows: ProseMirrorNode[] = [];
+  for (let index = 0; index < table.childCount; index += 1) rows.push(table.child(index));
+
+  let next: ProseMirrorNode[];
+
+  if (axis === "row") {
+    if (to < 0 || to >= rows.length) return false;
+    next = moved(rows, from, to);
+  } else {
+    const width = rows[0]?.childCount ?? 0;
+    if (to < 0 || to >= width) return false;
+
+    next = rows.map((row) => {
+      const cells: ProseMirrorNode[] = [];
+      for (let index = 0; index < row.childCount; index += 1) cells.push(row.child(index));
+
+      return row.copy(Fragment.fromArray(moved(cells, from, to)));
+    });
+  }
+
+  const { state, view } = editor;
+  view.dispatch(
+    state.tr.replaceWith(tablePos + 1, tablePos + 1 + table.content.size, Fragment.fromArray(next)),
+  );
+  editor.commands.focus();
+  return true;
 }

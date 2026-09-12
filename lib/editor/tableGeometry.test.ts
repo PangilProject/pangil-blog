@@ -1,8 +1,11 @@
 import { getSchema } from "@tiptap/core";
 import { TableKit } from "@tiptap/extension-table";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { EditorState } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { describe, expect, it } from "vitest";
 
+import { hasMergedCells, moveAxis } from "@/lib/editor/tableCommands";
 import { cellPosition, columnCount, rowCount } from "@/lib/editor/tableGeometry";
 
 /**
@@ -96,5 +99,91 @@ describe("cellPosition — 가리킨 칸에 선택을 놓기 위한 자리", () 
     if (pos === null) throw new Error("자리를 못 찾았다");
 
     expect(doc.resolve(pos).parent.textContent).toBe("머리");
+  });
+});
+
+describe("moveAxis — 손잡이를 끌어 자리 바꾸기", () => {
+  /** 내용을 다시 짜서 통째로 갈아끼운다. 자리 셈을 손으로 하면 한 번 틀렸을 때 표가 깨진다 */
+  function editorFor(rows: number, cols: number) {
+    const { table, doc } = tableDoc(rows, cols);
+    const dispatched: { doc: ProseMirrorNode }[] = [];
+
+    const state = { doc, tr: EditorState.create({ doc }).tr };
+    const editor = {
+      state,
+      view: { dispatch: (tr: { doc: ProseMirrorNode }) => dispatched.push(tr) },
+      commands: { focus: () => true },
+    } as unknown as Parameters<typeof moveAxis>[0];
+
+    return { editor, table, dispatched };
+  }
+
+  it("행을 아래로 옮긴다", () => {
+    const { editor, table, dispatched } = editorFor(3, 2);
+
+    expect(moveAxis(editor, table, 0, "row", 0, 2)).toBe(true);
+
+    const moved = dispatched[0]?.doc.child(0);
+    expect(moved?.child(2).textContent).toBe("0-00-1");
+    expect(moved?.child(0).textContent).toBe("1-01-1");
+  });
+
+  it("열을 오른쪽으로 옮긴다 — 모든 줄에서 같이 움직인다", () => {
+    const { editor, table, dispatched } = editorFor(2, 3);
+
+    expect(moveAxis(editor, table, 0, "column", 0, 2)).toBe(true);
+
+    const moved = dispatched[0]?.doc.child(0);
+    expect(moved?.child(0).child(2).textContent).toBe("0-0");
+    expect(moved?.child(1).child(2).textContent).toBe("1-0");
+  });
+
+  it("제자리면 아무 일도 하지 않는다", () => {
+    const { editor, table, dispatched } = editorFor(3, 2);
+
+    expect(moveAxis(editor, table, 0, "row", 1, 1)).toBe(false);
+    expect(dispatched).toHaveLength(0);
+  });
+
+  it("범위 밖으로는 못 옮긴다", () => {
+    const { editor, table } = editorFor(3, 2);
+
+    expect(moveAxis(editor, table, 0, "row", 0, 3)).toBe(false);
+    expect(moveAxis(editor, table, 0, "column", 0, -1)).toBe(false);
+  });
+});
+
+describe("hasMergedCells — 합친 표는 순서를 바꾸지 않는다", () => {
+  /**
+   * 3행짜리 칸을 한 줄만 옮기면 그 칸이 무엇을 덮어야 하는지 답이 없다.
+   * 조용히 표를 망가뜨리느니 못 한다고 말하는 편이 낫다.
+   */
+  it("합친 칸이 없으면 거짓이다", () => {
+    expect(hasMergedCells(tableDoc(2, 2).table)).toBe(false);
+  });
+
+  it("rowspan이 있으면 참이다", () => {
+    const doc = schema.nodeFromJSON({
+      type: "doc",
+      content: [
+        {
+          type: "table",
+          content: [
+            {
+              type: "tableRow",
+              content: [
+                {
+                  type: "tableCell",
+                  attrs: { rowspan: 2 },
+                  content: [{ type: "paragraph" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(hasMergedCells(doc.child(0))).toBe(true);
   });
 });
