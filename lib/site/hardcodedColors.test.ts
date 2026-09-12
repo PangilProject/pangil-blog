@@ -18,7 +18,6 @@ import { describe, expect, it } from "vitest";
 
 /** 파일 → 그 파일이 들고 있는 색 리터럴. **늘리지 않는다.** */
 const BASELINE: Record<string, string[]> = {
-  "components/admin/NitList.tsx": ["#5c5334", "#a0904e"],
   "components/editor/CodeBlockNodeView.tsx": ["#3a3630", "#C7B58A"],
   "components/editor/CrawlBand.tsx": ["#6e5d38", "#98835a", "#efe3c8"],
   "components/editor/EditorToolbar.tsx": ["#4e483c", "#a79c86", "#c9a98a", "#dcd4c2"],
@@ -26,9 +25,6 @@ const BASELINE: Record<string, string[]> = {
   "components/editor/QtEditor.tsx": ["#b98f4f", "#dcc9b8", "#fbf5ec"],
   "components/editor/SaveIndicator.tsx": ["#cfc8b6"],
   "components/public/CodeBlock.tsx": ["#3a3630", "#8B8474", "#F3EFE4"],
-  "components/record/PostIt.tsx": ["#5c5334", "#a0904e"],
-  "components/record/Tape.tsx": ["rgb(160_145_90_/_40%)", "rgb(233_222_168_/_55%)"],
-  "components/ui/button.tsx": ["#fff8f0"],
 };
 
 /** Tailwind 임의값으로 박힌 색. `bg-[#...]` · `text-[rgb(...)]` 같은 것들 */

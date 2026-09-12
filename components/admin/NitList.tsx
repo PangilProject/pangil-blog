@@ -33,7 +33,8 @@ export function NitList({ nits, total }: { nits: Nit[]; total: number }) {
               <input type="hidden" name="id" value={nit.id} />
               <button
                 type="submit"
-                className="font-typewriter text-[10px] text-[#a0904e] hover:text-[#5c5334]"
+                // 이 줄은 메모지(PostIt) 안에 선다 — 같은 종이의 토큰을 쓴다
+                className="font-typewriter text-[10px] text-ink-soft hover:text-ink"
               >
                 고쳤음
               </button>
