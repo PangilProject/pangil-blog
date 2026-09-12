@@ -248,22 +248,6 @@ export async function findDwellTimes(days = 30, limit = 8): Promise<DwellStat[]>
     LIMIT ${limit}`;
 }
 
-export type AllTimeTotals = { views: number; days: number };
-
-/**
- * 누적 통산. 유입이 적어도 **쌓이는 것이 보여야** 한다(프리모템 #4 — 검색 유입 0이 지속되면
- * 동기가 붕괴한다. 그 대응이 "유입 외 지표 병행 표시"다).
- */
-export async function findAllTimeTotals(): Promise<AllTimeTotals> {
-  const rows = await prisma.$queryRaw<AllTimeTotals[]>`
-    SELECT count(*) FILTER (WHERE "eventType"::text = 'PAGEVIEW')::int AS views,
-           count(DISTINCT ("occurredAt" + interval '9 hours')::date)::int AS days
-    FROM "StatEvent"
-    WHERE NOT "isOwner"`;
-
-  return rows[0] ?? { views: 0, days: 0 };
-}
-
 export type VisitorTotals = { today: number; yesterday: number; total: number };
 
 /**
