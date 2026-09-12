@@ -258,7 +258,7 @@ function SortableSection({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "group border border-edge bg-[#fffefa]",
+        "group border border-edge bg-surface-sheet",
         isDragging && "relative z-10 shadow-card",
       )}
     >

@@ -395,7 +395,7 @@ function QuestionItem({
   label: string;
 }) {
   return (
-    <div className="border border-edge border-t-2 border-t-[#eae2d0] bg-[#fffefa] px-4 py-3.5">
+    <div className="border border-edge border-t-2 border-t-edge-strong bg-surface-sheet px-4 py-3.5">
       <div className="mb-2 flex items-baseline gap-2">
         <span className="flex-none font-typewriter text-[11px] text-(--accent)">{label}.</span>
         <Controller

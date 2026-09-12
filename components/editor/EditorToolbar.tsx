@@ -125,9 +125,13 @@ export function EditorToolbar({
   return (
     <div
       // 스크롤해도 늘 같은 자리에 있어야 한다 — 떠다니는 UI 금지(ADR-001 §5)
+      //
+      // **바탕은 토큰이어야 한다.** 라이트 값(#f4efe3)을 박아 두었더니 다크에서 이 띠만
+      // 크림색 판으로 남았다 — 매일 몇 시간 보는 자리이고, 위에 얹힌 문단 스타일 칩이
+      // 1.85:1이 됐다. 시트(`--surface-sheet`)가 아니라 그 위에 얹힌 크롬이므로 탭 표면을 쓴다
       className={cn(
         "sticky top-0 z-10 flex flex-wrap items-center gap-1 border-edge border-b",
-        "bg-[#f4efe3] px-[5%] py-[9px]",
+        "bg-surface-tab px-[5%] py-[9px]",
         className,
       )}
     >
