@@ -10,7 +10,13 @@ import {
   TABLE_CELL_COLORS,
   type TableCellColor,
 } from "@/lib/editor/tableCellColors";
-import { clearAxis, duplicateAxis, selectAndRun } from "@/lib/editor/tableCommands";
+import {
+  clearAxis,
+  duplicateAxis,
+  hasMergedCells,
+  moveAxis,
+  selectAndRun,
+} from "@/lib/editor/tableCommands";
 import { columnCount, rowCount } from "@/lib/editor/tableGeometry";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +86,12 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [offsets, setOffsets] = useState<Offsets>({ rows: [], columns: [] });
   const [target, setTarget] = useState<Target | null>(null);
+  /** 끄는 중인 손잡이와, 지금 놓으면 갈 자리 */
+  const [drag, setDrag] = useState<{ axis: Axis; from: number; to: number } | null>(null);
+  /** 못 하는 일을 했을 때 한 줄로 알린다. 조용히 넘기면 고장으로 읽힌다 */
+  const [notice, setNotice] = useState<string | null>(null);
+  /** 방금 끌었는가. 끌린 뒤 따라오는 click 한 번을 삼킨다 */
+  const draggedRef = useRef(false);
 
   const measure = useCallback(() => {
     const table = wrapperRef.current?.querySelector("table");
@@ -140,6 +152,14 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
     setTarget(null);
   }, [node, measure]);
 
+  // 안내는 잠시 뒤 스스로 사라진다 — 지우는 일을 사람에게 시키지 않는다
+  useEffect(() => {
+    if (notice === null) return;
+
+    const timer = setTimeout(() => setNotice(null), 2600);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (target === null) return;
 
@@ -180,6 +200,66 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
     setTarget(null);
   };
 
+  /**
+   * 손잡이를 끌어 자리를 바꾼다.
+   *
+   * 누르는 것과 끄는 것을 **움직인 거리로** 가른다(가사 섹션의 드래그와 같은 기준, 4px).
+   * 그렇게 안 하면 메뉴를 열려고 누를 때마다 줄이 흔들린다.
+   *
+   * 메뉴는 `click`이 연다. 끌기를 `pointerdown`에만 매달면 **키보드로는 못 연다** —
+   * Enter는 포인터 이벤트를 내지 않는다. 끌린 뒤에 따라오는 click만 한 번 삼킨다.
+   */
+  const startDrag = (axis: Axis, index: number, event: React.PointerEvent) => {
+    const pos = typeof getPos === "function" ? getPos() : null;
+    if (pos === null || pos === undefined) return;
+
+    const lanes = axis === "row" ? offsets.rows : offsets.columns;
+    const origin = axis === "row" ? event.clientY : event.clientX;
+    const base = axis === "row" ? (lanes[index]?.start ?? 0) : (lanes[index]?.start ?? 0);
+    let moved = false;
+    let to = index;
+
+    const onMove = (move: PointerEvent) => {
+      const delta = (axis === "row" ? move.clientY : move.clientX) - origin;
+      if (!moved && Math.abs(delta) < 4) return;
+      moved = true;
+
+      // 끌고 있는 자리가 어느 줄 위에 있나. 줄 한가운데를 넘으면 그 줄과 자리를 바꾼다
+      const at = base + delta + (lanes[index]?.size ?? 0) / 2;
+      to = lanes.findIndex((lane) => at >= lane.start && at < lane.start + lane.size);
+      if (to < 0) to = at < 0 ? 0 : lanes.length - 1;
+
+      setDrag({ axis, from: index, to });
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setDrag(null);
+
+      // 움직이지 않았으면 누른 것이다. 뒤따라올 click이 메뉴를 연다
+      if (!moved) return;
+
+      draggedRef.current = true;
+      if (!moveAxis(editor, node, pos, axis, index, to) && hasMergedCells(node)) {
+        setNotice("칸을 합친 표는 순서를 바꿀 수 없어요");
+      }
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const openMenu = (axis: Axis, index: number) => {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+
+    const lane = (axis === "row" ? offsets.rows : offsets.columns)[index];
+    setTarget({ axis, index, offset: lane?.start ?? 0, size: lane?.size ?? 0 });
+  };
+
   /** 색은 고른 줄 전체에 칠한다 — 손잡이가 가리킨 것이 줄이기 때문이다 */
   const paint = (axis: Axis, index: number, color: TableCellColor) => {
     const pos = typeof getPos === "function" ? getPos() : null;
@@ -213,9 +293,9 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
           label={`${index + 1}번째 열`}
           style={{ left: column.start, width: column.size, top: -HANDLE }}
           active={target?.axis === "column" && target.index === index}
-          onOpen={() =>
-            setTarget({ axis: "column", index, offset: column.start, size: column.size })
-          }
+          dropping={drag?.axis === "column" && drag.to === index}
+          onPress={(event) => startDrag("column", index, event)}
+          onOpen={() => openMenu("column", index)}
         />
       ))}
 
@@ -228,7 +308,9 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
           label={`${index + 1}번째 행`}
           style={{ top: row.start, height: row.size, left: -HANDLE }}
           active={target?.axis === "row" && target.index === index}
-          onOpen={() => setTarget({ axis: "row", index, offset: row.start, size: row.size })}
+          dropping={drag?.axis === "row" && drag.to === index}
+          onPress={(event) => startDrag("row", index, event)}
+          onOpen={() => openMenu("row", index)}
         />
       ))}
 
@@ -259,6 +341,15 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
           }
           className="pointer-events-none absolute z-[5] border border-(--accent) bg-(--accent)/8"
         />
+      )}
+
+      {notice && (
+        <p
+          role="alert"
+          className="absolute -top-7 right-0 z-20 border border-edge bg-card px-2 py-1 font-typewriter text-[11px] text-(--accent)"
+        >
+          {notice}
+        </p>
       )}
 
       {target && (
@@ -312,29 +403,37 @@ function Handle({
   label,
   style,
   active,
+  dropping,
+  onPress,
   onOpen,
 }: {
   axis: Axis;
   label: string;
   style: React.CSSProperties;
   active: boolean;
+  /** 지금 놓으면 여기로 온다 */
+  dropping: boolean;
+  onPress: (event: React.PointerEvent) => void;
   onOpen: () => void;
 }) {
   return (
     <button
       type="button"
       aria-label={`${label} 다루기`}
-      // 손잡이가 무엇을 하는 것인지 글자로도 말한다 — 7px짜리 띠는 눌러 보기 전에는 모른다
-      title={`${label} · 눌러서 삽입·삭제`}
+      // 손잡이가 무엇을 하는 것인지 글자로도 말한다 — 8px짜리 띠는 눌러 보기 전에는 모른다
+      title={`${label} · 눌러서 삽입·삭제, 끌어서 자리 옮기기`}
       aria-haspopup="menu"
       aria-expanded={active}
       style={style}
-      onPointerDown={(event) => event.stopPropagation()}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onPress(event);
+      }}
       onClick={onOpen}
       className={cn(
         "absolute z-10 border border-edge transition-opacity duration-150",
         axis === "column" ? "h-[8px] cursor-pointer" : "w-[8px] cursor-pointer",
-        active
+        active || dropping
           ? "bg-(--accent) opacity-100"
           : "bg-paper opacity-0 hover:bg-edge group-hover/table:opacity-100 focus-visible:opacity-100",
       )}
