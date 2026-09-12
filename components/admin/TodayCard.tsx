@@ -1,4 +1,5 @@
 import { RecordCard } from "@/components/record/RecordCard";
+import { StateStamp } from "@/components/record/StateStamp";
 import { Tape } from "@/components/record/Tape";
 import type { RecordType } from "@/lib/record/callNumber";
 import { editorPath, RECORD_TYPE_LABELS, type TodayCardState } from "@/lib/record/todayCard";
@@ -48,6 +49,22 @@ const ACTION_BY_STATE: Record<TodayCardState, string> = {
   empty: "쓰러 가기 →",
 };
 
+/**
+ * 카드에 얹는 표시.
+ *
+ * **모든 상태에 찍지 않는다.** 다 찍으면 대비가 사라져 `완료`가 성취로 안 읽힌다 —
+ * 눈에 걸려야 하는 둘만 찍는다: 오늘 몫을 남긴 것과, 크롤러가 실패한 것(프리모템 #1).
+ * 초안이 도착한 카드는 종이 테이프로 표시해 오던 그대로 둔다.
+ *
+ * `done` 도장은 M1부터 있었는데 **디자인 지면에만 있고 실제 화면에서는 한 번도 안 쓰였다.**
+ */
+function Overlay({ state }: { state: TodayCardState }) {
+  if (state === "draft-ready") return <Tape />;
+  if (state === "published") return <StateStamp kind="done" />;
+  if (state === "crawl-failed") return <StateStamp kind="crawl-failed" />;
+  return null;
+}
+
 export function TodayCard({ type, state, post, subtitle, savedAgo, rotate = 0 }: TodayCardProps) {
   const isEmpty = state === "empty" || state === "crawl-failed";
 
@@ -63,7 +80,7 @@ export function TodayCard({ type, state, post, subtitle, savedAgo, rotate = 0 }:
         post?.title?.trim() ? post.title : <span className="text-ink-soft">아직 빈 카드예요</span>
       }
       subtitle={subtitle ?? HINT_BY_STATE[state]}
-      overlay={state === "draft-ready" ? <Tape /> : undefined}
+      overlay={<Overlay state={state} />}
     >
       <p className="pt-3 font-typewriter text-[11px] text-(--accent)">{ACTION_BY_STATE[state]}</p>
     </RecordCard>

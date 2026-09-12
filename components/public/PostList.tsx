@@ -1,6 +1,8 @@
 import { RecordCard } from "@/components/record/RecordCard";
+import { StateStamp } from "@/components/record/StateStamp";
 import type { ListCard } from "@/lib/db/publicLists";
 import { formatCallNumber } from "@/lib/record/callNumber";
+import { freshPostIds } from "@/lib/record/freshPosts";
 import { RECORD_TYPE_LABELS } from "@/lib/record/todayCard";
 import { siteOf } from "@/lib/revalidate/tags";
 import { postHref } from "@/lib/site/publicUrl";
@@ -35,6 +37,13 @@ export function PostList({
     );
   }
 
+  /*
+    **시각이 아니라 데이터에서 나온다.** 이 목록은 통째로 캐시되고 그 캐시는 글이 발행될 때
+    갈린다 — 렌더 중에 "오늘"을 읽으면 어제 만든 HTML이 오늘도 "오늘"이라고 적혀 있게 된다
+    (lib/record/freshPosts).
+  */
+  const fresh = freshPostIds(cards);
+
   return (
     <ul className={cn("grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-5", className)}>
       {cards.map((card, index) => (
@@ -52,6 +61,7 @@ export function PostList({
             title={card.title}
             subtitle={card.scriptureRef ?? card.excerpt}
             meta={metaOf(card)}
+            overlay={fresh.has(card.id) ? <StateStamp kind="new" /> : undefined}
           />
         </li>
       ))}

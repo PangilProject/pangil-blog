@@ -85,4 +85,35 @@ describe("PostList", () => {
 
     expect(first).toBe(second);
   });
+
+  /**
+   * 시각이 아니라 데이터에서 나온다. 이 목록은 캐시되고 그 캐시는 글이 발행될 때 갈리므로,
+   * 렌더 중에 "오늘"을 읽으면 어제 만든 HTML이 오늘도 "오늘"이라고 적혀 있게 된다.
+   */
+  it("가장 최근에 올라온 글에 새 글 도장을 찍는다", () => {
+    render(
+      <PostList
+        cards={[
+          { ...base, id: "새것", slug: "qt-2", publishedAt: new Date("2026-09-12T01:00:00Z") },
+          { ...base, id: "옛것", slug: "qt-1", publishedAt: new Date("2026-09-01T01:00:00Z") },
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByText("새 글")).toHaveLength(1);
+  });
+
+  it("같은 날 올린 글은 함께 찍힌다 — 그 묶음이 이번에 올라온 것이다", () => {
+    render(
+      <PostList
+        cards={[
+          { ...base, id: "a", slug: "qt-3", publishedAt: new Date("2026-09-12T01:00:00Z") },
+          { ...base, id: "b", slug: "qt-2", publishedAt: new Date("2026-09-12T09:00:00Z") },
+          { ...base, id: "c", slug: "qt-1", publishedAt: new Date("2026-09-01T01:00:00Z") },
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByText("새 글")).toHaveLength(2);
+  });
 });
