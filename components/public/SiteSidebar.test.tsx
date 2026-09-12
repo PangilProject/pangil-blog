@@ -14,6 +14,7 @@ vi.mock("@/lib/db/publicLists", () => ({
 }));
 
 const { axisHref, SiteSidebar } = await import("@/components/public/SiteSidebar");
+const { writeHref } = await import("@/components/public/SiteHeader");
 
 describe("SiteSidebar", () => {
   it("지면마다 필터 파라미터가 갈린다 — faith는 타입, dev는 카테고리다", () => {
@@ -102,5 +103,22 @@ describe("접는 손잡이", () => {
     expect(targets.filter((target) => target === "panel-axis")).toHaveLength(1);
     expect(targets.filter((target) => target === "panel-toc")).toHaveLength(1);
     expect(targets.filter((target) => target === "panel-none")).toHaveLength(2);
+  });
+});
+
+/**
+ * 좁은 화면에는 본문 위 줄이 없어, `글쓰기`도 이 띠가 내놓는다.
+ *
+ * 주소는 헤더와 한 곳에서 나온다(`writeHref`). 두 곳에 따로 적으면 한쪽만 고쳐지고, 그때
+ * 한 화면의 두 `글쓰기`가 서로 다른 데로 간다.
+ */
+describe("띠가 내놓는 글쓰기", () => {
+  it("헤더와 같은 자리로 간다", () => {
+    render(<SiteSidebar site="faith" />);
+
+    expect(screen.getByRole("link", { name: "글쓰기" })).toHaveAttribute(
+      "href",
+      writeHref("faith"),
+    );
   });
 });

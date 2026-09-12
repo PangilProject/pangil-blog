@@ -6,6 +6,16 @@ import { editorPath } from "@/lib/record/todayCard";
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { cn } from "@/lib/utils";
 
+/**
+ * 이 지면에서 글을 쓰러 가는 자리. dev는 기술 에디터, faith는 묵상 글쓰기 하나다(02 §2.4).
+ *
+ * 좁은 화면에서는 상단 띠가 같은 링크를 내놓으므로 여기서 내보낸다 — 두 곳에 따로 적으면
+ * 한쪽만 고쳐지고, 그때 한 화면의 두 `글쓰기`가 서로 다른 데로 간다.
+ */
+export function writeHref(site: PublicSite): string {
+  return site === "dev" ? editorPath("TECH") : "/admin/write/faith";
+}
+
 /** 헤더의 손잡이와 목차 칸이 같은 이름을 봐야 한다 — 어긋나면 눌러도 아무 일이 없다 */
 const TOC_FOLD_ID = "toc-fold";
 
@@ -35,15 +45,13 @@ const TOC_FOLD_ID = "toc-fold";
  */
 export function SiteHeader({ site, foldsToc = false }: { site: PublicSite; foldsToc?: boolean }) {
   return (
-    <header className="flex flex-wrap items-center justify-end gap-3 border-edge border-b pb-3">
+    // 좁은 화면에서는 이 줄이 없다. 스크롤 내내 남는 띠가 하나뿐이라 `글쓰기`와 밝기도
+    // 거기 선다(SiteSidebar) — 같은 것을 두 줄에 두면 글까지의 거리만 길어진다
+    <header className="max-lg:hidden flex flex-wrap items-center justify-end gap-3 border-edge border-b pb-3">
       <nav className="flex items-center gap-4 font-typewriter text-[11px] text-faint">
         {/* nofollow인 이유는 색인이 아니라 예산이다 — 로봇이 모든 지면에서 이 링크를
             따라가면 그 요청이 전부 로그인 리다이렉트로 끝난다 */}
-        <Link
-          href={site === "dev" ? editorPath("TECH") : "/admin/write/faith"}
-          rel="nofollow"
-          className="hover:text-ink"
-        >
+        <Link href={writeHref(site)} rel="nofollow" className="hover:text-ink">
           글쓰기
         </Link>
         <ThemeToggle />
