@@ -27,6 +27,11 @@
 7. `docs/07-roadmap.md` — 현재 마일스톤(M0~M6)과 DoD, MVP/Backlog 경계
 8. `docs/08-launch-and-dev-setup.md` — 개발 환경 세팅(Supabase 이중 URL·CI·env), Phase 8 착수 결정 델타(검색 MVP·다크 토글·md export 등)
 
+> **`docs/`는 레포에 없다**(`.gitignore` · `e8e141e`에서 의도적으로 뺐다). **로컬 디스크에만 있고
+> 이력도 사본도 없다** — 브랜치를 옮기다 한 번 잃은 적이 있다. 이 트리를 잃으면 이 레포의 근거가
+> 통째로 사라지므로, 기기를 바꾸거나 초기화하기 전에 **먼저 어딘가로 복사한다.**
+> 위치: 이 레포 루트의 `docs/`.
+
 ## 기술 스택
 
 - **Next.js App Router + TypeScript (strict)** — 서버 컴포넌트 우선
@@ -79,7 +84,7 @@
 │   ├── migrate-tistory/            # 마이그레이션 파서 + dry-run
 │   └── content-migrations/         # JSONB 스키마 backfill (docs/05 §1.6)
 ├── .github/workflows/              # ci(PR) / crawler / db-backup / reminder cron
-├── docs/                           # 기획 문서 (진실의 원천)
+├── docs/                           # 기획 문서 (진실의 원천) — git에 없다. 위 §문서 경고 참고
 ├── vercel.json                     # watchdog cron 등록
 ├── AGENTS.md   CLAUDE.md
 ```
@@ -186,6 +191,14 @@
 - 크롤러 변경 시: dry-run 모드로 파싱 결과 6질문·4그룹 검증
 - **CI (자동 게이트)**: PR에 typecheck + Biome 린트 + Vitest + `build`를 GitHub Actions로 강제(크롤러 워크플로우와 별개). 초록 아니면 머지 금지
 - **commitlint + husky**: commit-msg 훅으로 커밋 규칙(Conventional Commits·영문 소문자 제목·서명 금지) 자동 검증, pre-commit 훅으로 Biome 실행
+
+### 잃으면 못 되돌리는 것 (분기 1회 · 5분)
+
+매일 도는 백업(`/api/cron/backup`)은 **DB와 같은 Supabase 프로젝트의 Storage**에 쌓인다.
+그 프로젝트 하나가 날아가면 원본과 사본이 함께 날아간다. 복원 스크립트도 아직 없다.
+
+- **분기 1회 `/admin/export`를 눌러 내려받은 파일을 그 프로젝트 밖에 둔다.** 그게 지금의 오프사이트다
+- 같은 걸음에 `docs/`도 복사한다(위 §문서 경고 — 그쪽은 이력조차 없다)
 
 ## 작업 스타일
 
