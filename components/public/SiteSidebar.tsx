@@ -7,6 +7,10 @@ import { countPublishedPosts, findAxisCounts, findFeedItems } from "@/lib/db/pub
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { brandLabel, siteBrand } from "@/lib/site/brand";
 import { siteHref } from "@/lib/site/publicUrl";
+import { cn } from "@/lib/utils";
+
+/** 한 지면에 사이드바는 하나뿐이라 고정 id로 충분하다 */
+const COLLAPSE_ID = "sidebar-collapse";
 
 /**
  * 목록 옆 사이드바 (03 §5.1).
@@ -34,7 +38,13 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
   return (
     // 화면 왼쪽 끝에 붙는다. 바깥 여백은 이 칸 안쪽에만 있고, 오른쪽 괘선이 본문과 나눈다 —
     // 붙어 있는 칸이 화면 가운데 떠 있는 칸보다 "이 블로그의 것"으로 읽힌다
-    <aside className="w-full border-edge border-b lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0">
+    <aside
+      className={cn(
+        "group/side w-full border-edge border-b lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0",
+        // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다
+        "lg:has-checked:w-[2.75rem]",
+      )}
+    >
       {/*
         이 칸이 화면 끝까지 서려면 레이아웃 쪽이 `flex-1`이어야 한다 — 없으면 짧은 글에서
         오른쪽 괘선이 본문 끝나는 자리에서 툭 끊긴다.
@@ -42,32 +52,75 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         sticky는 안쪽 div에 건다. aside 자체에 걸면 그 칸이 내용 높이만큼만 서서 오른쪽
         괘선이 본문 중간에서 끊긴다 — 목차가 같은 이유로 같은 모양이다(dev 상세)
       */}
-      <div className="flex flex-col gap-7 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6">
-        <section className="flex flex-col gap-2">
-          <Link
-            href={siteHref(site, `/${site}`, { from: site })}
-            className="font-typewriter font-bold text-[13px] text-ink"
-          >
-            {label.lead}
-            <em className="text-(--accent) not-italic">{label.accent}</em>
-          </Link>
-          {description && <p className="text-[11.5px] leading-body text-faint">{description}</p>}
-        </section>
+      <div
+        className={cn(
+          "flex flex-col gap-4 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6",
+          // 접히면 세로 여백까지 줄인다 — 안 그러면 빈 칸이 화면 높이만큼 남는다
+          "group-has-checked/side:py-4 lg:group-has-checked/side:px-3",
+        )}
+      >
+        <CollapseHandle />
 
-        <Suspense fallback={<CountSkeleton />}>
-          <ViewCount />
-        </Suspense>
+        <div className="flex flex-col gap-7 group-has-checked/side:hidden">
+          <section className="flex flex-col gap-2">
+            <Link
+              href={siteHref(site, `/${site}`, { from: site })}
+              className="font-typewriter font-bold text-[13px] text-ink"
+            >
+              {label.lead}
+              <em className="text-(--accent) not-italic">{label.accent}</em>
+            </Link>
+            {description && <p className="text-[11.5px] leading-body text-faint">{description}</p>}
+          </section>
 
-        <Suspense fallback={null}>
-          <AxisList site={site} />
-        </Suspense>
+          <Suspense fallback={<CountSkeleton />}>
+            <ViewCount />
+          </Suspense>
 
-        {/* 최근 글은 넓은 화면에서만. 모바일에서는 바로 아래가 그 목록이다 */}
-        <Suspense fallback={null}>
-          <RecentPosts site={site} />
-        </Suspense>
+          <Suspense fallback={null}>
+            <AxisList site={site} />
+          </Suspense>
+
+          {/* 최근 글은 넓은 화면에서만. 모바일에서는 바로 아래가 그 목록이다 */}
+          <Suspense fallback={null}>
+            <RecentPosts site={site} />
+          </Suspense>
+        </div>
       </div>
     </aside>
+  );
+}
+
+/**
+ * 접는 손잡이.
+ *
+ * **자바스크립트를 쓰지 않는다.** 공개 지면의 클라이언트 아일랜드는 세어 둔 것이 전부고(04 §3.6),
+ * "칸 하나 접기"에 그 예산을 쓰지 않는다. 숨긴 체크박스 하나와 `group-has-checked`면 끝이고,
+ * 스크립트가 죽어도 접힌다.
+ *
+ * 대신 **새로고침하면 다시 펴진다** — 접힌 상태를 기억하려면 쿠키가 필요하고, 쿠키를 읽으려면
+ * 아일랜드가 는다. 지면 안에서 옮겨 다니는 동안은 레이아웃이 안 갈리므로 접힌 채로 남는다.
+ */
+function CollapseHandle() {
+  return (
+    <>
+      <input id={COLLAPSE_ID} type="checkbox" className="sr-only" />
+      <label
+        htmlFor={COLLAPSE_ID}
+        className={cn(
+          "flex cursor-pointer select-none items-center justify-end font-typewriter text-[11px] text-faint",
+          "hover:text-(--accent) group-has-checked/side:justify-center",
+        )}
+      >
+        <span aria-hidden className="group-has-checked/side:hidden">
+          &laquo;
+        </span>
+        <span aria-hidden className="hidden group-has-checked/side:inline">
+          &raquo;
+        </span>
+        <span className="sr-only">사이드바 접고 펴기</span>
+      </label>
+    </>
   );
 }
 
