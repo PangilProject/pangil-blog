@@ -165,16 +165,17 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
             <Button size="sm" type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              type="button"
-              disabled={isPublishing}
-              onClick={() => void onPublish()}
-            >
-              {isPublishing ? "발행 중…" : "발행"}
-            </Button>
           </>
+        }
+        footer={
+          <Button
+            variant="primary"
+            type="button"
+            disabled={isPublishing}
+            onClick={() => void onPublish()}
+          >
+            {isPublishing ? "발행 중…" : "발행"}
+          </Button>
         }
         toolbar={
           <ToolbarDock>

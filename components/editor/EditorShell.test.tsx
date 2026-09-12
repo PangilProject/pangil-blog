@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CrawlBand } from "@/components/editor/CrawlBand";
+import { EditorShell } from "@/components/editor/EditorShell";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
 import { SectionBlock } from "@/components/editor/SectionBlock";
@@ -16,7 +17,7 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
   it("full은 기술·큐티 구성 전체를 낸다", () => {
     render(<EditorToolbar variant="full" />);
 
-    for (const label of ["굵게", "기울임", "밑줄", "목록", "인용", "구분선"]) {
+    for (const label of ["굵게", "기울임", "밑줄", "목록", "번호 목록", "인용", "구분선", "표"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
   });
@@ -49,6 +50,40 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
 
     expect(screen.getByRole("button", { name: "굵게" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "기울임" })).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+describe("EditorShell — 발행은 시트 끝에", () => {
+  /**
+   * 다 쓰고 나서 하는 일이라 글 끝이 손의 동선과 맞다. 헤더에는 쓰는 동안 필요한 것만
+   * 남는다 — 저장 인디케이터·임시저장·작성 취소.
+   */
+  it("헤더가 아니라 본문 아래에 선다", () => {
+    render(
+      <EditorShell
+        breadcrumb="관리"
+        indicator={<span>저장됨</span>}
+        actions={<button type="button">임시저장</button>}
+        footer={<button type="button">발행</button>}
+      >
+        <p>본문</p>
+      </EditorShell>,
+    );
+
+    const header = screen.getByRole("banner");
+    expect(header).toHaveTextContent("임시저장");
+    expect(header).not.toHaveTextContent("발행");
+    expect(screen.getByRole("button", { name: "발행" })).toBeInTheDocument();
+  });
+
+  it("발행을 안 넘기면 그 자리를 만들지 않는다", () => {
+    render(
+      <EditorShell breadcrumb="관리" indicator={null} actions={null}>
+        <p>본문</p>
+      </EditorShell>,
+    );
+
+    expect(screen.queryByRole("button", { name: "발행" })).toBeNull();
   });
 });
 
