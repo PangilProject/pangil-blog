@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { FOLD_DOWN } from "@/components/public/panelToggle";
 import type { RichTextHeading } from "@/lib/render/richText";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,9 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
 
   if (headings.length < 2) return null;
 
+  // 관찰자가 아직 아무것도 못 정했으면 첫 절로 읽는다 — 빈 줄을 띄우지 않는다
+  const current = headings.find((heading) => heading.id === activeId)?.text ?? headings[0]?.text;
+
   const list = (
     <ol className="flex flex-col gap-1.5">
       {headings.map((heading) => (
@@ -78,10 +82,23 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
 
   return (
     <>
-      {/* 모바일: 본문 위 접이식 */}
-      <details className="mb-6 border border-edge bg-card px-4 py-3 lg:hidden">
-        <summary className="cursor-pointer font-typewriter text-[11px] text-faint">목차</summary>
-        <div className="mt-3">{list}</div>
+      {/*
+        모바일: 상단에 붙는 한 줄. **차례를 감추는 대신 지금 어디를 읽는지 말한다.**
+        전에는 `목차`라고만 적힌 상자가 글 제목 위에 서 있었다 — 무슨 글인지 알기 전에 그
+        글의 차례부터 보는 꼴이었고, 정작 차례가 필요한 순간(읽는 도중)에는 맨 위까지
+        올라가야 닿았다.
+        붙어 있으므로 읽는 내내 닿고, 값은 이미 관찰자가 들고 있던 것이다 — 여태 넓은
+        화면에서만 쓰였다.
+      */}
+      <details className="border-edge border-b bg-paper lg:hidden">
+        <summary className="flex h-[34px] cursor-pointer list-none items-center gap-2">
+          <span className="font-typewriter text-[9.5px] tracking-[0.12em] text-faint">지금</span>
+          <span className="truncate text-[11.5px] text-(--accent)">{current}</span>
+          <span aria-hidden className="ml-auto font-typewriter text-[10px] text-faint">
+            {FOLD_DOWN}
+          </span>
+        </summary>
+        <div className="pt-1 pb-3">{list}</div>
       </details>
 
       {/* 데스크탑: 우측 여백 sticky */}

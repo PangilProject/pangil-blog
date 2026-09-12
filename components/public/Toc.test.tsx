@@ -111,3 +111,26 @@ describe("Toc — 누른 줄", () => {
     article.remove();
   });
 });
+
+/**
+ * 좁은 화면의 목차는 상단에 붙어 **지금 읽는 절**을 말한다. 그 값은 여태 넓은 화면의
+ * 하이라이트에만 쓰이던 것이라, 관찰자가 고른 절과 이 줄이 같은 것을 가리켜야 한다.
+ */
+describe("모바일 상단 줄", () => {
+  it("지금 읽는 절을 적는다 — 아직 못 정했으면 첫 절이다", () => {
+    render(<Toc headings={headings} />);
+
+    expect(screen.getByText("지금").parentElement).toHaveTextContent("정리");
+  });
+
+  it("관찰자가 다른 절을 고르면 그 절로 바뀐다", () => {
+    render(<Toc headings={headings} />);
+
+    // 두 번째 제목 링크를 누르면 그 절이 현재가 된다(관찰자보다 먼저 반응한다)
+    act(() => {
+      screen.getAllByRole("link", { name: "태그 체계" })[0]?.click();
+    });
+
+    expect(screen.getByText("지금").parentElement).toHaveTextContent("태그 체계");
+  });
+});
