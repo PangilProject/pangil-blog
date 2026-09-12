@@ -21,7 +21,7 @@ describe("TodayCard — 상태별 문구와 도착지", () => {
   it("작성 중: 같은 초안으로 이어진다", () => {
     render(<TodayCard type="PRAISE" state="writing" post={post} savedAgo="5분 전" />);
 
-    expect(screen.getByText("이어서 작성 →")).toBeInTheDocument();
+    expect(screen.getByText("이어서 쓰기 →")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "/admin/write/praise/post-1");
     expect(screen.getByText("5분 전")).toBeInTheDocument();
   });
@@ -68,7 +68,25 @@ describe("TodayCard — 상태별 문구와 도착지", () => {
   it("크롤러가 실패한 카드도 찍는다 — 조용히 넘기지 않는다", () => {
     render(<TodayCard type="QT" state="crawl-failed" post={null} />);
 
-    expect(screen.getByText("크롤러 실패")).toBeInTheDocument();
+    expect(screen.getByText("가져오지 못함")).toBeInTheDocument();
+  });
+
+  /**
+   * **도장이 말한 것을 배지가 또 말하지 않는다.** `완료` 카드에 `완료`가 두 번, 실패 카드에
+   * `가져오지 못함`이 두 번 찍혀 있었다 — 한 화면에 같은 말이 두 벌이면 둘 다 덜 읽힌다.
+   *
+   * `getByText`는 두 벌이면 던지므로 이 자리를 지킨다. 도장을 다시 배지로 옮기거나 배지를
+   * 되살리면 여기서 걸린다.
+   */
+  it("도장이 찍힌 카드에서는 그 말이 한 번만 나온다", () => {
+    const { unmount } = render(
+      <TodayCard type="QT" state="published" post={{ id: "p", title: "오늘의 큐티" }} />,
+    );
+    expect(screen.getAllByText("완료")).toHaveLength(1);
+    unmount();
+
+    render(<TodayCard type="QT" state="crawl-failed" post={null} />);
+    expect(screen.getAllByText("가져오지 못함")).toHaveLength(1);
   });
 
   it("쓰는 중인 카드에는 찍지 않는다 — 다 찍으면 표시가 아니라 장식이다", () => {

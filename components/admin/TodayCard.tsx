@@ -42,8 +42,10 @@ const BADGE_BY_STATE: Record<TodayCardState, string> = {
 };
 
 const ACTION_BY_STATE: Record<TodayCardState, string> = {
+  // 03 §7.2 — `이어서 작성`은 쓰지 않는다. 오늘 카드의 `이어서 쓰기`가 그 예외로 적혀 있다.
+  // 두 상태의 다음 걸음이 같은 일이므로 말도 같다 — 어느 상태인지는 배지가 말한다
   "draft-ready": "이어서 쓰기 →",
-  writing: "이어서 작성 →",
+  writing: "이어서 쓰기 →",
   published: "고치러 가기 →",
   "crawl-failed": "빈 템플릿으로 시작 →",
   empty: "쓰러 가기 →",
@@ -58,6 +60,11 @@ const ACTION_BY_STATE: Record<TodayCardState, string> = {
  *
  * `done` 도장은 M1부터 있었는데 **디자인 지면에만 있고 실제 화면에서는 한 번도 안 쓰였다.**
  */
+/** 도장이 찍히는 상태. 그 카드에서는 배지가 같은 말을 되풀이하지 않는다 */
+function isStamped(state: TodayCardState): boolean {
+  return state === "published" || state === "crawl-failed";
+}
+
 function Overlay({ state }: { state: TodayCardState }) {
   if (state === "draft-ready") return <Tape />;
   if (state === "published") return <StateStamp kind="done" />;
@@ -75,7 +82,16 @@ export function TodayCard({ type, state, post, subtitle, savedAgo, rotate = 0 }:
       rotate={rotate}
       href={editorPath(type, post?.id)}
       aside={savedAgo ?? undefined}
-      meta={`${RECORD_TYPE_LABELS[type]} · ${BADGE_BY_STATE[state]}`}
+      /*
+       * **도장이 말한 것을 배지가 또 말하지 않는다.** `완료` 카드에는 `완료`가 두 번,
+       * 실패 카드에는 `가져오지 못함`이 두 번 찍혀 있었다. 한 화면에 같은 말이 두 벌이면
+       * 둘 다 덜 읽힌다 — 도장 쪽이 더 크고 눈에 걸리므로 그쪽에 맡긴다.
+       */
+      meta={
+        isStamped(state)
+          ? RECORD_TYPE_LABELS[type]
+          : `${RECORD_TYPE_LABELS[type]} · ${BADGE_BY_STATE[state]}`
+      }
       title={
         post?.title?.trim() ? post.title : <span className="text-ink-soft">아직 빈 카드예요</span>
       }

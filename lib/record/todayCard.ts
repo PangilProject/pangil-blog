@@ -8,7 +8,7 @@ import { isSunday } from "@/lib/record/kst";
  * 떼어내 여기서 테스트로 고정한다.
  *
  *   ① draft-ready  크롤러가 채워둔 초안이 있고 아직 손대지 않았다 → "이어서 쓰기"
- *   ② writing      쓰던 초안이 있다                              → "이어서 작성"
+ *   ② writing      쓰던 초안이 있다                              → "이어서 쓰기"
  *   ③ published    오늘 몫을 발행했다                             → "오늘 완료"
  *   ④ crawl-failed 크롤이 실패했다(QT만)                          → "빈 템플릿으로 시작"
  *   ⑤ empty        아무것도 없다                                  → "쓰러 가기"

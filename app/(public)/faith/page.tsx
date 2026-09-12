@@ -85,7 +85,8 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
         hrefFor={hrefFor}
         searchAction="/faith"
         searchQuery={query}
-        emptyMessage={query ? "찾는 기록이 없어요" : "이 칸은 아직 비어 있어요"}
+        // 03 §7.2 — `기록`은 브랜드어(지면 이름·반갑)고, 셀 수 있는 대상은 `글`이다
+        emptyMessage={query ? "찾는 글이 없어요" : "이 칸은 아직 비어 있어요"}
       />
     </>
   );

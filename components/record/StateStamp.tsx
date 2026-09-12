@@ -30,7 +30,9 @@ const STAMP: Record<StateStampKind, { label: string; tone: string }> = {
   "fresh-start": { label: "새로 시작", tone: "border-faint text-faint" },
   done: { label: "완료", tone: "border-ok text-ok" },
   // 테두리는 채움색(`--warn`), 글자는 글자색(`--warn-ink`)이다 — 종이 위의 --warn은 2.24:1이다
-  "crawl-failed": { label: "크롤러 실패", tone: "border-warn text-warn-ink" },
+  // 한 사건에 말이 셋이었다(`크롤러 실패`·`가져오지 못함`·`가져오지 못했어요`).
+  // 줄기를 `가져오다` 하나로 맞추고, 자리에 따라 형태만 갈린다 — 도장은 명사, 띠는 문장이다
+  "crawl-failed": { label: "가져오지 못함", tone: "border-warn text-warn-ink" },
 };
 
 export function StateStamp({ kind, className }: { kind: StateStampKind; className?: string }) {

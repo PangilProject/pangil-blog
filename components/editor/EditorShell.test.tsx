@@ -147,7 +147,7 @@ describe("StateStamp — 02 §3.1 카드 상태 4종", () => {
     expect(screen.getByText("완료").className).toContain("text-ok");
 
     rerender(<StateStamp kind="crawl-failed" />);
-    expect(screen.getByText("크롤러 실패").className).toContain("text-warn");
+    expect(screen.getByText("가져오지 못함").className).toContain("text-warn-ink");
   });
 
   it("기울어진 도장으로 찍힌다", () => {
