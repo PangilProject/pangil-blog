@@ -1,6 +1,6 @@
 import type { RecordType } from "@/lib/record/callNumber";
 import { publicPostPath } from "@/lib/record/paths";
-import { isPreviewHost, type SiteKey, siteHostsFromEnv } from "@/lib/site/resolveSite";
+import { type SiteKey, siteHostsFromEnv } from "@/lib/site/resolveSite";
 
 /**
  * 피드·사이트맵·OG에 적을 **절대 URL** (04 §1.3 · 08 §3).
@@ -53,12 +53,6 @@ export function absoluteUrl(site: SiteKey, path: string, context: UrlContext): s
 export function absolutePostUrl(type: RecordType, slug: string, context: UrlContext): string {
   const site = type === "TECH" ? "dev" : "faith";
   return absoluteUrl(site, publicPostPath(type, slug), context);
-}
-
-/** 이 호스트가 도메인 미확정 구간인가 — 피드가 site 세그먼트를 남겨야 하는지의 판단 */
-export function isSingleHost(context: UrlContext): boolean {
-  const hosts = siteHostsFromEnv(context.env ?? process.env);
-  return !hosts.dev && !hosts.faith && isPreviewHost(context.host);
 }
 
 /**
