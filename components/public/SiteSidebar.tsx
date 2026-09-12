@@ -2,13 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 
-import {
-  FOLD_DOWN,
-  FOLD_LEFT,
-  FOLD_RIGHT,
-  FOLD_UP,
-  PANEL_TOGGLE,
-} from "@/components/public/panelToggle";
+import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import { writeHref } from "@/components/public/SiteHeader";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { ViewCount } from "@/components/public/ViewCount";
@@ -195,7 +189,11 @@ function PanelHandle({
 }: {
   /** 이 손잡이가 켜는 라디오 */
   target: string;
-  /** 화면에 적히는 이름. 좁은 화면에서는 손잡이가 둘이라 기호만으로 구분이 안 된다 */
+  /**
+   * 무엇을 여는 손잡이인가. **화면에는 안 적는다** — 같은 줄의 밝기 토글이 그림이라, 옆에
+   * 글자 칩이 서면 한 줄에 두 문법이 섞이고 좁은 폭에서 브랜드가 눌린다.
+   * 대신 `title`과 읽어 주는 이름으로 남는다.
+   */
   name: string;
   /** 닫혀 있을 때 — 누르면 열린다 */
   openGlyph: ReactNode;
@@ -212,22 +210,28 @@ function PanelHandle({
   shutWhenOpen: string;
   className?: string;
 }) {
-  const chip = cn(PANEL_TOGGLE, "w-auto gap-1.5 px-2", className);
+  const chip = cn(PANEL_TOGGLE, className);
 
   return (
     <>
       <input id={target} name={PANEL_NAME} type="radio" className="sr-only" />
 
       <label htmlFor={target} title={name} className={cn(chip, openWhenShut)}>
-        <span>{name}</span>
         {openGlyph}
-        <span className="sr-only">열기</span>
+        <span className="sr-only">{name} 열기</span>
       </label>
 
-      <label htmlFor={PANEL_NONE} title={name} className={cn(chip, shutWhenOpen)}>
-        <span>{name}</span>
+      {/*
+        좁은 화면에서 열려 있는 쪽은 잉크색으로 산다 — 그림만 있는 손잡이라 켜진 것이 달리
+        드러나지 않는다. 넓은 화면에서는 칸이 접힌 것이 눈에 보이므로 색까지 쓰지 않는다.
+      */}
+      <label
+        htmlFor={PANEL_NONE}
+        title={name}
+        className={cn(chip, shutWhenOpen, "max-lg:border-(--accent) max-lg:text-(--accent)")}
+      >
         {closeGlyph}
-        <span className="sr-only">닫기</span>
+        <span className="sr-only">{name} 닫기</span>
       </label>
     </>
   );
@@ -238,12 +242,51 @@ function PanelHandle({
  * 가로로 누워 아래로 펴지고, 넓은 화면에서는 옆으로 접힌다. 겹치는 display 유틸리티가 서로를
  * 지우지 않도록 바깥에서 한 번 갈라 둔다.
  */
-function Glyph({ narrow, wide }: { narrow: string; wide: string }) {
+function Glyph({ narrow, wide }: { narrow: ReactNode; wide: ReactNode }) {
   return (
     <span aria-hidden>
       <span className="lg:hidden">{narrow}</span>
       <span className="hidden lg:inline">{wide}</span>
     </span>
+  );
+}
+
+/**
+ * 차례 — 길이가 다른 네 줄. **글 안의 절**로 읽혀서 메뉴와 갈린다.
+ *
+ * 밝기 토글과 같은 결이다(ThemeToggle): 15px, 획 1.7, 둥근 끝. 같은 줄에 서는 그림들이
+ * 굵기가 다르면 하나만 무거워 보인다.
+ */
+function TocIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      className="size-[15px]"
+    >
+      <path d="M4 6h16M4 11h11M4 16h14M4 21h8" />
+    </svg>
+  );
+}
+
+/** 메뉴 — 고른 길이의 세 줄. 분류를 연다 */
+function MenuIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      className="size-[15px]"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
   );
 }
 
@@ -262,12 +305,10 @@ function CollapseHandle() {
     <PanelHandle
       target={PANEL_AXIS}
       name="분류"
-      openGlyph={<Glyph narrow={FOLD_DOWN} wide={FOLD_LEFT} />}
-      closeGlyph={<Glyph narrow={FOLD_UP} wide={FOLD_RIGHT} />}
+      openGlyph={<Glyph narrow={<MenuIcon />} wide={FOLD_LEFT} />}
+      closeGlyph={<Glyph narrow={<MenuIcon />} wide={FOLD_RIGHT} />}
       openWhenShut="group-has-[#panel-axis:checked]/side:hidden"
       shutWhenOpen="hidden group-has-[#panel-axis:checked]/side:inline-flex"
-      // 넓은 화면에서는 이름을 떼고 네모 칩으로 돌아간다 — 거기서는 손잡이가 하나뿐이다
-      className="lg:w-[26px] lg:gap-0 lg:px-0 lg:[&>span:first-child]:hidden"
     />
   );
 }
@@ -291,8 +332,8 @@ function TocHandle() {
         <PanelHandle
           target={PANEL_TOC}
           name="목차"
-          openGlyph={<Glyph narrow={FOLD_DOWN} wide={FOLD_DOWN} />}
-          closeGlyph={<Glyph narrow={FOLD_UP} wide={FOLD_UP} />}
+          openGlyph={<TocIcon />}
+          closeGlyph={<TocIcon />}
           openWhenShut="group-has-[#panel-toc:checked]/side:hidden"
           shutWhenOpen="hidden group-has-[#panel-toc:checked]/side:inline-flex"
         />
