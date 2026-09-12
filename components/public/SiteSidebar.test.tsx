@@ -67,7 +67,19 @@ describe("접는 손잡이", () => {
   it("손잡이가 체크박스를 가리킨다", () => {
     render(<SiteSidebar site="dev" />);
 
-    const toggle = screen.getByRole("checkbox", { name: "사이드바 접고 펴기" });
-    expect(toggle).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /사이드바 접고 펴기/ })).not.toBeChecked();
+  });
+
+  /**
+   * 좁은 화면에서는 이 줄이 유일한 띠라 목차 손잡이도 여기 선다. 목차 칸이 남기는 표식과
+   * 이 손잡이가 켜는 이름이 어긋나면, 눌러도 아무 일이 없고 다른 무엇도 잡지 못한다.
+   */
+  it("목차 손잡이도 같은 줄에 선다", () => {
+    render(<SiteSidebar site="dev" />);
+
+    expect(screen.getByRole("checkbox", { name: /목차 열고 닫기/ })).toHaveAttribute(
+      "id",
+      "toc-open",
+    );
   });
 });

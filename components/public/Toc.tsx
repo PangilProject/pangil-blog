@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { FOLD_DOWN, FOLD_UP, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import type { RichTextHeading } from "@/lib/render/richText";
 import { cn } from "@/lib/utils";
 
@@ -52,9 +51,6 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
 
   if (headings.length < 2) return null;
 
-  // 관찰자가 아직 아무것도 못 정했으면 첫 절로 읽는다 — 빈 줄을 띄우지 않는다
-  const current = headings.find((heading) => heading.id === activeId)?.text ?? headings[0]?.text;
-
   const list = (
     <ol className="flex flex-col gap-1.5">
       {headings.map((heading) => (
@@ -90,30 +86,26 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
         붙어 있으므로 읽는 내내 닿고, 값은 이미 관찰자가 들고 있던 것이다 — 여태 넓은
         화면에서만 쓰였다.
       */}
-      <details className="group/toc bg-paper lg:hidden">
-        {/*
-          **자기 괘선을 긋지 않는다.** 이 띠는 본문 통 안쪽(좌우 6%)에 있고 위에 붙은
-          사이드바 띠는 화면 끝까지 가는데, 둘 다 선을 그으면 아래 선만 6% 안에서 끊겨
-          두 띠가 어긋나 보인다. 바탕만 깔면 그 어긋남이 드러날 자리가 없다 —
-          본문도 같은 통 안이라 글이 그 여백으로 넘어오지 않는다.
-        */}
-        <summary
-          className={cn(
-            "flex h-9 cursor-pointer list-none items-center gap-2.5",
-            "[&::-webkit-details-marker]:hidden",
-          )}
-        >
-          <span className="font-typewriter text-[9.5px] tracking-[0.12em] text-faint">지금</span>
-          <span className="truncate text-[11.5px] text-(--accent)">{current}</span>
+      {/*
+        모바일: **평소에는 없다.** 상단 띠의 `목차`를 눌러야 이 판이 띠 아래로 내려온다.
+        한동안 "지금 · <절>"을 적은 띠를 늘 띄워 두었는데, 이미 붙어 있는 띠 아래에 또
+        하나가 겹치면서 바탕이 두 겹으로 보였다 — 지면이 종이 한 장으로 읽히지 않았다.
 
-          {/* 사이드바 손잡이와 같은 칩이다 — 두 띠에 다른 물건이 서면 줄이 어긋나 보인다 */}
-          <span aria-hidden className={cn(PANEL_TOGGLE, "ml-auto")}>
-            <span className="group-open/toc:hidden">{FOLD_DOWN}</span>
-            <span className="hidden group-open/toc:inline">{FOLD_UP}</span>
-          </span>
-        </summary>
-        <div className="pt-1 pb-3">{list}</div>
-      </details>
+        지금 읽는 절은 판 안에서 그대로 표시된다(`aria-current`) — 읽다가 열면 어디쯤인지
+        바로 보인다.
+
+        `data-toc`는 **여기 목차가 있다**는 표식이다. 상단 띠는 이 표식을 보고 손잡이를
+        내놓는다 — 제목이 하나뿐인 글에 눌러도 아무 일 없는 버튼을 남기지 않는다.
+      */}
+      <div
+        data-toc
+        className={cn(
+          "hidden border-edge border-b bg-paper pt-1 pb-3 lg:hidden",
+          "group-has-[#toc-open:checked]/site:block",
+        )}
+      >
+        {list}
+      </div>
 
       {/* 데스크탑: 우측 여백 sticky */}
       <nav

@@ -19,6 +19,9 @@ import { cn } from "@/lib/utils";
 /** 한 지면에 사이드바는 하나뿐이라 고정 id로 충분하다 */
 const COLLAPSE_ID = "sidebar-collapse";
 
+/** 목차가 보는 이름 — 어긋나면 눌러도 아무 일이 없다(Toc) */
+const TOC_OPEN_ID = "toc-open";
+
 /**
  * 목록 옆 사이드바 (03 §5.1).
  *
@@ -100,7 +103,11 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
             )}
           </section>
 
-          <CollapseHandle />
+          {/* 좁은 화면에서는 이 줄이 유일한 띠라, 이 지면에서 접었다 펼 수 있는 것이 다 선다 */}
+          <div className="flex items-center gap-2">
+            <TocHandle />
+            <CollapseHandle />
+          </div>
         </div>
 
         {/*
@@ -153,7 +160,13 @@ function CollapseHandle() {
         바깥 모서리는 화면 끝에 못 박혀 있다 — 손잡이를 그쪽에 두어야 접고 펴는 동안
         제자리에 있는다. 오른쪽 여백의 목차가 오른쪽 끝에 붙어 있는 것과 같은 규칙이다.
       */}
-      <label htmlFor={COLLAPSE_ID} title="사이드바" className={cn(PANEL_TOGGLE, "lg:self-start")}>
+      <label
+        htmlFor={COLLAPSE_ID}
+        title="사이드바"
+        className={cn(PANEL_TOGGLE, "max-lg:w-auto max-lg:gap-1.5 max-lg:px-2 lg:self-start")}
+      >
+        {/* 좁은 화면에서는 손잡이가 둘이다 — 기호만으로는 어느 쪽인지 알 수 없다 */}
+        <span className="lg:hidden">분류</span>
         {/*
           기호는 **접히는 방향**을 가리키는데, 그 방향이 화면마다 다르다 — 좁은 화면에서는
           이 칸이 가로로 누워 아래로 펴지고, 넓은 화면에서는 옆으로 접힌다.
@@ -271,4 +284,40 @@ function formatDay(at: Date): string {
     dateStyle: "short",
     timeZone: "Asia/Seoul",
   }).format(at);
+}
+
+/**
+ * 목차 손잡이 — 좁은 화면 전용.
+ *
+ * 넓은 화면에서는 상단 줄(SiteHeader)이 이 일을 한다. 좁은 화면에는 그 줄이 붙어 있지
+ * 않으므로, 스크롤 내내 남는 유일한 띠인 여기가 맡는다.
+ *
+ * **목차가 있는 글에만 나온다.** 이 칸은 레이아웃에 있어서 지금 지면에 목차가 있는지 모른다
+ * — 대신 목차가 남기는 표식(`data-toc`)을 보고 정한다. 제목이 하나뿐인 글에는 그 표식이
+ * 없고, 그러면 이 손잡이도 없다.
+ */
+function TocHandle() {
+  return (
+    <>
+      <input id={TOC_OPEN_ID} type="checkbox" className="sr-only" />
+      <label
+        htmlFor={TOC_OPEN_ID}
+        title="목차"
+        className={cn(
+          PANEL_TOGGLE,
+          "w-auto gap-1.5 px-2 lg:hidden",
+          "hidden group-has-[[data-toc]]/site:inline-flex",
+        )}
+      >
+        <span>목차</span>
+        <span aria-hidden className="group-has-[#toc-open:checked]/site:hidden">
+          {FOLD_DOWN}
+        </span>
+        <span aria-hidden className="hidden group-has-[#toc-open:checked]/site:inline">
+          {FOLD_UP}
+        </span>
+        <span className="sr-only">목차 열고 닫기</span>
+      </label>
+    </>
+  );
 }
