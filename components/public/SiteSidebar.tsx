@@ -2,7 +2,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
+import {
+  FOLD_DOWN,
+  FOLD_LEFT,
+  FOLD_RIGHT,
+  FOLD_UP,
+  PANEL_TOGGLE,
+} from "@/components/public/panelToggle";
 import { ViewCount } from "@/components/public/ViewCount";
 import { countPublishedPosts, findAxisCounts, findFeedItems } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -41,11 +47,19 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
     // 붙어 있는 칸이 화면 가운데 떠 있는 칸보다 "이 블로그의 것"으로 읽힌다
     <aside
       className={cn(
-        "group/side w-full border-edge border-b lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0",
+        "group/side w-full border-edge border-b bg-paper lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0",
         // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다.
         // 폭을 숫자로 박지 않는 이유는 아래 여백과 같이 움직여야 해서다 — 손잡이가 제자리에
         // 있으려면 좌우 여백이 접히기 전과 같아야 하고, 그러면 폭은 내용이 정한다
         "lg:has-checked:w-auto",
+        /**
+         * **좁은 화면에서는 이 칸이 상단에 붙는 줄이 된다.**
+         *
+         * sticky를 안쪽 줄에 걸 수 없다 — sticky는 부모 상자 안에서만 붙고, 접힌 사이드바는
+         * 그 줄 높이밖에 안 돼서 곧바로 밀려 올라간다. aside 자신은 본문과 나란한 flex
+         * 아이템이라 통이 화면만큼 길고, 그래서 여기 걸어야 스크롤 내내 남는다.
+         */
+        "max-lg:sticky max-lg:top-0 max-lg:z-30",
       )}
     >
       {/*
@@ -57,19 +71,22 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
       */}
       <div
         className={cn(
-          "flex flex-col gap-4 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6",
-          // **넓은 화면에서는 여백이 접히든 펴지든 같다.** 접힌 쪽만 줄였더니 손잡이가 위로
-          // 튀어 올라, 접고 펴는 동안 버튼이 제자리에 있지 않았다.
-          //
-          // 좁은 화면은 다르다. 거기서는 이 칸이 본문 위에 가로로 누워서 접는 목적이 "폭을
-          // 돌려받는 것"이 아니라 "본문까지의 거리를 줄이는 것"이다 — 세로 여백을 줄인다
-          "group-has-checked/side:py-4 lg:group-has-checked/side:py-10",
+          "flex flex-col px-[6%] lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:gap-7 lg:px-6 lg:py-10",
+          // 펼친 사이드바가 화면보다 길면 여기서 스크롤한다 — 상단에 붙은 줄을 밀어내지 않는다
+          "max-lg:max-h-screen max-lg:overflow-y-auto",
         )}
       >
-        <CollapseHandle />
-
-        <div className="flex flex-col gap-7 group-has-checked/side:hidden">
-          <section className="flex flex-col gap-2">
+        {/*
+          머리 줄. 좁은 화면에서는 **브랜드와 손잡이가 한 줄**이고 그 줄이 곧 상단 띠다.
+          넓은 화면에서는 예전처럼 손잡이가 위, 브랜드가 아래다(`flex-col-reverse`).
+        */}
+        <div
+          className={cn(
+            "flex h-11 items-center justify-between gap-3",
+            "lg:h-auto lg:flex-col-reverse lg:items-start lg:gap-4",
+          )}
+        >
+          <section className="flex flex-col gap-2 lg:group-has-checked/side:hidden">
             <Link
               href={siteHref(site, `/${site}`, { from: site })}
               className="font-typewriter font-bold text-[13px] text-ink"
@@ -77,9 +94,28 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
               {label.lead}
               <em className="text-(--accent) not-italic">{label.accent}</em>
             </Link>
-            {description && <p className="text-[11.5px] leading-body text-faint">{description}</p>}
+            {/* 설명문은 넓은 화면에서만 — 상단 띠는 한 줄이어야 띠다 */}
+            {description && (
+              <p className="max-lg:hidden text-[11.5px] leading-body text-faint">{description}</p>
+            )}
           </section>
 
+          <CollapseHandle />
+        </div>
+
+        {/*
+          **같은 체크박스를 두 화면이 반대로 읽는다.**
+          좁은 화면은 기본이 접힘(눌러야 펴짐), 넓은 화면은 기본이 펴짐(눌러야 접힘).
+          체크박스는 "기본에서 벗어났나"만 들고 있고, 그 기본이 화면마다 다르다 — 폰에서는
+          분류 아홉 줄을 지나야 글에 닿았고, 넓은 화면에서는 그 아홉 줄이 길잡이다.
+        */}
+        <div
+          className={cn(
+            "flex-col gap-7 pb-9",
+            "hidden group-has-checked/side:flex",
+            "lg:flex lg:pb-0 lg:group-has-checked/side:hidden",
+          )}
+        >
           <Suspense fallback={<CountSkeleton />}>
             <ViewCount />
           </Suspense>
@@ -117,12 +153,19 @@ function CollapseHandle() {
         바깥 모서리는 화면 끝에 못 박혀 있다 — 손잡이를 그쪽에 두어야 접고 펴는 동안
         제자리에 있는다. 오른쪽 여백의 목차가 오른쪽 끝에 붙어 있는 것과 같은 규칙이다.
       */}
-      <label htmlFor={COLLAPSE_ID} title="사이드바" className={cn(PANEL_TOGGLE, "self-start")}>
-        <span aria-hidden className="group-has-checked/side:hidden">
-          {FOLD_LEFT}
+      <label htmlFor={COLLAPSE_ID} title="사이드바" className={cn(PANEL_TOGGLE, "lg:self-start")}>
+        {/*
+          기호는 **접히는 방향**을 가리키는데, 그 방향이 화면마다 다르다 — 좁은 화면에서는
+          이 칸이 가로로 누워 아래로 펴지고, 넓은 화면에서는 옆으로 접힌다.
+          겹치는 display 유틸리티가 서로를 지우지 않도록 바깥에서 한 번 갈라 둔다.
+        */}
+        <span aria-hidden className="lg:hidden">
+          <span className="group-has-checked/side:hidden">{FOLD_DOWN}</span>
+          <span className="hidden group-has-checked/side:inline">{FOLD_UP}</span>
         </span>
-        <span aria-hidden className="hidden group-has-checked/side:inline">
-          {FOLD_RIGHT}
+        <span aria-hidden className="hidden lg:inline">
+          <span className="group-has-checked/side:hidden">{FOLD_LEFT}</span>
+          <span className="hidden group-has-checked/side:inline">{FOLD_RIGHT}</span>
         </span>
         <span className="sr-only">사이드바 접고 펴기</span>
       </label>
