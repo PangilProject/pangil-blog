@@ -55,10 +55,12 @@ describe("TableToolbarRow — 표 안에서는 표 자체만 만진다", () => {
    * 행·열은 표 위의 손잡이가 맡는다(TableNodeView). 툴바에 두면 "커서가 어쩌다 놓인 행"이
    * 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다. 표 삭제는 그 모호함이 없다.
    */
-  it("표 삭제만 남는다", () => {
+  it("표 전체나 고른 칸에 하는 일만 남는다", () => {
     render(<TableToolbarRow inTable />);
 
-    expect(screen.getByRole("button", { name: "표 삭제" })).toBeInTheDocument();
+    for (const label of ["머리 줄", "칸 병합", "칸 나누기", "표 삭제"]) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    }
     for (const gone of ["행 추가", "행 삭제", "열 추가", "열 삭제"]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
     }

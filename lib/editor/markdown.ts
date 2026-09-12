@@ -34,6 +34,25 @@ const ORDERED = /^(\s*)(\d+)[.)]\s+(.*)$/;
 const IMAGE_ONLY = /^\s*!\[([^\]]*)\]\(([^\s)]+)\)\s*$/;
 
 /**
+ * 파이프 표 (02 §5.5).
+ *
+ * 표를 **내보내기는 하는데 읽지는 못했다** — `postToMarkdown`이 파이프 표로 내보내므로,
+ * 내보낸 파일을 다시 붙여넣으면 표가 문단으로 풀렸다. 왕복이 끊긴 자리다.
+ *
+ * 가르는 줄(`|---|---|`)이 있어야 표로 본다. 그게 없으면 그냥 세로줄이 든 문장이고,
+ * 평범한 글을 표로 바꾸면 붙여넣기가 무서워진다.
+ */
+const TABLE_ROW = /^\s*\|(.+)\|\s*$/;
+const TABLE_DIVIDER = /^\s*\|(?:\s*:?-{1,}:?\s*\|)+\s*$/;
+
+/** `| 가 | 나 |` → `["가", "나"]`. 이스케이프한 세로줄은 글자로 남긴다 */
+function tableCells(line: string): string[] {
+  const inner = TABLE_ROW.exec(line)?.[1] ?? "";
+
+  return inner.split(/(?<!\\)\|/).map((cell) => cell.replace(/\\\|/g, "|").trim());
+}
+
+/**
  * 붙여넣은 글이 마크다운인가.
  *
  * 신호가 없으면 변환하지 않는다 — 평범한 글에서 별표 하나를 기울임으로 바꿔버리면
@@ -46,6 +65,7 @@ export function looksLikeMarkdown(text: string): boolean {
     (line) =>
       HEADING.test(line) ||
       FENCE.test(line) ||
+      TABLE_DIVIDER.test(line) ||
       BULLET.test(line) ||
       ORDERED.test(line) ||
       QUOTE.test(line) ||
@@ -196,6 +216,30 @@ function parseList(lines: string[], start: number): { node: MarkdownNode; next: 
 }
 
 /** 마크다운을 Tiptap 노드 배열로 바꾼다. 빈 입력은 빈 배열이다 */
+/**
+ * 머리 줄 + 본문 줄 → 표 노드.
+ *
+ * 줄마다 칸 수가 다를 수 있다(손으로 적은 표가 그렇다). **머리 줄을 기준으로 맞춘다** —
+ * 모자라면 빈 칸을 채우고 넘치면 버리지 않고 남긴다. 칸 수가 어긋난 표는 ProseMirror가
+ * 통째로 거부하므로, 여기서 맞춰 두지 않으면 붙여넣기가 조용히 실패한다.
+ */
+function tableNode(header: string[], rows: string[][]): MarkdownNode {
+  const width = Math.max(header.length, ...rows.map((row) => row.length), 1);
+
+  const toRow = (cells: string[], kind: "tableHeader" | "tableCell"): MarkdownNode => ({
+    type: "tableRow",
+    content: Array.from({ length: width }, (_, index) => ({
+      type: kind,
+      content: [{ type: "paragraph", content: parseInline(cells[index] ?? "") }],
+    })),
+  });
+
+  return {
+    type: "table",
+    content: [toRow(header, "tableHeader"), ...rows.map((row) => toRow(row, "tableCell"))],
+  };
+}
+
 export function markdownToTiptapContent(markdown: string): MarkdownNode[] {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   const out: MarkdownNode[] = [];
@@ -236,6 +280,26 @@ export function markdownToTiptapContent(markdown: string): MarkdownNode[] {
     if (line.trim() === "") {
       flush();
       index += 1;
+      continue;
+    }
+
+    /*
+      표는 **가르는 줄이 둘째 줄에 있을 때만** 표다. 머리 줄과 가르는 줄을 함께 보고 결정한다 —
+      한 줄만 보면 `| 이건 표가 아니다 |` 같은 문장도 표가 된다.
+    */
+    if (TABLE_ROW.test(line) && TABLE_DIVIDER.test(lines[index + 1] ?? "")) {
+      flush();
+
+      const header = tableCells(line);
+      const rows: string[][] = [];
+      index += 2;
+
+      while (index < lines.length && TABLE_ROW.test(lines[index] ?? "")) {
+        rows.push(tableCells(lines[index] ?? ""));
+        index += 1;
+      }
+
+      out.push(tableNode(header, rows));
       continue;
     }
 

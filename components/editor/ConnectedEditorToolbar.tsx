@@ -92,7 +92,22 @@ function applyCommand(editor: Editor, command: ToolbarCommand) {
  * 툴바에 두면 "커서가 어쩌다 놓인 행"이 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다.
  */
 function applyTableCommand(editor: Editor, command: TableCommand) {
-  if (command === "deleteTable") editor.chain().focus().deleteTable().run();
+  const chain = editor.chain().focus();
+
+  switch (command) {
+    case "toggleHeaderRow":
+      chain.toggleHeaderRow().run();
+      break;
+    case "mergeCells":
+      chain.mergeCells().run();
+      break;
+    case "splitCell":
+      chain.splitCell().run();
+      break;
+    case "deleteTable":
+      chain.deleteTable().run();
+      break;
+  }
 }
 
 export function ConnectedEditorToolbar({

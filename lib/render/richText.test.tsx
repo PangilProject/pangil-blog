@@ -140,6 +140,44 @@ describe("renderRichText — 표의 열 폭", () => {
   });
 });
 
+describe("renderRichText — 칸 색", () => {
+  /** 색은 **토큰 이름**으로 저장된다. 값을 저장하면 팔레트를 고쳐도 옛 글은 옛 색으로 남는다 */
+  const colored = (backgroundColor: unknown) =>
+    doc({
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            {
+              type: "tableCell",
+              attrs: { backgroundColor },
+              content: [{ type: "paragraph", content: [text("칸")] }],
+            },
+          ],
+        },
+      ],
+    });
+
+  it("토큰 이름을 클래스로 옮긴다 — 에디터와 같은 조판이다", () => {
+    const { container } = view(colored("accent"));
+
+    expect(container.querySelector("td")?.className).toBe("cell-accent");
+  });
+
+  it("색이 없으면 클래스도 없다", () => {
+    const { container } = view(colored(null));
+
+    expect(container.querySelector("td")?.className).toBe("");
+  });
+
+  it("모르는 값은 색 없음으로 읽는다 — 손으로 고친 값이 들어와도 지면이 깨지지 않는다", () => {
+    const { container } = view(colored("#ff0000"));
+
+    expect(container.querySelector("td")?.className).toBe("");
+  });
+});
+
 describe("renderRichText — 인라인 마크", () => {
   it("굵게·기울임·밑줄·취소선·코드를 씌운다", () => {
     const { container } = view(

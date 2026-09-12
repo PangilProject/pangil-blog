@@ -4,7 +4,14 @@ import { updateColumns } from "@tiptap/extension-table";
 import { NodeViewContent, type NodeViewProps, NodeViewWrapper } from "@tiptap/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { cellPosition, columnCount, rowCount } from "@/lib/editor/tableGeometry";
+import {
+  cellColorClass,
+  TABLE_CELL_COLOR_LABELS,
+  TABLE_CELL_COLORS,
+  type TableCellColor,
+} from "@/lib/editor/tableCellColors";
+import { clearAxis, duplicateAxis, selectAndRun } from "@/lib/editor/tableCommands";
+import { columnCount, rowCount } from "@/lib/editor/tableGeometry";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,16 +55,20 @@ const MENU_ITEMS: Record<Axis, { command: TableAction; label: string }[]> = {
   row: [
     { command: "addBefore", label: "위에 삽입" },
     { command: "addAfter", label: "아래에 삽입" },
+    { command: "duplicate", label: "복제" },
+    { command: "clear", label: "콘텐츠 삭제" },
     { command: "delete", label: "삭제" },
   ],
   column: [
     { command: "addBefore", label: "왼쪽에 삽입" },
     { command: "addAfter", label: "오른쪽에 삽입" },
+    { command: "duplicate", label: "복제" },
+    { command: "clear", label: "콘텐츠 삭제" },
     { command: "delete", label: "삭제" },
   ],
 };
 
-type TableAction = "addBefore" | "addAfter" | "delete";
+type TableAction = "addBefore" | "addAfter" | "duplicate" | "clear" | "delete";
 
 /** 손잡이가 놓일 자리. 표의 실제 칸을 재서 얻는다 — 칸 너비를 짐작하지 않는다 */
 type Offsets = {
@@ -150,22 +161,33 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
     const pos = typeof getPos === "function" ? getPos() : null;
     if (pos === null || pos === undefined) return;
 
-    const cell =
-      axis === "row" ? cellPosition(node, pos, index, 0) : cellPosition(node, pos, 0, index);
-    if (cell === null) return;
-
-    const chain = editor.chain().focus().setTextSelection(cell);
-
-    if (axis === "row") {
-      if (action === "addBefore") chain.addRowBefore().run();
-      else if (action === "addAfter") chain.addRowAfter().run();
-      else chain.deleteRow().run();
-    } else {
-      if (action === "addBefore") chain.addColumnBefore().run();
-      else if (action === "addAfter") chain.addColumnAfter().run();
-      else chain.deleteColumn().run();
+    if (action === "duplicate") duplicateAxis(editor, node, pos, axis, index);
+    else if (action === "clear") clearAxis(editor, node, pos, axis, index);
+    else {
+      selectAndRun(editor, node, pos, axis, index, (chain) => {
+        if (axis === "row") {
+          if (action === "addBefore") chain.addRowBefore().run();
+          else if (action === "addAfter") chain.addRowAfter().run();
+          else chain.deleteRow().run();
+        } else {
+          if (action === "addBefore") chain.addColumnBefore().run();
+          else if (action === "addAfter") chain.addColumnAfter().run();
+          else chain.deleteColumn().run();
+        }
+      });
     }
 
+    setTarget(null);
+  };
+
+  /** 색은 고른 줄 전체에 칠한다 — 손잡이가 가리킨 것이 줄이기 때문이다 */
+  const paint = (axis: Axis, index: number, color: TableCellColor) => {
+    const pos = typeof getPos === "function" ? getPos() : null;
+    if (pos === null || pos === undefined) return;
+
+    selectAndRun(editor, node, pos, axis, index, (chain) => {
+      chain.setCellAttribute("backgroundColor", color === "none" ? null : color).run();
+    });
     setTarget(null);
   };
 
@@ -264,6 +286,21 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
               </button>
             </li>
           ))}
+
+          {/* 색은 세 칸뿐이라 이름 대신 견본을 늘어놓는다 — 고르는 데 한 번이면 된다 */}
+          <li className="flex items-center gap-1.5 border-edge border-t px-3 pt-2 pb-1">
+            <span className="font-typewriter text-[10.5px] text-faint">색</span>
+            {TABLE_CELL_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={TABLE_CELL_COLOR_LABELS[color]}
+                title={TABLE_CELL_COLOR_LABELS[color]}
+                onClick={() => paint(target.axis, target.index, color)}
+                className={cn("size-[14px] border border-edge", cellColorClass(color) ?? "bg-card")}
+              />
+            ))}
+          </li>
         </menu>
       )}
     </NodeViewWrapper>

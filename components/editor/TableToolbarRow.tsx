@@ -26,13 +26,18 @@ const ROW_SIZES = Array.from({ length: MAX_ROWS }, (_, index) => index + 1);
 const COL_SIZES = Array.from({ length: MAX_COLS }, (_, index) => index + 1);
 
 /**
- * 표 자체에 하는 일만 남는다. **행·열은 손잡이가 맡는다**(TableNodeView) — 툴바에 두면
- * "커서가 어쩌다 놓인 행"이 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다.
- * 표 삭제는 그 모호함이 없다. 커서가 놓인 표는 하나뿐이다.
+ * 표 **전체**나 **고른 칸**에 하는 일만 남는다. 행·열은 손잡이가 맡는다(TableNodeView) —
+ * 툴바에 두면 "커서가 어쩌다 놓인 행"이 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다.
+ *
+ * 여기 남은 것들은 그 모호함이 없다. 커서가 놓인 표는 하나뿐이고, 병합·나누기는 **고른 칸**이
+ * 대상이라 화면에 이미 드러나 있다(`.selectedCell`).
  */
-export type TableCommand = "deleteTable";
+export type TableCommand = "toggleHeaderRow" | "mergeCells" | "splitCell" | "deleteTable";
 
 const TABLE_COMMAND_LABELS: Record<TableCommand, string> = {
+  toggleHeaderRow: "머리 줄",
+  mergeCells: "칸 병합",
+  splitCell: "칸 나누기",
   deleteTable: "표 삭제",
 };
 
@@ -61,7 +66,7 @@ export function TableToolbarRow({
             className={cn(
               "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft",
               "hover:border-ink-soft hover:text-ink",
-              command === "deleteTable" && "text-(--accent)",
+              command === "deleteTable" && "ml-auto text-(--accent)",
             )}
           >
             {TABLE_COMMAND_LABELS[command]}

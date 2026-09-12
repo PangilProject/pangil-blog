@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { CodeBlock } from "@/components/public/CodeBlock";
 import { PostImage } from "@/components/public/PostImage";
 import type { TiptapDoc } from "@/lib/content/schema";
+import { cellColorClass } from "@/lib/editor/tableCellColors";
 import { headingId } from "@/lib/render/headingId";
 
 /**
@@ -279,16 +280,27 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
     case "tableRow":
       return <tr key={key}>{children()}</tr>;
 
+    /* 칸 색은 토큰 이름으로 저장된다 — 조판은 에디터와 같은 클래스가 한다 */
     case "tableHeader":
       return (
-        <th key={key} colSpan={spanOf(node, "colspan")} rowSpan={spanOf(node, "rowspan")}>
+        <th
+          key={key}
+          colSpan={spanOf(node, "colspan")}
+          rowSpan={spanOf(node, "rowspan")}
+          className={cellColorClass(node.attrs?.backgroundColor)}
+        >
           {children()}
         </th>
       );
 
     case "tableCell":
       return (
-        <td key={key} colSpan={spanOf(node, "colspan")} rowSpan={spanOf(node, "rowspan")}>
+        <td
+          key={key}
+          colSpan={spanOf(node, "colspan")}
+          rowSpan={spanOf(node, "rowspan")}
+          className={cellColorClass(node.attrs?.backgroundColor)}
+        >
           {children()}
         </td>
       );
