@@ -131,8 +131,3 @@ export function probeImage(bytes: Uint8Array): ProbedImage | null {
 
   return null;
 }
-
-/** Storage 버킷이 받는 형식인가 (lib/storage/images의 허용 목록과 같은 규칙) */
-export function isUploadable(mime: string): boolean {
-  return ["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"].includes(mime);
-}

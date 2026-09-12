@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isUploadable, probeImage } from "@/lib/images/probe";
+import { probeImage } from "@/lib/images/probe";
 
 /**
  * 확장자를 믿지 않고 바이트를 본다 — 백업에 `.dat`이나 확장자 없는 파일이 섞여 있고,
@@ -78,12 +78,5 @@ describe("probeImage", () => {
   it("이미지가 아니면 null이다", () => {
     expect(probeImage(new Uint8Array([0x25, 0x50, 0x44, 0x46]))).toBeNull();
     expect(probeImage(new Uint8Array(0))).toBeNull();
-  });
-});
-
-describe("isUploadable", () => {
-  it("버킷이 받는 형식만 통과한다", () => {
-    expect(isUploadable("image/png")).toBe(true);
-    expect(isUploadable("image/heic")).toBe(false);
   });
 });
