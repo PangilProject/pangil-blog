@@ -32,7 +32,7 @@ export function CrawlBand({
         "flex flex-wrap justify-between gap-2 border px-[13px] py-[9px]",
         "font-typewriter text-[10.5px]",
         isFailed
-          ? "border-warn bg-crawl text-[#8a6a26]"
+          ? "border-warn bg-crawl text-warn-ink"
           : "border-[#efe3c8] bg-crawl text-[#98835a]",
         className,
       )}
