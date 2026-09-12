@@ -82,7 +82,7 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         */}
         <div
           className={cn(
-            "flex h-11 items-center justify-between gap-3",
+            "flex h-10 items-center justify-between gap-3",
             "lg:h-auto lg:flex-col-reverse lg:items-start lg:gap-4",
           )}
         >

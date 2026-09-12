@@ -100,7 +100,7 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
           접기는 헤더의 손잡이가 켠다(SiteHeader). 넓은 화면에서만 걷어내는 이유는 좁은 화면의
           목차가 본문 위 접이식이라 이미 접혀 있어서다 — 그쪽까지 걷으면 목차가 아예 사라진다
         */}
-        <div className="order-1 max-lg:sticky max-lg:top-11 max-lg:z-20 max-lg:bg-paper max-lg:pb-4 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto lg:group-has-[#toc-fold:checked]/page:hidden">
+        <div className="order-1 max-lg:sticky max-lg:top-10 max-lg:z-20 max-lg:bg-paper max-lg:pb-3 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto lg:group-has-[#toc-fold:checked]/page:hidden">
           <Toc headings={headings} />
         </div>
       </div>
