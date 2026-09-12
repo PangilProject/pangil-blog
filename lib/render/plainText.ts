@@ -17,7 +17,7 @@ type UnknownNode = {
   content?: unknown;
 };
 
-/** 블록 경계로 취급하는 노드 — 평문에서 줄바꿈이 된다 */
+/** 줄 경계로 취급하는 노드 — 평문에서 줄바꿈이 된다 */
 const BLOCK_TYPES = new Set([
   "paragraph",
   "heading",
@@ -31,6 +31,15 @@ const BLOCK_TYPES = new Set([
   // 칸을 경계로 보지 않으면 "합계" + "3" 이 "합계3"으로 붙어 검색에 걸리지 않는다
   "tableCell",
   "tableHeader",
+  /**
+   * 블록은 아니지만 **줄은 끊는다.** 여기 없던 동안 문단 안의 줄바꿈이 색인에서 사라져
+   * "감사"⏎"합니다"가 `감사합니다` 한 낱말로 붙었다 — 위 칸 이야기와 같은 고장이다.
+   *
+   * 가공의 사례가 아니다. 티스토리 컨버터가 `<br>`을 전부 이 노드로 옮겼으므로
+   * (`scripts/migrate-tistory/convertHtml.ts:218`) 이관해 온 글 대부분이 그 상태였다.
+   * 나머지 두 타깃은 처음부터 줄로 다루고 있었다(`markdown.ts:38`, `richText.tsx:311`).
+   */
+  "hardBreak",
 ]);
 
 function walk(node: unknown, out: string[]): void {
