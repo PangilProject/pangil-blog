@@ -19,11 +19,13 @@ export function PostIt({
     <div
       className={cn(
         "w-[190px] -rotate-2 bg-postit px-[15px] pt-[13px] pb-4 shadow-[0_6px_14px_rgb(60_50_35_/_18%)]",
-        "font-serif text-[12.5px] leading-[1.85] text-[#5c5334]",
+        // 글자는 토큰이다. 하드코딩이던 동안 다크에서 어두운 글자가 올리브 위에 얹혀
+        // 본문 1.23:1 · 라벨 1.95:1이었다 — 메모지는 관리 화면에만 있어 오래 안 보였다
+        "font-serif text-[12.5px] leading-[1.85] text-ink",
         className,
       )}
     >
-      {label && <div className="mb-[5px] font-typewriter text-[10px] text-[#a0904e]">{label}</div>}
+      {label && <div className="mb-[5px] font-typewriter text-[10px] text-ink-soft">{label}</div>}
       {children}
     </div>
   );

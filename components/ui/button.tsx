@@ -21,7 +21,9 @@ const buttonVariants = cva(
           "border-edge bg-card font-typewriter text-ink-soft hover:border-ink-soft hover:text-ink",
         // 발행·저장처럼 지면에서 유일한 주 동작 (03 §5.3)
         primary:
-          "border-(--accent) bg-(--accent) font-typewriter font-bold text-[#fff8f0] hover:brightness-90",
+          // 글자는 지면색이다 — 테마를 따라간다. 흰색을 박아 두었던 동안 다크에서 밝은 글자가
+          // 밝은 액센트 위에 얹혀 3.23:1(faith)·3.59:1(dev)이었다
+          "border-(--accent) bg-(--accent) font-typewriter font-bold text-paper hover:brightness-90",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
