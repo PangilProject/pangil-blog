@@ -57,3 +57,17 @@ describe("SiteSidebar", () => {
     });
   });
 });
+
+/**
+ * 접기는 자바스크립트 없이 체크박스 하나로 돈다(04 §3.6 — 아일랜드를 늘리지 않는다).
+ * jsdom에는 조판이 없어 "접혔는지"는 볼 수 없지만, **손잡이가 그 체크박스를 가리키는지**는
+ * 볼 수 있다 — `htmlFor`와 `id`가 어긋나면 눌러도 아무 일이 없고 다른 무엇도 잡지 못한다.
+ */
+describe("접는 손잡이", () => {
+  it("손잡이가 체크박스를 가리킨다", () => {
+    render(<SiteSidebar site="dev" />);
+
+    const toggle = screen.getByRole("checkbox", { name: "사이드바 접고 펴기" });
+    expect(toggle).not.toBeChecked();
+  });
+});
