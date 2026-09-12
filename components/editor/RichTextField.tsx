@@ -123,7 +123,9 @@ export function RichTextField({
             // 이제는 툴바에서 새 표를 놓는 길이기도 하다(TableToolbarRow)
             TableKit.configure({ table: false }),
             // 행·열 손잡이를 표 위에 얹는다(TableNodeView). 조작 대상이 화면에 있어야 한다
-            Table.configure({ resizable: false }).extend({
+            // 폭을 끌어서 정한다. 저장은 셀의 colwidth에 실리고, 공개 지면도 같은 폭으로
+            // 그린다(lib/render/richText의 colgroup) — 안 그리면 지면이 에디터와 달라진다
+            Table.configure({ resizable: true, cellMinWidth: 48 }).extend({
               addNodeView() {
                 // 안쪽 content 요소를 tbody로 만든다 — 기본값(div)이면 표 안에 div가
                 // 들어가 브라우저가 그것을 표 밖으로 밀어낸다(TableNodeView 주석)

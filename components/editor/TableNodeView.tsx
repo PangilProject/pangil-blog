@@ -1,5 +1,6 @@
 "use client";
 
+import { updateColumns } from "@tiptap/extension-table";
 import { NodeViewContent, type NodeViewProps, NodeViewWrapper } from "@tiptap/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -36,6 +37,9 @@ const TableElement = NodeViewContent as unknown as React.FC<{ as: "table" }>;
 
 /** 손잡이 두께. 표 테두리에 붙여 놓는다 — 떨어뜨리면 무엇에 달린 손잡이인지 흐려진다 */
 const HANDLE = 8;
+
+/** 칸이 이보다 좁아지지 않는다. `Table.configure`에 넘긴 값과 같아야 드래그 셈이 맞는다 */
+const CELL_MIN_WIDTH = 48;
 
 type Axis = "row" | "column";
 type Target = { axis: Axis; index: number; offset: number; size: number };
@@ -82,6 +86,29 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
 
     setOffsets({ rows, columns });
   }, []);
+
+  /**
+   * 표의 첫 자식을 `<colgroup>`으로 유지한다.
+   *
+   * 폭을 끌 때 prosemirror-tables는 **가장 가까운 `<table>`의 `firstChild`를 colgroup으로
+   * 보고** 거기에 폭을 쓴다(`displayColumnWidth`). 기본 TableView 대신 우리 NodeView를
+   * 쓰므로 그 자리를 우리가 만들어 줘야 한다 — 없으면 끄는 동안 아무 일도 일어나지 않는다.
+   *
+   * React가 만드는 자식이 아니다. Tiptap도 tbody를 이렇게 직접 붙인다.
+   */
+  useEffect(() => {
+    const table = wrapperRef.current?.querySelector("table");
+    if (!table) return;
+
+    const first = table.firstChild;
+    const colgroup =
+      first instanceof HTMLTableColElement && first.tagName === "COLGROUP"
+        ? first
+        : table.insertBefore(document.createElement("colgroup"), table.firstChild);
+
+    updateColumns(node, colgroup, table, CELL_MIN_WIDTH);
+    measure();
+  }, [node, measure]);
 
   // 글자를 치면 칸 높이가 바뀐다. 재는 것을 한 번으로 끝내면 손잡이가 어긋난 자리에 남는다
   useEffect(() => {

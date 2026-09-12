@@ -93,6 +93,53 @@ describe("renderRichText — 블록", () => {
   });
 });
 
+describe("renderRichText — 표의 열 폭", () => {
+  /**
+   * 에디터에서 끌어 정한 폭은 칸의 `colwidth`에 실린다. `<colgroup>`을 안 그리면 지면에서
+   * 그 값이 아무 일도 하지 않는다 — **쓴 사람이 본 표와 읽는 사람이 보는 표가 달라진다.**
+   */
+  const table = (...cells: unknown[]) =>
+    doc({
+      type: "table",
+      content: [{ type: "tableRow", content: cells }],
+    });
+
+  const cell = (colwidth: unknown, colspan?: number) => ({
+    type: "tableCell",
+    attrs: { colwidth, ...(colspan ? { colspan } : {}) },
+    content: [{ type: "paragraph", content: [text("칸")] }],
+  });
+
+  it("정해진 폭을 col로 그린다", () => {
+    const { container } = view(table(cell([120]), cell([240])));
+
+    const cols = container.querySelectorAll("col");
+    expect(cols).toHaveLength(2);
+    expect(cols[0]?.style.width).toBe("120px");
+    expect(cols[1]?.style.width).toBe("240px");
+  });
+
+  it("폭이 하나도 없으면 colgroup을 세우지 않는다 — 이관해 온 표가 그렇다", () => {
+    const { container } = view(table(cell(null), cell(null)));
+
+    expect(container.querySelector("colgroup")).toBeNull();
+  });
+
+  it("일부만 정해져 있으면 나머지는 폭 없이 남긴다", () => {
+    const { container } = view(table(cell([120]), cell(null)));
+
+    const cols = container.querySelectorAll("col");
+    expect(cols[0]?.style.width).toBe("120px");
+    expect(cols[1]?.style.width).toBe("");
+  });
+
+  it("병합된 칸은 펴서 센다 — col 수가 실제 열 수와 같아야 한다", () => {
+    const { container } = view(table(cell([100, 140], 2), cell([90])));
+
+    expect(container.querySelectorAll("col")).toHaveLength(3);
+  });
+});
+
 describe("renderRichText — 인라인 마크", () => {
   it("굵게·기울임·밑줄·취소선·코드를 씌운다", () => {
     const { container } = view(

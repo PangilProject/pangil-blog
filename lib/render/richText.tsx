@@ -142,6 +142,37 @@ function spanOf(node: Node, name: "colspan" | "rowspan"): number | undefined {
   return typeof value === "number" && value > 1 ? value : undefined;
 }
 
+/**
+ * 표의 열 폭 (px). 하나라도 정해진 것이 있을 때만 답한다.
+ *
+ * 폭은 **첫 줄 칸의 `colwidth`**에 실린다(prosemirror-tables). 병합된 칸은 한 칸에 여러
+ * 폭을 들고 있어 펴서 읽는다. 아무 칸에도 폭이 없으면(이관해 온 표가 그렇다) `null`을
+ * 돌려 `colgroup` 자체를 세우지 않는다 — 빈 `<col>`은 아무 일도 안 하면서 조판만 흔든다.
+ */
+function columnWidths(table: Node): (number | null)[] | null {
+  const rows = table.content;
+  const firstRow = Array.isArray(rows) ? (rows[0] as Node | undefined) : undefined;
+  const cells = firstRow?.content;
+  if (!Array.isArray(cells)) return null;
+
+  const widths: (number | null)[] = [];
+  let hasAny = false;
+
+  for (const cell of cells as Node[]) {
+    const colwidth = cell.attrs?.colwidth;
+    const span = spanOf(cell, "colspan") ?? 1;
+
+    for (let index = 0; index < span; index += 1) {
+      const width = Array.isArray(colwidth) ? colwidth[index] : null;
+      const usable = typeof width === "number" && width > 0 ? width : null;
+      if (usable !== null) hasAny = true;
+      widths.push(usable);
+    }
+  }
+
+  return hasAny ? widths : null;
+}
+
 type Context = {
   headings: RichTextHeading[];
   seen: Map<string, number>;
@@ -213,18 +244,37 @@ function renderNode(node: Node, context: Context, key: string): ReactNode {
     }
 
     /*
-      표는 에디터 툴바에 없지만(ADR-001) 티스토리에서 옮겨온 글에 298개가 있다. 넓은 표가
-      본문 폭을 밀어내지 않도록 자기 안에서만 좌우로 넘긴다 — 지면이 가로로 스크롤되면
-      읽는 자리가 흔들린다
+      넓은 표가 본문 폭을 밀어내지 않도록 자기 안에서만 좌우로 넘긴다 — 지면이 가로로
+      스크롤되면 읽는 자리가 흔들린다.
+
+      **폭을 여기서도 그린다.** 에디터에서 끌어 정한 폭은 칸의 `colwidth`에 실리는데,
+      `<colgroup>`이 없으면 지면에서는 그 값이 아무 일도 하지 않는다 — 쓴 사람이 본 표와
+      읽는 사람이 보는 표가 달라진다. 이관해 온 표에는 `colwidth`가 없고(컨버터가 null을
+      넣었다) 그때는 `colgroup`을 세우지 않아 예전처럼 고르게 나뉜다.
     */
-    case "table":
+    case "table": {
+      const widths = columnWidths(node);
+
       return (
         <div key={key} className="my-5 overflow-x-auto">
           <table>
+            {widths && (
+              <colgroup>
+                {widths.map((width, index) => (
+                  <col
+                    // 열은 자리가 곧 정체다
+                    // biome-ignore lint/suspicious/noArrayIndexKey: 자리 번호가 식별자다
+                    key={index}
+                    style={width === null ? undefined : { width: `${width}px` }}
+                  />
+                ))}
+              </colgroup>
+            )}
             <tbody>{children()}</tbody>
           </table>
         </div>
       );
+    }
 
     case "tableRow":
       return <tr key={key}>{children()}</tr>;
