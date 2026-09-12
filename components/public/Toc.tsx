@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { FOLD_DOWN } from "@/components/public/panelToggle";
+import { FOLD_DOWN, FOLD_UP, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import type { RichTextHeading } from "@/lib/render/richText";
 import { cn } from "@/lib/utils";
 
@@ -90,12 +90,26 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
         붙어 있으므로 읽는 내내 닿고, 값은 이미 관찰자가 들고 있던 것이다 — 여태 넓은
         화면에서만 쓰였다.
       */}
-      <details className="border-edge border-b bg-paper lg:hidden">
-        <summary className="flex h-[34px] cursor-pointer list-none items-center gap-2">
+      <details className="group/toc bg-paper lg:hidden">
+        {/*
+          **자기 괘선을 긋지 않는다.** 이 띠는 본문 통 안쪽(좌우 6%)에 있고 위에 붙은
+          사이드바 띠는 화면 끝까지 가는데, 둘 다 선을 그으면 아래 선만 6% 안에서 끊겨
+          두 띠가 어긋나 보인다. 바탕만 깔면 그 어긋남이 드러날 자리가 없다 —
+          본문도 같은 통 안이라 글이 그 여백으로 넘어오지 않는다.
+        */}
+        <summary
+          className={cn(
+            "flex h-9 cursor-pointer list-none items-center gap-2.5",
+            "[&::-webkit-details-marker]:hidden",
+          )}
+        >
           <span className="font-typewriter text-[9.5px] tracking-[0.12em] text-faint">지금</span>
           <span className="truncate text-[11.5px] text-(--accent)">{current}</span>
-          <span aria-hidden className="ml-auto font-typewriter text-[10px] text-faint">
-            {FOLD_DOWN}
+
+          {/* 사이드바 손잡이와 같은 칩이다 — 두 띠에 다른 물건이 서면 줄이 어긋나 보인다 */}
+          <span aria-hidden className={cn(PANEL_TOGGLE, "ml-auto")}>
+            <span className="group-open/toc:hidden">{FOLD_DOWN}</span>
+            <span className="hidden group-open/toc:inline">{FOLD_UP}</span>
           </span>
         </summary>
         <div className="pt-1 pb-3">{list}</div>
