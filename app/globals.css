@@ -407,6 +407,42 @@
   margin-top: 0.4em;
 }
 
+/* ---- 열 폭 끌기 -------------------------------------------
+   칸 경계에 잡을 것이 있어야 끌 수 있다. prosemirror-tables가 경계마다 이 조각을 놓는다.
+   평소에는 보이지 않고 표에 손을 올렸을 때만 드러난다 — 쓰는 동안 선이 늘 서 있으면
+   그게 방해다(02 §5.3). */
+.record-prose .column-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -2px;
+  width: 4px;
+  z-index: 12;
+  background: var(--accent);
+  opacity: 0;
+  cursor: col-resize;
+}
+
+.record-prose th,
+.record-prose td {
+  /* 손잡이가 칸 오른쪽 끝에 붙으려면 칸이 기준이어야 한다 */
+  position: relative;
+}
+
+[data-table-handles]:hover .column-resize-handle,
+.record-prose .column-resize-dragging .column-resize-handle {
+  opacity: 0.5;
+}
+
+.record-prose .column-resize-handle:hover {
+  opacity: 1;
+}
+
+/* 끄는 동안 커서가 손을 따라간다 — 칸 위를 지나도 글자 커서로 바뀌지 않게 */
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
 /* 쓰는 동안 어느 칸에 있는지 보여야 한다. ProseMirror가 선택된 칸에 붙이는 클래스다 */
 .record-prose .selectedCell {
   background: color-mix(in oklch, var(--accent), transparent 88%);
