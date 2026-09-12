@@ -22,3 +22,7 @@ export const PANEL_TOGGLE =
  */
 export const FOLD_LEFT = "«";
 export const FOLD_RIGHT = "»";
+
+/** 좁은 화면에서는 칸이 가로로 누워 아래로 펴진다 — 그때는 방향이 위아래다 */
+export const FOLD_DOWN = "▾";
+export const FOLD_UP = "▴";
