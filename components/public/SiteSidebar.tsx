@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 
 import {
   FOLD_DOWN,
@@ -16,11 +16,20 @@ import { brandLabel, siteBrand } from "@/lib/site/brand";
 import { siteHref } from "@/lib/site/publicUrl";
 import { cn } from "@/lib/utils";
 
-/** 한 지면에 사이드바는 하나뿐이라 고정 id로 충분하다 */
-const COLLAPSE_ID = "sidebar-collapse";
-
-/** 목차가 보는 이름 — 어긋나면 눌러도 아무 일이 없다(Toc) */
-const TOC_OPEN_ID = "toc-open";
+/**
+ * 띠에서 내려오는 판은 **한 번에 하나**다.
+ *
+ * 체크박스 둘로는 그게 안 된다 — 서로의 상태를 모르므로 목차와 분류가 같이 열린다. 라디오
+ * 하나에 `없음`을 더한 세 값으로 두면 브라우저가 알아서 하나만 켜 준다. 다시 눌러 닫는 것은
+ * 라디오가 못 하는 일이라, 손잡이마다 **라벨을 두 장** 둔다: 닫혀 있을 때 보이는 `열기`와
+ * 열려 있을 때 그 자리에 겹쳐 서는 `닫기`(=`없음`을 고른다).
+ *
+ * 한 지면에 띠는 하나뿐이라 고정 id로 충분하다.
+ */
+const PANEL_NONE = "panel-none";
+const PANEL_AXIS = "panel-axis";
+const PANEL_TOC = "panel-toc";
+const PANEL_NAME = "site-panel";
 
 /**
  * 목록 옆 사이드바 (03 §5.1).
@@ -54,7 +63,7 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다.
         // 폭을 숫자로 박지 않는 이유는 아래 여백과 같이 움직여야 해서다 — 손잡이가 제자리에
         // 있으려면 좌우 여백이 접히기 전과 같아야 하고, 그러면 폭은 내용이 정한다
-        "lg:has-[#sidebar-collapse:checked]:w-auto",
+        "lg:has-[#panel-axis:checked]:w-auto",
         /**
          * **좁은 화면에서는 이 칸이 상단에 붙는 줄이 된다.**
          *
@@ -89,7 +98,7 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
             "lg:h-auto lg:flex-col-reverse lg:items-start lg:gap-4",
           )}
         >
-          <section className="flex flex-col gap-2 lg:group-has-[#sidebar-collapse:checked]/side:hidden">
+          <section className="flex flex-col gap-2 lg:group-has-[#panel-axis:checked]/side:hidden">
             <Link
               href={siteHref(site, `/${site}`, { from: site })}
               className="font-typewriter font-bold text-[13px] text-ink"
@@ -105,6 +114,14 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
 
           {/* 좁은 화면에서는 이 줄이 유일한 띠라, 이 지면에서 접었다 펼 수 있는 것이 다 선다 */}
           <div className="flex items-center gap-2">
+            <input
+              id={PANEL_NONE}
+              name={PANEL_NAME}
+              type="radio"
+              defaultChecked
+              className="sr-only"
+              aria-label="판 닫기"
+            />
             <TocHandle />
             <CollapseHandle />
           </div>
@@ -118,9 +135,9 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         */}
         <div
           className={cn(
-            "flex-col gap-7 pb-9",
-            "hidden group-has-[#sidebar-collapse:checked]/side:flex",
-            "lg:flex lg:pb-0 lg:group-has-[#sidebar-collapse:checked]/side:hidden",
+            "flex-col gap-7 pb-9 max-lg:pt-4",
+            "hidden group-has-[#panel-axis:checked]/side:flex",
+            "lg:flex lg:pb-0 lg:group-has-[#panel-axis:checked]/side:hidden",
           )}
         >
           <Suspense fallback={<CountSkeleton />}>
@@ -142,55 +159,129 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
 }
 
 /**
- * 접는 손잡이.
+ * 판 손잡이 — 열기 라벨과 닫기 라벨을 겹쳐 둔 한 벌.
  *
  * **자바스크립트를 쓰지 않는다.** 공개 지면의 클라이언트 아일랜드는 세어 둔 것이 전부고(04 §3.6),
- * "칸 하나 접기"에 그 예산을 쓰지 않는다. 숨긴 체크박스 하나와 `group-has-*`면 끝이고,
- * 스크립트가 죽어도 접힌다.
+ * "칸 하나 접기"에 그 예산을 쓰지 않는다. 라디오 세 값과 `group-has-*`면 끝이고, 스크립트가
+ * 죽어도 열린다.
  *
- * **선택자에 id를 적는다.** 한동안 `has-checked`로만 적었는데, 같은 줄에 목차 손잡이가
- * 들어오자 그 체크박스까지 같이 잡혀서 **목차를 누르면 분류가 펼쳐졌다**. 이 줄에 손잡이가
- * 더 붙을 수 있으므로 각자 자기 것만 본다.
+ * 대신 **새로고침하면 닫힌다** — 열린 판을 기억하려면 쿠키가 필요하고, 쿠키를 읽으려면
+ * 아일랜드가 는다. 지면 안에서 옮겨 다니는 동안은 레이아웃이 안 갈려서 그대로 남는다.
+ */
+function PanelHandle({
+  target,
+  name,
+  openGlyph,
+  closeGlyph,
+  openWhenShut,
+  shutWhenOpen,
+  className,
+}: {
+  /** 이 손잡이가 켜는 라디오 */
+  target: string;
+  /** 화면에 적히는 이름. 좁은 화면에서는 손잡이가 둘이라 기호만으로 구분이 안 된다 */
+  name: string;
+  /** 닫혀 있을 때 — 누르면 열린다 */
+  openGlyph: ReactNode;
+  /** 열려 있을 때 — 누르면 닫힌다 */
+  closeGlyph: ReactNode;
+  /**
+   * 켜져 있는 판만 `닫기`를 내놓는다. 두 라벨이 같은 자리에 겹쳐 서므로 줄이 흔들리지 않는다.
+   *
+   * **이 두 줄을 부르는 쪽이 글자 그대로 넘긴다.** 여기서 `target`으로 조립하면 Tailwind가
+   * 그 이름을 못 읽는다 — 클래스는 소스를 훑어 찾으므로, 만들어 낸 이름은 CSS에 안 나온다.
+   * 화면에서는 그저 손잡이가 안 바뀌는 것으로 보이고, 조판 없는 테스트도 못 잡는다.
+   */
+  openWhenShut: string;
+  shutWhenOpen: string;
+  className?: string;
+}) {
+  const chip = cn(PANEL_TOGGLE, "w-auto gap-1.5 px-2", className);
+
+  return (
+    <>
+      <input id={target} name={PANEL_NAME} type="radio" className="sr-only" />
+
+      <label htmlFor={target} title={name} className={cn(chip, openWhenShut)}>
+        <span>{name}</span>
+        {openGlyph}
+        <span className="sr-only">열기</span>
+      </label>
+
+      <label htmlFor={PANEL_NONE} title={name} className={cn(chip, shutWhenOpen)}>
+        <span>{name}</span>
+        {closeGlyph}
+        <span className="sr-only">닫기</span>
+      </label>
+    </>
+  );
+}
+
+/**
+ * 기호는 **접히는 방향**을 가리키는데, 그 방향이 화면마다 다르다 — 좁은 화면에서는 이 칸이
+ * 가로로 누워 아래로 펴지고, 넓은 화면에서는 옆으로 접힌다. 겹치는 display 유틸리티가 서로를
+ * 지우지 않도록 바깥에서 한 번 갈라 둔다.
+ */
+function Glyph({ narrow, wide }: { narrow: string; wide: string }) {
+  return (
+    <span aria-hidden>
+      <span className="lg:hidden">{narrow}</span>
+      <span className="hidden lg:inline">{wide}</span>
+    </span>
+  );
+}
+
+/**
+ * 분류 손잡이.
  *
- * 대신 **새로고침하면 다시 펴진다** — 접힌 상태를 기억하려면 쿠키가 필요하고, 쿠키를 읽으려면
- * 아일랜드가 는다. 지면 안에서 옮겨 다니는 동안은 레이아웃이 안 갈리므로 접힌 채로 남는다.
+ * **좁은 화면과 넓은 화면의 기본값이 반대다.** 폰에서는 분류 아홉 줄이 글로 가는 길을 막아
+ * 기본이 닫힘이고, 넓은 화면에서는 그 아홉 줄이 길잡이라 기본이 펼침이다. 그래서 같은 라벨이
+ * 한쪽에서는 `열기`, 다른 쪽에서는 `접기`로 읽힌다 — 기호만 갈라 둔다.
+ *
+ * 넓은 화면에서는 이 칸의 **바깥 가장자리**에 붙는다. 접히면 안쪽(본문 쪽) 모서리가 밀려
+ * 들어오지만 바깥 모서리는 화면 끝에 못 박혀 있어, 그쪽에 두어야 제자리에 있는다.
  */
 function CollapseHandle() {
   return (
-    <>
-      <input id={COLLAPSE_ID} type="checkbox" className="sr-only" />
-      {/*
-        **바깥 가장자리에 붙는다.** 접히면 이 칸은 안쪽(본문 쪽) 모서리가 밀려 들어오지만
-        바깥 모서리는 화면 끝에 못 박혀 있다 — 손잡이를 그쪽에 두어야 접고 펴는 동안
-        제자리에 있는다. 오른쪽 여백의 목차가 오른쪽 끝에 붙어 있는 것과 같은 규칙이다.
-      */}
-      <label
-        htmlFor={COLLAPSE_ID}
-        title="사이드바"
-        className={cn(PANEL_TOGGLE, "max-lg:w-auto max-lg:gap-1.5 max-lg:px-2 lg:self-start")}
-      >
-        {/* 좁은 화면에서는 손잡이가 둘이다 — 기호만으로는 어느 쪽인지 알 수 없다 */}
-        <span className="lg:hidden">분류</span>
-        {/*
-          기호는 **접히는 방향**을 가리키는데, 그 방향이 화면마다 다르다 — 좁은 화면에서는
-          이 칸이 가로로 누워 아래로 펴지고, 넓은 화면에서는 옆으로 접힌다.
-          겹치는 display 유틸리티가 서로를 지우지 않도록 바깥에서 한 번 갈라 둔다.
-        */}
-        <span aria-hidden className="lg:hidden">
-          <span className="group-has-[#sidebar-collapse:checked]/side:hidden">{FOLD_DOWN}</span>
-          <span className="hidden group-has-[#sidebar-collapse:checked]/side:inline">
-            {FOLD_UP}
-          </span>
-        </span>
-        <span aria-hidden className="hidden lg:inline">
-          <span className="group-has-[#sidebar-collapse:checked]/side:hidden">{FOLD_LEFT}</span>
-          <span className="hidden group-has-[#sidebar-collapse:checked]/side:inline">
-            {FOLD_RIGHT}
-          </span>
-        </span>
-        <span className="sr-only">사이드바 접고 펴기</span>
-      </label>
-    </>
+    <PanelHandle
+      target={PANEL_AXIS}
+      name="분류"
+      openGlyph={<Glyph narrow={FOLD_DOWN} wide={FOLD_LEFT} />}
+      closeGlyph={<Glyph narrow={FOLD_UP} wide={FOLD_RIGHT} />}
+      openWhenShut="group-has-[#panel-axis:checked]/side:hidden"
+      shutWhenOpen="hidden group-has-[#panel-axis:checked]/side:inline-flex"
+      // 넓은 화면에서는 이름을 떼고 네모 칩으로 돌아간다 — 거기서는 손잡이가 하나뿐이다
+      className="lg:w-[26px] lg:gap-0 lg:px-0 lg:[&>span:first-child]:hidden"
+    />
+  );
+}
+
+/**
+ * 목차 손잡이 — 좁은 화면 전용.
+ *
+ * 넓은 화면에서는 상단 줄(SiteHeader)이 이 일을 한다. 좁은 화면에는 그 줄이 붙어 있지
+ * 않으므로, 스크롤 내내 남는 유일한 띠인 여기가 맡는다.
+ *
+ * **목차가 있는 글에만 나온다.** 이 칸은 레이아웃에 있어서 지금 지면에 목차가 있는지 모른다
+ * — 대신 목차가 남기는 표식(`data-toc`)을 보고 정한다. 제목이 하나뿐인 글에는 그 표식이
+ * 없고, 그러면 이 손잡이도 없다.
+ */
+function TocHandle() {
+  return (
+    // 껍데기를 둘로 겹친다. 바깥은 화면 너비로, 안은 목차가 있는지로 가른다 —
+    // 한 요소에 두 조건을 겹쳐 적으면 같은 display 유틸리티끼리 서로를 지운다
+    <span className="lg:hidden">
+      <span className="hidden items-center gap-2 group-has-[[data-toc]]/site:inline-flex">
+        <PanelHandle
+          target={PANEL_TOC}
+          name="목차"
+          openGlyph={<Glyph narrow={FOLD_DOWN} wide={FOLD_DOWN} />}
+          closeGlyph={<Glyph narrow={FOLD_UP} wide={FOLD_UP} />}
+          openWhenShut="group-has-[#panel-toc:checked]/side:hidden"
+          shutWhenOpen="hidden group-has-[#panel-toc:checked]/side:inline-flex"
+        />
+      </span>
+    </span>
   );
 }
 
@@ -292,40 +383,4 @@ function formatDay(at: Date): string {
     dateStyle: "short",
     timeZone: "Asia/Seoul",
   }).format(at);
-}
-
-/**
- * 목차 손잡이 — 좁은 화면 전용.
- *
- * 넓은 화면에서는 상단 줄(SiteHeader)이 이 일을 한다. 좁은 화면에는 그 줄이 붙어 있지
- * 않으므로, 스크롤 내내 남는 유일한 띠인 여기가 맡는다.
- *
- * **목차가 있는 글에만 나온다.** 이 칸은 레이아웃에 있어서 지금 지면에 목차가 있는지 모른다
- * — 대신 목차가 남기는 표식(`data-toc`)을 보고 정한다. 제목이 하나뿐인 글에는 그 표식이
- * 없고, 그러면 이 손잡이도 없다.
- */
-function TocHandle() {
-  return (
-    <>
-      <input id={TOC_OPEN_ID} type="checkbox" className="sr-only" />
-      <label
-        htmlFor={TOC_OPEN_ID}
-        title="목차"
-        className={cn(
-          PANEL_TOGGLE,
-          "w-auto gap-1.5 px-2 lg:hidden",
-          "hidden group-has-[[data-toc]]/site:inline-flex",
-        )}
-      >
-        <span>목차</span>
-        <span aria-hidden className="group-has-[#toc-open:checked]/site:hidden">
-          {FOLD_DOWN}
-        </span>
-        <span aria-hidden className="hidden group-has-[#toc-open:checked]/site:inline">
-          {FOLD_UP}
-        </span>
-        <span className="sr-only">목차 열고 닫기</span>
-      </label>
-    </>
-  );
 }
