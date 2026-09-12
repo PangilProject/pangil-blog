@@ -116,21 +116,23 @@ describe("Toc — 누른 줄", () => {
  * 좁은 화면의 목차는 상단에 붙어 **지금 읽는 절**을 말한다. 그 값은 여태 넓은 화면의
  * 하이라이트에만 쓰이던 것이라, 관찰자가 고른 절과 이 줄이 같은 것을 가리켜야 한다.
  */
-describe("모바일 상단 줄", () => {
-  it("지금 읽는 절을 적는다 — 아직 못 정했으면 첫 절이다", () => {
-    render(<Toc headings={headings} />);
 
-    expect(screen.getByText("지금").parentElement).toHaveTextContent("정리");
+/**
+ * 좁은 화면의 목차는 **평소에 없다.** 상단 띠의 손잡이가 열어야 내려온다.
+ *
+ * 그 손잡이는 레이아웃에 있어서 지금 지면에 목차가 있는지 모르고, 여기가 남기는 표식을 보고
+ * 정한다 — 표식이 사라지면 제목이 하나뿐인 글에도 눌러도 아무 일 없는 버튼이 남는다.
+ */
+describe("모바일 목차 판", () => {
+  it("띠가 찾을 표식을 남긴다", () => {
+    const { container } = render(<Toc headings={headings} />);
+
+    expect(container.querySelector("[data-toc]")).not.toBeNull();
   });
 
-  it("관찰자가 다른 절을 고르면 그 절로 바뀐다", () => {
-    render(<Toc headings={headings} />);
+  it("제목이 하나면 표식도 없다 — 눌러도 아무 일 없는 손잡이를 만들지 않는다", () => {
+    const { container } = render(<Toc headings={[first]} />);
 
-    // 두 번째 제목 링크를 누르면 그 절이 현재가 된다(관찰자보다 먼저 반응한다)
-    act(() => {
-      screen.getAllByRole("link", { name: "태그 체계" })[0]?.click();
-    });
-
-    expect(screen.getByText("지금").parentElement).toHaveTextContent("태그 체계");
+    expect(container.querySelector("[data-toc]")).toBeNull();
   });
 });

@@ -8,7 +8,9 @@ export const metadata = siteLayoutMetadata("dev");
 
 export default function DevSiteLayout({ children }: LayoutProps<"/dev">) {
   return (
-    <div data-site="dev" className="flex min-h-full flex-1 flex-col">
+    // `group/site` — 상단 띠(사이드바)와 목차가 서로 다른 가지에 있어, 접힘을 주고받으려면
+    // 여기가 공통 조상이어야 한다. 띠의 체크박스를 목차가 본다
+    <div data-site="dev" className="group/site flex min-h-full flex-1 flex-col">
       {/*
         사이드바가 여기 서는 이유는 캐시다. 상세 지면은 통째로 `use cache`라 그 안에 두면
         방문자 수가 그 글의 캐시에 굳는다 — 레이아웃은 캐시 범위가 갈려서 요청 시점 조각을
