@@ -64,39 +64,43 @@ describe("SiteSidebar", () => {
  * 볼 수 있다 — `htmlFor`와 `id`가 어긋나면 눌러도 아무 일이 없고 다른 무엇도 잡지 못한다.
  */
 describe("접는 손잡이", () => {
-  it("손잡이가 체크박스를 가리킨다", () => {
-    render(<SiteSidebar site="dev" />);
-
-    expect(screen.getByRole("checkbox", { name: /사이드바 접고 펴기/ })).not.toBeChecked();
-  });
-
   /**
-   * 좁은 화면에서는 이 줄이 유일한 띠라 목차 손잡이도 여기 선다. 목차 칸이 남기는 표식과
-   * 이 손잡이가 켜는 이름이 어긋나면, 눌러도 아무 일이 없고 다른 무엇도 잡지 못한다.
-   */
-  /**
-   * **두 손잡이가 한 그룹 안에 있다.** `has-checked`처럼 대상을 안 적으면 그 그룹의 아무
-   * 체크박스나 잡혀서, 목차를 눌렀는데 분류가 펼쳐졌다(실제로 그랬다).
+   * **띠에서 내려오는 판은 한 번에 하나다.** 체크박스 둘로는 서로의 상태를 몰라 목차와 분류가
+   * 같이 열렸다 — 라디오 하나에 `없음`을 더한 세 값으로 두면 브라우저가 하나만 켜 준다.
    *
-   * jsdom에는 조판이 없어 "무엇이 펼쳐지는가"는 볼 수 없지만, **대상을 안 적은 선택자가
-   * 남아 있는가**는 볼 수 있다. 이 줄에 손잡이가 더 붙을 때 같은 사고가 되풀이된다.
+   * 그 배타성은 전적으로 **같은 name**에 달려 있다. 하나라도 이름이 어긋나면 둘이 같이 열리고,
+   * 조판이 없는 테스트로는 그 장면을 볼 수 없다.
    */
-  it("접힘 선택자가 자기 체크박스만 본다", () => {
+  it("판 셋이 한 무리다 — 하나가 켜지면 나머지가 꺼진다", () => {
     const { container } = render(<SiteSidebar site="dev" />);
 
-    const classes = [...container.querySelectorAll("[class]")]
-      .flatMap((element) => element.className.split(/\s+/))
-      .filter((name) => /(^|:)(group-)?has-checked/.test(name));
+    const names = [...container.querySelectorAll<HTMLInputElement>('input[type="radio"]')].map(
+      (input) => input.name,
+    );
 
-    expect(classes).toEqual([]);
+    expect(names).toHaveLength(3);
+    expect(new Set(names).size).toBe(1);
   });
 
-  it("목차 손잡이도 같은 줄에 선다", () => {
-    render(<SiteSidebar site="dev" />);
+  it("기본은 아무 판도 열리지 않은 상태다", () => {
+    const { container } = render(<SiteSidebar site="dev" />);
 
-    expect(screen.getByRole("checkbox", { name: /목차 열고 닫기/ })).toHaveAttribute(
-      "id",
-      "toc-open",
+    expect(container.querySelector<HTMLInputElement>("#panel-none")?.defaultChecked).toBe(true);
+  });
+
+  /**
+   * 라디오는 다시 눌러 끄지 못한다. 그래서 손잡이마다 라벨이 두 장이고, 열려 있을 때 서는
+   * 쪽은 `없음`을 가리킨다 — 그 자리가 어긋나면 한 번 연 판을 닫을 길이 없다.
+   */
+  it("손잡이마다 여는 라벨과 닫는 라벨이 한 장씩이다", () => {
+    const { container } = render(<SiteSidebar site="dev" />);
+
+    const targets = [...container.querySelectorAll("label[for]")].map((label) =>
+      label.getAttribute("for"),
     );
+
+    expect(targets.filter((target) => target === "panel-axis")).toHaveLength(1);
+    expect(targets.filter((target) => target === "panel-toc")).toHaveLength(1);
+    expect(targets.filter((target) => target === "panel-none")).toHaveLength(2);
   });
 });

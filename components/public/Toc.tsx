@@ -100,7 +100,7 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
       <div
         data-toc
         className={cn(
-          "hidden border-edge border-b bg-paper pt-1 pb-4 lg:hidden",
+          "hidden border-edge border-b bg-paper pt-4 pb-5 lg:hidden",
           /**
            * **화면 끝까지 채운다.** 이 판은 본문 통 안(좌우 6%)에 있어서 바탕이 그만큼 좁게
            * 깔렸는데, 같은 띠에서 내려오는 분류 판은 레이아웃에 있어 화면 끝까지 간다 —
@@ -111,7 +111,7 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
            * 퍼센트로 적으면 통 너비를 기준으로 재서 띠의 글자와 어긋난다.
            */
           "mx-[calc(50%-50vw)] w-screen px-[6vw]",
-          "group-has-[#toc-open:checked]/site:block",
+          "group-has-[#panel-toc:checked]/site:block",
         )}
       >
         {list}
