@@ -139,6 +139,11 @@ export function ConnectedEditorToolbar({
           .run()
       }
       onTableCommand={(command) => editor && applyTableCommand(editor, command)}
+      canTable={{
+        // 병합은 칸을 여럿 골랐을 때만, 나누기는 합쳐진 칸에서만 된다
+        mergeCells: editor?.can().mergeCells() ?? false,
+        splitCell: editor?.can().splitCell() ?? false,
+      }}
     />
   );
 }

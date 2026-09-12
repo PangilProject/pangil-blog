@@ -41,13 +41,26 @@ const TABLE_COMMAND_LABELS: Record<TableCommand, string> = {
   deleteTable: "표 삭제",
 };
 
+/**
+ * 지금 할 수 있는 일인가. **할 수 없는 버튼은 눌리지 않아야 한다** — 누르고 아무 일도
+ * 안 일어나면 고장으로 읽힌다(02 §3.4). 병합은 칸을 여럿 골라야 하고, 나누기는 이미
+ * 합쳐진 칸에서만 된다.
+ */
+const REQUIREMENTS: Partial<Record<TableCommand, string>> = {
+  mergeCells: "칸을 두 개 이상 끌어서 골라 주세요",
+  splitCell: "합쳐진 칸에서 쓸 수 있어요",
+};
+
 export function TableToolbarRow({
   inTable = false,
+  can,
   onInsertTable,
   onTableCommand,
 }: {
   /** 커서가 표 안에 있는가 */
   inTable?: boolean;
+  /** 지금 할 수 있는 일들. 모르면 다 열어 둔다 */
+  can?: Partial<Record<TableCommand, boolean>>;
   onInsertTable?: (rows: number, cols: number) => void;
   onTableCommand?: (command: TableCommand) => void;
 }) {
@@ -58,20 +71,27 @@ export function TableToolbarRow({
   if (inTable) {
     return (
       <Row>
-        {(Object.keys(TABLE_COMMAND_LABELS) as TableCommand[]).map((command) => (
-          <button
-            key={command}
-            type="button"
-            onClick={() => onTableCommand?.(command)}
-            className={cn(
-              "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft",
-              "hover:border-ink-soft hover:text-ink",
-              command === "deleteTable" && "ml-auto text-(--accent)",
-            )}
-          >
-            {TABLE_COMMAND_LABELS[command]}
-          </button>
-        ))}
+        {(Object.keys(TABLE_COMMAND_LABELS) as TableCommand[]).map((command) => {
+          const allowed = can?.[command] ?? true;
+
+          return (
+            <button
+              key={command}
+              type="button"
+              disabled={!allowed}
+              // 왜 못 누르는지 말한다. 회색 버튼만 두면 고장인지 조건인지 알 수 없다
+              title={allowed ? undefined : REQUIREMENTS[command]}
+              onClick={() => onTableCommand?.(command)}
+              className={cn(
+                "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft",
+                "hover:border-ink-soft hover:text-ink disabled:opacity-40 disabled:hover:border-edge",
+                command === "deleteTable" && "ml-auto text-(--accent)",
+              )}
+            >
+              {TABLE_COMMAND_LABELS[command]}
+            </button>
+          );
+        })}
       </Row>
     );
   }

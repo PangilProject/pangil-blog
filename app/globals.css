@@ -408,13 +408,17 @@
 }
 
 /* 칸 색. 값이 아니라 토큰 이름을 저장하므로(lib/editor/tableCellColors) 여기가 유일한 출처다.
-   다크 모드에서도 같은 토큰을 쓰므로 따로 손볼 곳이 없다 */
+   다크 모드에서도 같은 토큰을 쓰므로 따로 손볼 곳이 없다.
+
+   **처음엔 12%로 넣었다가 올렸다.** 클래스는 제대로 붙는데 눈에는 아무 일도 안 일어난
+   것처럼 보였다 — 칠했는지 아닌지 모르는 색은 칠하지 않은 것과 같다. 종이 바탕을 벗어나지
+   않는 선에서 알아볼 만큼 준다. */
 .record-prose .cell-accent {
-  background: color-mix(in oklch, var(--accent), transparent 88%);
+  background: color-mix(in oklch, var(--accent), transparent 78%);
 }
 
 .record-prose .cell-muted {
-  background: color-mix(in oklch, var(--edge), transparent 45%);
+  background: color-mix(in oklch, var(--ink-soft), transparent 88%);
 }
 
 /* ---- 열 폭 끌기 -------------------------------------------

@@ -100,6 +100,19 @@ describe("TableNodeView", () => {
     }
   });
 
+  it("색을 고르면 그 줄 전체에 칠해진다", async () => {
+    const { container } = await renderEditor();
+
+    screen.getByLabelText("2번째 행 다루기").click();
+    (await screen.findByRole("button", { name: "강조" })).click();
+
+    await waitFor(() => {
+      const cells = container.querySelectorAll("tbody tr:nth-child(2) td");
+      expect(cells.length).toBeGreaterThan(0);
+      for (const cell of cells) expect(cell.className).toContain("cell-accent");
+    });
+  });
+
   it("열 손잡이는 좌우로 말한다 — 위아래가 아니다", async () => {
     await renderEditor();
 

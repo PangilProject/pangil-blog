@@ -99,6 +99,8 @@ export type EditorToolbarProps = {
   inTable?: boolean;
   onInsertTable?: (rows: number, cols: number) => void;
   onTableCommand?: (command: TableCommand) => void;
+  /** 지금 할 수 있는 표 명령들 */
+  canTable?: Partial<Record<TableCommand, boolean>>;
   /** 우측 힌트 — "마크다운 단축 입력도 돼요" 등 */
   hint?: string;
   className?: string;
@@ -113,6 +115,7 @@ export function EditorToolbar({
   inTable,
   onInsertTable,
   onTableCommand,
+  canTable,
   hint,
   className,
 }: EditorToolbarProps) {
@@ -174,6 +177,7 @@ export function EditorToolbar({
       {variant === "full" && (
         <TableToolbarRow
           inTable={inTable}
+          can={canTable}
           onInsertTable={onInsertTable}
           onTableCommand={onTableCommand}
         />

@@ -5,6 +5,13 @@ import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/sermonForm";
 
 /**
+ * 이 지면은 열 때마다 그 글을 읽는다 — 요청이 있어야 무엇을 그릴지 정해진다. 그래서 즉시
+ * 전환용 껍데기를 미리 만들 수 없고, Next가 개발 중에 매 이동마다 그 사실을 인사이트로
+ * 알린다(04 ADR-003). 관리 목록도 같은 이유로 같은 선언을 갖고 있다.
+ */
+export const instant = false;
+
+/**
  * A-05 설교 에디터 — 이어쓰기·수정 (02 §2.4 "에디터 4종이 신규/수정 모드를 겸한다").
  *
  * content가 스키마를 통과하지 못하면 빈 폼으로 시작한다. 로컬 미러에 최신 내용이 있으면

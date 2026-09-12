@@ -76,6 +76,27 @@ describe("TableToolbarRow — 표 안에서는 표 자체만 만진다", () => {
 
     expect(onTableCommand).toHaveBeenCalledWith("deleteTable");
   });
+
+  /**
+   * 누르고 아무 일도 안 일어나면 고장으로 읽힌다(02 §3.4). 병합은 칸을 여럿 골라야 하고
+   * 나누기는 이미 합쳐진 칸에서만 되는데, 그 조건이 화면에 없었다.
+   */
+  it("지금 못 하는 일은 눌리지 않고, 왜인지 말한다", () => {
+    render(<TableToolbarRow inTable can={{ mergeCells: false, splitCell: false }} />);
+
+    const merge = screen.getByRole("button", { name: "칸 병합" });
+    expect(merge).toBeDisabled();
+    expect(merge).toHaveAttribute("title", "칸을 두 개 이상 끌어서 골라 주세요");
+    expect(screen.getByRole("button", { name: "칸 나누기" })).toBeDisabled();
+  });
+
+  it("할 수 있으면 열려 있고 까닭을 적지 않는다", () => {
+    render(<TableToolbarRow inTable can={{ mergeCells: true }} />);
+
+    const merge = screen.getByRole("button", { name: "칸 병합" });
+    expect(merge).toBeEnabled();
+    expect(merge).not.toHaveAttribute("title");
+  });
 });
 
 describe("툴바에 붙는 자리", () => {
