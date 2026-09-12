@@ -27,7 +27,9 @@ function selectAxis(
   index: number,
 ): boolean {
   const anchor =
-    axis === "row" ? cellPosition(table, tablePos, index, 0) : cellPosition(table, tablePos, 0, index);
+    axis === "row"
+      ? cellPosition(table, tablePos, index, 0)
+      : cellPosition(table, tablePos, 0, index);
   if (anchor === null) return false;
 
   const { state, view } = editor;
