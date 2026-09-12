@@ -29,6 +29,16 @@ describe("툴바 구성 차등 — 03 §5.3", () => {
     expect(BLOCK_COMMANDS_BY_VARIANT.full).toContain("horizontalRule");
   });
 
+  it("full은 번호 목록과 표까지 낸다 — 기술 글이 실제로 쓰는 것들이다", () => {
+    expect(BLOCK_COMMANDS_BY_VARIANT.full).toContain("orderedList");
+    expect(BLOCK_COMMANDS_BY_VARIANT.full).toContain("table");
+  });
+
+  it("slim에는 번호 목록도 표도 없다 — 그 자리에서 손이 멈출 것을 늘리지 않는다", () => {
+    expect(BLOCK_COMMANDS_BY_VARIANT.slim).not.toContain("orderedList");
+    expect(BLOCK_COMMANDS_BY_VARIANT.slim).not.toContain("table");
+  });
+
   it("모든 문단 스타일에 한국어 라벨이 있다", () => {
     for (const style of BLOCK_STYLES_BY_VARIANT.full) {
       expect(BLOCK_STYLE_LABELS[style]).toBeTruthy();

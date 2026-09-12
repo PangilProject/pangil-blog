@@ -31,8 +31,10 @@ export type ToolbarCommand =
   | "italic"
   | "underline"
   | "bulletList"
+  | "orderedList"
   | "blockquote"
-  | "horizontalRule";
+  | "horizontalRule"
+  | "table";
 
 export type EditorToolbarVariant = "full" | "slim";
 
@@ -55,8 +57,12 @@ export const MARK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarComma
   slim: ["bold"],
 };
 
+/**
+ * slim에는 번호 목록·표를 두지 않는다. 설교는 라이브 속기고 찬양은 가사 타이핑이라,
+ * 그 자리에서 손이 멈출 만한 것을 늘리지 않는다(02 §5.3 방해 요소 제로).
+ */
 export const BLOCK_COMMANDS_BY_VARIANT: Record<EditorToolbarVariant, ToolbarCommand[]> = {
-  full: ["bulletList", "blockquote", "horizontalRule"],
+  full: ["bulletList", "orderedList", "blockquote", "horizontalRule", "table"],
   slim: ["bulletList", "blockquote"],
 };
 
@@ -65,8 +71,10 @@ const COMMAND_LABELS: Record<ToolbarCommand, string> = {
   italic: "기울임",
   underline: "밑줄",
   bulletList: "목록",
+  orderedList: "번호 목록",
   blockquote: "인용",
   horizontalRule: "구분선",
+  table: "표",
 };
 
 const COMMAND_GLYPHS: Record<ToolbarCommand, string> = {
@@ -74,8 +82,10 @@ const COMMAND_GLYPHS: Record<ToolbarCommand, string> = {
   italic: "가",
   underline: "U",
   bulletList: "≡ 목록",
+  orderedList: "1. 번호",
   blockquote: "❝ 인용",
   horizontalRule: "— 구분선",
+  table: "⊞ 표",
 };
 
 export type EditorToolbarProps = {
