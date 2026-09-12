@@ -31,6 +31,7 @@ function activeCommands(editor: Editor): ToolbarCommand[] {
   if (editor.isActive("italic")) commands.push("italic");
   if (editor.isActive("underline")) commands.push("underline");
   if (editor.isActive("bulletList")) commands.push("bulletList");
+  if (editor.isActive("orderedList")) commands.push("orderedList");
   if (editor.isActive("blockquote")) commands.push("blockquote");
   return commands;
 }
@@ -73,11 +74,21 @@ function applyCommand(editor: Editor, command: ToolbarCommand) {
     case "bulletList":
       chain.toggleBulletList().run();
       break;
+    case "orderedList":
+      chain.toggleOrderedList().run();
+      break;
     case "blockquote":
       chain.toggleBlockquote().run();
       break;
     case "horizontalRule":
       chain.setHorizontalRule().run();
+      break;
+    case "table":
+      /*
+        표는 **켜고 끄는 것이 아니라 놓는 것**이다 — 구분선과 같은 부류라 활성 표시가 없다.
+        3×3에 머리 줄 하나로 연다. 빈 표를 크게 열면 지우는 일부터 시작하게 된다.
+      */
+      chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
       break;
   }
 }
