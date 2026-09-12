@@ -157,6 +157,10 @@
 - **공개 쿼리는 `status = PUBLISHED` 강제.** DRAFT/PRIVATE가 공개 경로로 새지 않게
 - 요청받지 않은 대규모 리팩토링 금지 (제안 가능, 실행은 승인 후)
 - **마이그레이션 파일 수동 편집 금지** (Prisma migrate 사용). JSONB content 구조 변경은 `scripts/content-migrations/` backfill 규약(`docs/05` §1.6)
+  - **예외 하나 — `Post_searchText_trgm_idx`.** 검색 GIN 인덱스는 `schema.prisma`가 표현하지 못하는 종류라,
+    스키마를 바꿀 때마다 Prisma가 생성된 `migration.sql`에 `DROP INDEX "Post_searchText_trgm_idx"`를 끼워 넣는다.
+    **그 줄은 손으로 뺀다**(`docs/05` §4A). 한 번 놓치면 검색이 깨지는 게 아니라 조용히 느려져서 늦게 발견된다.
+    이 함정은 지금 사람의 기억에만 있었다 — 규칙과 현실이 반대인 채로 두지 않는다.
 
 ## 검증 방법
 
