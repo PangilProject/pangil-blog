@@ -103,6 +103,17 @@ describe("PostList", () => {
     expect(screen.getAllByText("새 글")).toHaveLength(1);
   });
 
+  /**
+   * 도장으로 찍었더니 오른쪽 위 **날짜를 덮었다.** 카드에는 빈 모서리가 없다 —
+   * 윗줄 왼쪽(청구기호 옆)에 세워 날짜와 나란히 읽히게 한다.
+   */
+  it("표시가 날짜를 가리지 않는다", () => {
+    render(<PostList cards={[{ ...base, publishedAt: new Date("2026-09-12T01:00:00Z") }]} />);
+
+    expect(screen.getByText("새 글")).toBeInTheDocument();
+    expect(screen.getByText("9월 12일")).toBeInTheDocument();
+  });
+
   it("같은 날 올린 글은 함께 찍힌다 — 그 묶음이 이번에 올라온 것이다", () => {
     render(
       <PostList
