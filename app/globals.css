@@ -370,6 +370,17 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+
+  /*
+    **칸을 치는 동안 표가 흔들리지 않아야 한다.**
+
+    기본값(`auto`)은 칸 하나에 글자가 들어올 때마다 **모든 열의 폭을 다시 계산한다** —
+    쓰는 사람 눈에는 표가 제멋대로 출렁이는 것으로 보인다. `fixed`는 첫 줄로 폭을 정하고
+    그다음에는 움직이지 않는다. 긴 글은 칸 안에서 줄바꿈된다.
+
+    열마다 다른 폭은 `colwidth`로 따로 정한다 — 폭을 **우연이 아니라 뜻대로** 정하는 쪽이다.
+  */
+  table-layout: fixed;
 }
 
 .record-prose th,
@@ -378,8 +389,8 @@
   padding: 7px 10px;
   text-align: left;
   vertical-align: top;
-  /* 칸이 내용만큼 벌어지되 한 칸이 표를 다 먹지 않게 한다 */
-  min-width: 3em;
+  /* 줄바꿈 지점을 브라우저에 맡긴다. fixed 레이아웃에서 긴 낱말이 칸을 밀지 않게 */
+  overflow-wrap: break-word;
 }
 
 .record-prose th {
