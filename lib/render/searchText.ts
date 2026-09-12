@@ -1,4 +1,5 @@
 import { type PostContent, praiseMeditationBlocks } from "@/lib/content/schema";
+import { stripScriptureMarks } from "@/lib/record/scriptureVerses";
 import { normalizeWhitespace, tiptapToPlainText } from "@/lib/render/plainText";
 
 /**
@@ -16,7 +17,8 @@ export function extractSearchText(title: string, content: PostContent): string {
 
   switch (content.kind) {
     case "QT": {
-      parts.push(content.scriptureRef, content.scriptureBody);
+      // 강조 표시를 떼고 넣는다 — `**주님**`을 한 낱말로 잡으면 그 말로 글을 못 찾는다
+      parts.push(content.scriptureRef, stripScriptureMarks(content.scriptureBody));
 
       for (const annotation of content.annotations) {
         parts.push(annotation.term, annotation.body);
@@ -36,7 +38,7 @@ export function extractSearchText(title: string, content: PostContent): string {
     case "SERMON": {
       parts.push(
         content.scriptureRef,
-        content.scriptureBody,
+        stripScriptureMarks(content.scriptureBody),
         // 설교 제목은 본문 밖에 있다 — 안 담으면 그 말로는 글을 못 찾는다
         content.sermonTitle ?? "",
         tiptapToPlainText(content.body),

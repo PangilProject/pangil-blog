@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { ScriptureSegment } from "@/lib/record/scriptureVerses";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,7 +17,7 @@ export type ScriptureBlockProps = {
   /** 말씀 범위 — "열왕기상 2장 41~46절" */
   reference: string;
   /** 절 단위로 넘기면 절 번호를 타자기체로 앞에 세운다 */
-  verses?: { number?: string | number; text: string }[];
+  verses?: { number?: string | number; text: string; segments?: ScriptureSegment[] }[];
   /** 절 분해 없이 통째로 넣을 때 */
   children?: ReactNode;
   className?: string;
@@ -50,7 +51,23 @@ export function ScriptureBlock({
                 {verse.number}
               </span>
             )}
-            {verse.text}
+            {/*
+              강조는 글자 안의 표시로 실려 온다(`**굵게**` · `__밑줄__`, lib/record/scriptureVerses).
+              표시가 없는 절은 덩이 하나뿐이라 예전과 같은 글자가 나온다.
+            */}
+            {(verse.segments ?? [{ text: verse.text }]).map((segment, index) => (
+              <span
+                // 같은 글자가 한 절에 두 번 나올 수 있어 자리 번호까지 쓴다
+                // biome-ignore lint/suspicious/noArrayIndexKey: 덩이는 다시 정렬되지 않는다
+                key={`${index}-${segment.text.slice(0, 8)}`}
+                className={cn(
+                  segment.bold && "font-bold",
+                  segment.underline && "underline decoration-(--accent) underline-offset-[3px]",
+                )}
+              >
+                {segment.text}
+              </span>
+            ))}
           </p>
         ))}
         {children}
