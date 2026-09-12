@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import type { RichTextHeading } from "@/lib/render/richText";
 import { cn } from "@/lib/utils";
 
@@ -104,15 +105,25 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
           open ? "lg:w-[13rem]" : "lg:w-auto",
         )}
       >
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="mb-2.5 flex w-full items-center gap-3 font-typewriter text-[10.5px] tracking-[0.14em] text-faint hover:text-(--accent)"
-        >
-          목차
-          <span aria-hidden>{open ? "\u00ab" : "\u00bb"}</span>
-        </button>
+        {/*
+          사이드바와 같은 줄 구조다: 왼쪽에 라벨, **오른쪽 끝에 손잡이**. 접히면 라벨이 빠져
+          손잡이 하나만 남고, 그 폭이 그대로 본문에 간다 — 이름은 title과 aria-label에 남는다
+        */}
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          {open && (
+            <p className="font-typewriter text-[10.5px] tracking-[0.14em] text-faint">목차</p>
+          )}
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-label="목차 접고 펴기"
+            title="목차"
+            className={PANEL_TOGGLE}
+          >
+            <span aria-hidden>{open ? FOLD_RIGHT : FOLD_LEFT}</span>
+          </button>
+        </div>
         {open && list}
       </nav>
     </>

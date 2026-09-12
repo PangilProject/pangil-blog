@@ -128,4 +128,18 @@ describe("접고 펴기", () => {
     fireEvent.click(toggle);
     expect(screen.getAllByRole("link", { name: "정리" })).toHaveLength(2);
   });
+
+  /**
+   * **오른쪽 여백의 칸은 오른쪽으로 접힌다.** 사이드바를 그대로 베껴 «를 달았더니 "누르면
+   * 왼쪽으로 간다"로 읽혔다 — 방향 기호는 누르면 어디로 접히는지를 가리켜야 한다.
+   */
+  it("펴진 목차의 손잡이는 오른쪽을 가리킨다", () => {
+    render(<Toc headings={headings} />);
+
+    const toggle = screen.getByRole("button", { name: /목차/ });
+    expect(toggle).toHaveTextContent("»");
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveTextContent("«");
+  });
 });
