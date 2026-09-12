@@ -7,6 +7,7 @@ import { RecordSheet } from "@/components/public/RecordSheet";
 import { SermonView } from "@/components/public/SermonView";
 import { TechView } from "@/components/public/TechView";
 import type { PublicPost } from "@/lib/db/publicPosts";
+import { reportBrokenContent } from "@/lib/notify/brokenContent";
 import { tiptapToPlainText } from "@/lib/render/plainText";
 import { siteOf } from "@/lib/revalidate/tags";
 import { siteHref } from "@/lib/site/publicUrl";
@@ -74,8 +75,8 @@ export function PostDetail({ post }: { post: PublicPost }) {
 
 function PostBody({ post }: { post: PublicPost }) {
   if (!post.content.ok) {
-    // 서버 로그에 남긴다 — 조용히 폴백하면 스키마 사고를 모르고 지난다
-    console.error(`[render] content 스키마 실패 (${post.id}):`, post.content.issues.join(" / "));
+    // 조용히 폴백하면 스키마 사고를 모르고 지난다 — 로그와 Slack 둘 다 간다(04 §2.4)
+    reportBrokenContent(post.id, post.content.issues);
     return <RawFallback raw={post.content.raw} />;
   }
 
