@@ -54,4 +54,26 @@ describe("TodayCard — 상태별 문구와 도착지", () => {
 
     expect(screen.getByText("아직 빈 카드예요")).toBeInTheDocument();
   });
+
+  /**
+   * `done` 도장은 M1부터 있었는데 디자인 지면에만 있고 실제 화면에서는 한 번도 안 쓰였다.
+   * 다 찍지는 않는다 — 대비가 사라지면 `완료`가 성취로 안 읽힌다.
+   */
+  it("오늘 몫을 남긴 카드에는 완료 도장을 찍는다", () => {
+    render(<TodayCard type="QT" state="published" post={{ id: "p", title: "오늘의 큐티" }} />);
+
+    expect(screen.getByText("완료")).toBeInTheDocument();
+  });
+
+  it("크롤러가 실패한 카드도 찍는다 — 조용히 넘기지 않는다", () => {
+    render(<TodayCard type="QT" state="crawl-failed" post={null} />);
+
+    expect(screen.getByText("크롤러 실패")).toBeInTheDocument();
+  });
+
+  it("쓰는 중인 카드에는 찍지 않는다 — 다 찍으면 표시가 아니라 장식이다", () => {
+    render(<TodayCard type="QT" state="writing" post={{ id: "p", title: "쓰는 중" }} />);
+
+    expect(screen.queryByText("완료")).toBeNull();
+  });
 });
