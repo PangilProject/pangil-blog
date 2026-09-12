@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
  * 떠다니는 팝업이 아니다. 툴바가 한 줄 늘어나며 레이아웃을 밀어낸다 — 문단 스타일 목록과
  * 같은 근거다(툴바에 고정된 것이므로 "떠다니는 UI 금지"에 어긋나지 않는다).
  *
- * 두 얼굴을 한 자리에서 쓴다. **커서가 표 밖이면** 크기를 고르는 격자,
- * **표 안이면** 행·열을 더하고 지우는 줄이다 — 툴바가 현재 블록을 따라간다는 규칙
- * (ADR-001 §3 양방향 반영)을 표에도 그대로 적용한 것이다.
+ * 두 얼굴을 한 자리에서 쓴다. **커서가 표 밖이면** 크기를 고르는 격자, **표 안이면**
+ * 표를 지우는 줄이다 — 툴바가 현재 블록을 따라간다는 규칙(ADR-001 §3)을 표에도 적용한 것이다.
  *
- * 표 안에서 Tab은 다음 칸으로 간다(Tiptap 기본). **지우는 길이 없던 것**이 실제 불편이었다.
+ * 행과 열은 여기 없다. 표 위의 손잡이가 맡는다(`TableNodeView`) — 조작 대상이 화면에
+ * 있어야 하기 때문이다.
  */
 
 /** 격자 크기. 블로그 글의 표는 이보다 커지는 일이 드물고, 커지면 행·열을 더하면 된다 */
@@ -25,18 +25,14 @@ const MAX_COLS = 6;
 const ROW_SIZES = Array.from({ length: MAX_ROWS }, (_, index) => index + 1);
 const COL_SIZES = Array.from({ length: MAX_COLS }, (_, index) => index + 1);
 
-export type TableCommand =
-  | "addRowAfter"
-  | "deleteRow"
-  | "addColumnAfter"
-  | "deleteColumn"
-  | "deleteTable";
+/**
+ * 표 자체에 하는 일만 남는다. **행·열은 손잡이가 맡는다**(TableNodeView) — 툴바에 두면
+ * "커서가 어쩌다 놓인 행"이 지워지고, 어느 행인지 버튼만 봐서는 알 수 없다.
+ * 표 삭제는 그 모호함이 없다. 커서가 놓인 표는 하나뿐이다.
+ */
+export type TableCommand = "deleteTable";
 
 const TABLE_COMMAND_LABELS: Record<TableCommand, string> = {
-  addRowAfter: "행 추가",
-  deleteRow: "행 삭제",
-  addColumnAfter: "열 추가",
-  deleteColumn: "열 삭제",
   deleteTable: "표 삭제",
 };
 
@@ -65,7 +61,7 @@ export function TableToolbarRow({
             className={cn(
               "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft",
               "hover:border-ink-soft hover:text-ink",
-              command === "deleteTable" && "ml-auto text-(--accent)",
+              command === "deleteTable" && "text-(--accent)",
             )}
           >
             {TABLE_COMMAND_LABELS[command]}
