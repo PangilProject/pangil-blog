@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import { ViewCount } from "@/components/public/ViewCount";
 import { countPublishedPosts, findAxisCounts, findFeedItems } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -105,18 +106,20 @@ function CollapseHandle() {
   return (
     <>
       <input id={COLLAPSE_ID} type="checkbox" className="sr-only" />
+      {/*
+        본문과 맞닿은 쪽 가장자리에 붙는다 — 미는 것이 이 칸과 본문 사이의 경계라서다.
+        목차도 같은 이유로 그쪽 가장자리에 붙는다(반대편 괘선).
+      */}
       <label
         htmlFor={COLLAPSE_ID}
-        className={cn(
-          "flex cursor-pointer select-none items-center justify-end font-typewriter text-[11px] text-faint",
-          "hover:text-(--accent) group-has-checked/side:justify-center",
-        )}
+        title="사이드바"
+        className={cn(PANEL_TOGGLE, "self-end group-has-checked/side:self-center")}
       >
         <span aria-hidden className="group-has-checked/side:hidden">
-          &laquo;
+          {FOLD_LEFT}
         </span>
         <span aria-hidden className="hidden group-has-checked/side:inline">
-          &raquo;
+          {FOLD_RIGHT}
         </span>
         <span className="sr-only">사이드바 접고 펴기</span>
       </label>
