@@ -359,6 +359,48 @@
   font-weight: 700;
 }
 
+/* ---- 표 ----------------------------------------------------
+   **규칙이 아예 없었다.** 확장은 M3부터 등록돼 있었고(이관해 온 138편의 표 298개를
+   지키려고) 공개 렌더러도 <table>을 그리고 있었는데, 조판이 없어서 지금까지 테두리
+   없는 글자 덩어리로 나가고 있었다. 툴바에 표를 놓으면서 드러났다.
+
+   문법은 이 지면의 다른 괘와 같다 — 얇은 edge 선, 머리 줄만 종이 바닥(03 §5.2).
+   ProseMirror가 그리는 DOM과 공개 지면의 DOM이 같은 태그라 규칙 하나로 둘 다 덮는다. */
+.record-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.record-prose th,
+.record-prose td {
+  border: 1px solid var(--edge);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+  /* 칸이 내용만큼 벌어지되 한 칸이 표를 다 먹지 않게 한다 */
+  min-width: 3em;
+}
+
+.record-prose th {
+  background: var(--paper);
+  font-family: var(--stack-typewriter);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+/* 칸 안의 문단은 붙여 쓴다 — 위 규칙의 0.9em이 칸을 세로로 벌린다 */
+.record-prose td > * + *,
+.record-prose th > * + * {
+  margin-top: 0.4em;
+}
+
+/* 쓰는 동안 어느 칸에 있는지 보여야 한다. ProseMirror가 선택된 칸에 붙이는 클래스다 */
+.record-prose .selectedCell {
+  background: color-mix(in oklch, var(--accent), transparent 88%);
+}
+
 /* 링크는 밑줄 하나로 표시한다 — 색만 바꾸면 먹지 팔레트에서 눌린다(03 §1.1) */
 .record-prose a {
   color: var(--accent);
