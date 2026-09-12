@@ -42,8 +42,10 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
     <aside
       className={cn(
         "group/side w-full border-edge border-b lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0",
-        // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다
-        "lg:has-checked:w-[2.75rem]",
+        // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다.
+        // 폭을 숫자로 박지 않는 이유는 아래 여백과 같이 움직여야 해서다 — 손잡이가 제자리에
+        // 있으려면 좌우 여백이 접히기 전과 같아야 하고, 그러면 폭은 내용이 정한다
+        "lg:has-checked:w-auto",
       )}
     >
       {/*
@@ -56,8 +58,12 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
       <div
         className={cn(
           "flex flex-col gap-4 px-[6%] py-10 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:px-6",
-          // 접히면 세로 여백까지 줄인다 — 안 그러면 빈 칸이 화면 높이만큼 남는다
-          "group-has-checked/side:py-4 lg:group-has-checked/side:px-3",
+          // **넓은 화면에서는 여백이 접히든 펴지든 같다.** 접힌 쪽만 줄였더니 손잡이가 위로
+          // 튀어 올라, 접고 펴는 동안 버튼이 제자리에 있지 않았다.
+          //
+          // 좁은 화면은 다르다. 거기서는 이 칸이 본문 위에 가로로 누워서 접는 목적이 "폭을
+          // 돌려받는 것"이 아니라 "본문까지의 거리를 줄이는 것"이다 — 세로 여백을 줄인다
+          "group-has-checked/side:py-4 lg:group-has-checked/side:py-10",
         )}
       >
         <CollapseHandle />
@@ -107,14 +113,11 @@ function CollapseHandle() {
     <>
       <input id={COLLAPSE_ID} type="checkbox" className="sr-only" />
       {/*
-        본문과 맞닿은 쪽 가장자리에 붙는다 — 미는 것이 이 칸과 본문 사이의 경계라서다.
-        목차도 같은 이유로 그쪽 가장자리에 붙는다(반대편 괘선).
+        **바깥 가장자리에 붙는다.** 접히면 이 칸은 안쪽(본문 쪽) 모서리가 밀려 들어오지만
+        바깥 모서리는 화면 끝에 못 박혀 있다 — 손잡이를 그쪽에 두어야 접고 펴는 동안
+        제자리에 있는다. 오른쪽 여백의 목차가 오른쪽 끝에 붙어 있는 것과 같은 규칙이다.
       */}
-      <label
-        htmlFor={COLLAPSE_ID}
-        title="사이드바"
-        className={cn(PANEL_TOGGLE, "self-end group-has-checked/side:self-center")}
-      >
+      <label htmlFor={COLLAPSE_ID} title="사이드바" className={cn(PANEL_TOGGLE, "self-start")}>
         <span aria-hidden className="group-has-checked/side:hidden">
           {FOLD_LEFT}
         </span>
