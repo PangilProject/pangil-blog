@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { type PostContent, QT_GROUP_COUNT, QT_QUESTION_COUNT } from "@/lib/content/schema";
+import { QT_GROUP_COUNT, QT_QUESTION_COUNT } from "@/lib/content/schema";
 import { parseDraftContent, parsePublishContent } from "@/lib/db/content";
 import type { RecordType } from "@/lib/record/callNumber";
 import type { Backup } from "@/scripts/migrate-tistory/backups";
@@ -207,9 +207,4 @@ export function readBackup(input: string, backup: Backup): Prepared {
   }
 
   return { total: files.length, posts, excluded, review, failed };
-}
-
-/** 발행 가능한 글의 content — 발행 스키마를 통과한 값이다 */
-export function publishContentOf(post: PreparedPost): PostContent {
-  return post.content as PostContent;
 }
