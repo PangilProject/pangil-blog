@@ -9,6 +9,8 @@ import {
   FOLD_UP,
   PANEL_TOGGLE,
 } from "@/components/public/panelToggle";
+import { writeHref } from "@/components/public/SiteHeader";
+import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { ViewCount } from "@/components/public/ViewCount";
 import { countPublishedPosts, findAxisCounts, findFeedItems } from "@/lib/db/publicLists";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -112,8 +114,22 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
             )}
           </section>
 
-          {/* 좁은 화면에서는 이 줄이 유일한 띠라, 이 지면에서 접었다 펼 수 있는 것이 다 선다 */}
+          {/* 좁은 화면에서는 이 줄이 유일한 띠라, 이 지면에서 할 수 있는 일이 다 선다 */}
           <div className="flex items-center gap-2">
+            {/*
+              `글쓰기`와 밝기는 넓은 화면에서 본문 위 줄(SiteHeader)에 있다. 좁은 화면에는
+              그 줄이 없으므로 여기 선다 — 같은 것을 두 줄에 두면 글까지의 거리만 길어진다.
+
+              토글이 문서에 두 벌 서지만 next-themes의 같은 문맥을 읽으므로 어긋나지 않고,
+              한 번에 한쪽만 보인다.
+            */}
+            <span className="mr-1 flex items-center gap-3 font-typewriter text-[11px] text-faint lg:hidden">
+              <Link href={writeHref(site)} rel="nofollow" className="hover:text-ink">
+                글쓰기
+              </Link>
+              <ThemeToggle />
+            </span>
+
             <input
               id={PANEL_NONE}
               name={PANEL_NAME}
