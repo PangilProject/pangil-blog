@@ -14,6 +14,7 @@ import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SCRIPTURE_FIELD_ID, ScriptureMarkButtons } from "@/components/editor/ScriptureMarkButtons";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
@@ -212,8 +213,16 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
               aria-label="말씀 범위"
               className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[12.5px] text-(--accent) outline-none placeholder:text-faint"
             />
+            {/* 강조는 글자에 표시로 실린다 — 지면에서 풀린다(lib/record/scriptureVerses) */}
+            <div className="mb-1 flex justify-end">
+              <ScriptureMarkButtons
+                fieldId={SCRIPTURE_FIELD_ID}
+                onChange={(next) => setValue("scriptureBody", next, { shouldDirty: true })}
+              />
+            </div>
             <AutoGrowTextarea
               {...register("scriptureBody")}
+              id={SCRIPTURE_FIELD_ID}
               placeholder="말씀 본문"
               aria-label="말씀 본문"
               rows={4}

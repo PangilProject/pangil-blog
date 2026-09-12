@@ -138,6 +138,19 @@ describe("QtEditor — 가져온 값에 잠금이 없다 (02 §5)", () => {
     expect(copied).toContain("명령");
   });
 
+  it("말씀 강조는 고른 자리를 표시로 감싼다 — 저장은 글자열 그대로다", async () => {
+    renderEditor();
+
+    const body = screen.getByLabelText("말씀 본문") as HTMLTextAreaElement;
+    body.setSelectionRange(0, 2);
+
+    await act(async () => {
+      screen.getByLabelText("말씀 굵게").click();
+    });
+
+    expect(body.value.startsWith("**44**")).toBe(true);
+  });
+
   it("답변 칸은 질문마다 하나씩 놓인다", () => {
     renderEditor();
 

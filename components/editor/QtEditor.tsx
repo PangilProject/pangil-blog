@@ -15,6 +15,7 @@ import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SCRIPTURE_FIELD_ID, ScriptureMarkButtons } from "@/components/editor/ScriptureMarkButtons";
 import { TagInput } from "@/components/editor/TagInput";
 import { ToolbarDock } from "@/components/editor/ToolbarDock";
 import { GroupTab } from "@/components/record/GroupTab";
@@ -232,9 +233,17 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
               aria-label="말씀 범위"
               className="mb-2 w-full border-edge border-b bg-transparent pb-1.5 font-typewriter text-[12.5px] text-(--accent) outline-none placeholder:text-faint"
             />
+            {/* 강조는 글자에 표시로 실린다 — 지면에서 풀린다(lib/record/scriptureVerses) */}
+            <div className="mb-1 flex justify-end">
+              <ScriptureMarkButtons
+                fieldId={SCRIPTURE_FIELD_ID}
+                onChange={(next) => setValue("scriptureBody", next, { shouldDirty: true })}
+              />
+            </div>
             {/* 기본 펼침 확정(02 §5.2) — 접어두면 매일 펼치는 동작이 붙는다 */}
             <AutoGrowTextarea
               {...register("scriptureBody")}
+              id={SCRIPTURE_FIELD_ID}
               placeholder="말씀 본문"
               aria-label="말씀 본문"
               rows={6}
