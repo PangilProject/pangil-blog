@@ -125,7 +125,9 @@ export function RichTextField({
             // 행·열 손잡이를 표 위에 얹는다(TableNodeView). 조작 대상이 화면에 있어야 한다
             Table.configure({ resizable: false }).extend({
               addNodeView() {
-                return ReactNodeViewRenderer(TableNodeView);
+                // 안쪽 content 요소를 tbody로 만든다 — 기본값(div)이면 표 안에 div가
+                // 들어가 브라우저가 그것을 표 밖으로 밀어낸다(TableNodeView 주석)
+                return ReactNodeViewRenderer(TableNodeView, { contentDOMElementTag: "tbody" });
               },
             }),
             // 스크린샷 붙여넣기가 기술 글의 실제 작성 경로다(04 §3.3)

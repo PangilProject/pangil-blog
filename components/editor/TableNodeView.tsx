@@ -23,13 +23,22 @@ import { cn } from "@/lib/utils";
  */
 
 /**
- * `NodeViewContent`의 `as`가 좁게 선언돼 있다. 표의 내용은 줄이므로 `tbody`여야 하고,
- * 그 밖의 태그를 넣으면 ProseMirror가 표를 못 그린다.
+ * **`NodeViewContent`가 `<table>`이어야 한다.**
+ *
+ * Tiptap은 이 요소 **안에** 제 content 요소를 하나 더 만들어 넣는다. `as="tbody"`로 두면
+ * `<tbody><div><tr>…`이 되고, 표 안의 `<div>`는 브라우저가 표 밖으로 밀어낸다 — 표 조판이
+ * 깨지고 `table.rows`가 비어 손잡이도 못 그린다. 실제로 그렇게 만들었다가 고쳤다.
+ *
+ * `<table>`로 두고 안쪽 content 요소를 `tbody`로 만들면(`contentDOMElementTag`)
+ * `<table><tbody><tr>…`이 된다. `as`의 타입이 좁아 단언이 필요하다.
  */
-const TableBody = NodeViewContent as unknown as React.FC<{ as: "tbody" }>;
+const TableElement = NodeViewContent as unknown as React.FC<{ as: "table" }>;
+
+/** 손잡이 두께. 표 테두리에 붙여 놓는다 — 떨어뜨리면 무엇에 달린 손잡이인지 흐려진다 */
+const HANDLE = 8;
 
 type Axis = "row" | "column";
-type Target = { axis: Axis; index: number; offset: number };
+type Target = { axis: Axis; index: number; offset: number; size: number };
 
 const MENU_ITEMS: Record<Axis, { command: TableAction; label: string }[]> = {
   row: [
@@ -143,45 +152,65 @@ export function TableNodeView({ editor, node, getPos }: NodeViewProps) {
       // 손잡이는 표에 손을 올렸을 때만 나온다 — 쓰는 동안 늘 떠 있으면 그게 방해다
       data-table-handles=""
     >
-      <table>
-        <TableBody as="tbody" />
-      </table>
+      <TableElement as="table" />
 
       {/* 열 손잡이 — 표 위에 가로로 눕는다 */}
       {offsets.columns.map((column, index) => (
         <Handle
-          key={`column-${index === 0 ? "first" : column.start}`}
+          // 열은 자리가 곧 정체다 — 다시 정렬되지 않는다
+          // biome-ignore lint/suspicious/noArrayIndexKey: 자리 번호가 식별자다
+          key={index}
           axis="column"
           label={`${index + 1}번째 열`}
-          style={{ left: column.start, width: column.size, top: -11 }}
+          style={{ left: column.start, width: column.size, top: -HANDLE }}
           active={target?.axis === "column" && target.index === index}
-          onOpen={() => setTarget({ axis: "column", index, offset: column.start })}
+          onOpen={() =>
+            setTarget({ axis: "column", index, offset: column.start, size: column.size })
+          }
         />
       ))}
 
       {/* 행 손잡이 — 표 왼쪽에 세로로 선다 */}
       {offsets.rows.map((row, index) => (
         <Handle
-          key={`row-${index === 0 ? "first" : row.start}`}
+          // biome-ignore lint/suspicious/noArrayIndexKey: 자리 번호가 식별자다
+          key={index}
           axis="row"
           label={`${index + 1}번째 행`}
-          style={{ top: row.start, height: row.size, left: -11 }}
+          style={{ top: row.start, height: row.size, left: -HANDLE }}
           active={target?.axis === "row" && target.index === index}
-          onOpen={() => setTarget({ axis: "row", index, offset: row.start })}
+          onOpen={() => setTarget({ axis: "row", index, offset: row.start, size: row.size })}
         />
       ))}
 
       {/* 끝에 하나 더 붙이는 띠. 손잡이를 열지 않고도 늘릴 수 있다 */}
       <AddStrip
         label="행 추가"
-        className="-bottom-[9px] inset-x-0 h-[7px]"
+        className="-bottom-[10px] inset-x-0 h-[9px]"
         onClick={() => run("row", rows - 1, "addAfter")}
-      />
+      >
+        +
+      </AddStrip>
       <AddStrip
         label="열 추가"
-        className="-right-[9px] inset-y-0 w-[7px]"
+        className="-right-[10px] inset-y-0 w-[9px]"
         onClick={() => run("column", columns - 1, "addAfter")}
-      />
+      >
+        +
+      </AddStrip>
+
+      {/* 고른 행·열을 감싼다 — 메뉴가 어디에 대한 것인지 글자 없이 보여야 한다 */}
+      {target && (
+        <div
+          aria-hidden
+          style={
+            target.axis === "row"
+              ? { top: target.offset, height: target.size, left: 0, right: 0 }
+              : { left: target.offset, width: target.size, top: 0, bottom: 0 }
+          }
+          className="pointer-events-none absolute z-[5] border border-(--accent) bg-(--accent)/8"
+        />
+      )}
 
       {target && (
         <menu
@@ -231,17 +260,19 @@ function Handle({
     <button
       type="button"
       aria-label={`${label} 다루기`}
+      // 손잡이가 무엇을 하는 것인지 글자로도 말한다 — 7px짜리 띠는 눌러 보기 전에는 모른다
+      title={`${label} · 눌러서 삽입·삭제`}
       aria-haspopup="menu"
       aria-expanded={active}
       style={style}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onOpen}
       className={cn(
-        "absolute z-10 rounded-[2px] border border-edge transition-opacity duration-150",
-        axis === "column" ? "h-[7px]" : "w-[7px]",
+        "absolute z-10 border border-edge transition-opacity duration-150",
+        axis === "column" ? "h-[8px] cursor-pointer" : "w-[8px] cursor-pointer",
         active
           ? "bg-(--accent) opacity-100"
-          : "bg-edge opacity-0 group-hover/table:opacity-100 focus-visible:opacity-100",
+          : "bg-paper opacity-0 hover:bg-edge group-hover/table:opacity-100 focus-visible:opacity-100",
       )}
     />
   );
@@ -251,22 +282,28 @@ function AddStrip({
   label,
   className,
   onClick,
+  children,
 }: {
   label: string;
   className: string;
   onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      title={`눌러서 ${label.replace(" 추가", "")} 하나 추가`}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onClick}
       className={cn(
-        "absolute z-10 rounded-[2px] bg-edge opacity-0 transition-opacity duration-150",
-        "group-hover/table:opacity-60 hover:opacity-100 focus-visible:opacity-100",
+        "absolute z-10 flex items-center justify-center border border-edge bg-paper",
+        "font-typewriter text-[11px] text-faint opacity-0 transition-opacity duration-150",
+        "hover:bg-edge hover:text-ink group-hover/table:opacity-100 focus-visible:opacity-100",
         className,
       )}
-    />
+    >
+      {children}
+    </button>
   );
 }
