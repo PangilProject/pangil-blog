@@ -114,8 +114,15 @@ export function RecordCard({
       )}
     >
       {overlay}
+      {/*
+        포커스는 밑줄을 쓰지 않는다 — 카드 바탕이 27px 괘선이라 글줄마다 밑줄이 겹쳐
+        무엇이 선택됐는지가 아니라 화면이 고장난 것처럼 보였다. 카드 바깥으로 한 겹 두른다
+      */}
       {href ? (
-        <Link href={href} className="block outline-none focus-visible:underline">
+        <Link
+          href={href}
+          className="block outline-none focus-visible:ring-1 focus-visible:ring-(--accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--paper)"
+        >
           {body}
         </Link>
       ) : (
