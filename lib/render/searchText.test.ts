@@ -50,6 +50,36 @@ describe("tiptapToPlainText — 04 §3.1 평문 타깃", () => {
   });
 });
 
+/**
+ * 문단 **안**의 줄바꿈(`hardBreak`)이 두 타깃에서 각각 어떻게 나와야 하는가.
+ *
+ * 티스토리 컨버터가 `<br>`을 전부 이 노드로 옮겼으므로(`convertHtml.ts:218`) 이관해 온 글
+ * 대부분이 이 모양이다. 여기 없던 동안 색인에서 두 줄이 한 낱말로 붙었다.
+ */
+const withBreak: TiptapDoc = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "감사" },
+        { type: "hardBreak" },
+        { type: "text", text: "합니다" },
+      ],
+    },
+  ],
+};
+
+describe("문단 안의 줄바꿈", () => {
+  it("색인에서는 낱말이 갈린다 — 붙으면 `감사합니다`로 검색해야만 걸린다", () => {
+    expect(tiptapToPlainText(withBreak)).toBe("감사 합니다");
+  });
+
+  it("붙여넣기에서는 줄이 그대로 남는다 — 찬양 `묵상과 기도 복사`가 이 길을 쓴다", () => {
+    expect(tiptapToCopyText(withBreak)).toBe("감사\n합니다");
+  });
+});
+
 describe("tiptapToCopyText — 붙여넣기용은 줄바꿈을 살린다", () => {
   it("문단마다 줄을 남긴다 — 색인용과 달리 여기서는 문단이 곧 의미다", () => {
     expect(tiptapToCopyText(doc("첫 문단", "둘째 문단"))).toBe("첫 문단\n둘째 문단");
