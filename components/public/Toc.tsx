@@ -100,7 +100,17 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
       <div
         data-toc
         className={cn(
-          "hidden border-edge border-b bg-paper pt-1 pb-3 lg:hidden",
+          "hidden border-edge border-b bg-paper pt-1 pb-4 lg:hidden",
+          /**
+           * **화면 끝까지 채운다.** 이 판은 본문 통 안(좌우 6%)에 있어서 바탕이 그만큼 좁게
+           * 깔렸는데, 같은 띠에서 내려오는 분류 판은 레이아웃에 있어 화면 끝까지 간다 —
+           * 나란히 놓고 보면 목차만 여백이 뚫려 보였다.
+           *
+           * `50% - 50vw`로 통 밖까지 밀어낸다. 통의 절반과 화면의 절반 차이가 곧 그 6%라,
+           * 숫자를 따로 적지 않아도 여백과 정확히 맞는다. 안쪽 여백은 vw로 되돌린다 —
+           * 퍼센트로 적으면 통 너비를 기준으로 재서 띠의 글자와 어긋난다.
+           */
+          "mx-[calc(50%-50vw)] w-screen px-[6vw]",
           "group-has-[#toc-open:checked]/site:block",
         )}
       >
