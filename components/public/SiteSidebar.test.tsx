@@ -83,6 +83,21 @@ describe("접는 손잡이", () => {
     expect(new Set(names).size).toBe(1);
   });
 
+  /**
+   * **라디오 한 무리는 탭 한 칸이다.** Tab이 들어가는 지점은 기본으로 켜진 `모두 닫기`인데
+   * 그것이 `sr-only`라, 무리에 링을 걸지 않으면 키보드로 들어와도 화면에 아무 표시가 없다.
+   *
+   * 링 자체는 조판이라 여기서 못 본다. 대신 **링이 걸릴 자리가 있는지**를 본다 — 이 무리가
+   * 사라지면 링도 같이 사라지고, 그때 화면은 멀쩡해 보인다.
+   */
+  it("손잡이 둘이 고르는 자리 하나로 묶여 있다", () => {
+    render(<SiteSidebar site="dev" />);
+
+    const group = screen.getByRole("radiogroup", { name: "띠에서 열 판" });
+
+    expect(group.querySelectorAll('input[type="radio"]')).toHaveLength(3);
+  });
+
   it("기본은 아무 판도 열리지 않은 상태다", () => {
     const { container } = render(<SiteSidebar site="dev" />);
 

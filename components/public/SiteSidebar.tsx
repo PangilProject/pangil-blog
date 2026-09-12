@@ -124,16 +124,35 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
               <ThemeToggle />
             </span>
 
-            <input
-              id={PANEL_NONE}
-              name={PANEL_NAME}
-              type="radio"
-              defaultChecked
-              className="sr-only"
-              aria-label="판 닫기"
-            />
-            <TocHandle />
-            <CollapseHandle />
+            {/*
+              **라디오 한 무리는 탭 한 칸이다.** 그래서 링도 무리에 건다.
+              전에는 아무 데도 안 걸려 있었는데, Tab이 들어가는 지점은 기본으로 켜진
+              `판 닫기` 라디오이고 그것이 `sr-only` 1×1px이라 **화면에 아무 표시가 없었다**.
+              화살표를 누르면 판은 실제로 열렸다 — 거기까지 가는 길이 안 보였을 뿐이다.
+
+              `role="radiogroup"`은 그 사실을 읽어 주는 쪽에도 말한다: 여기는 단추 둘이 아니라
+              "어느 판을 열까"라는 고르는 자리 하나다.
+            */}
+            <div
+              role="radiogroup"
+              aria-label="띠에서 열 판"
+              className={cn(
+                "flex items-center gap-2",
+                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4",
+                "has-[:focus-visible]:outline-(--accent)",
+              )}
+            >
+              <input
+                id={PANEL_NONE}
+                name={PANEL_NAME}
+                type="radio"
+                defaultChecked
+                className="sr-only"
+                aria-label="모두 닫기"
+              />
+              <TocHandle />
+              <CollapseHandle />
+            </div>
           </div>
         </div>
 
