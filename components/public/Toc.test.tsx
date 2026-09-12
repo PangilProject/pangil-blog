@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Toc } from "@/components/public/Toc";
@@ -109,5 +109,23 @@ describe("Toc — 누른 줄", () => {
 
     expect(margins[0]).toMatch(/^0px/);
     article.remove();
+  });
+});
+
+describe("접고 펴기", () => {
+  it("접으면 목록이 사라지고, 다시 누르면 돌아온다", () => {
+    render(<Toc headings={headings} />);
+
+    const toggle = screen.getByRole("button", { name: /목차/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(toggle);
+
+    // 모바일 접이식 한 벌은 남는다 — 접는 것은 데스크탑 여백의 목차다
+    expect(screen.getAllByRole("link", { name: "정리" })).toHaveLength(1);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+    expect(screen.getAllByRole("link", { name: "정리" })).toHaveLength(2);
   });
 });

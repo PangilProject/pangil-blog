@@ -16,6 +16,13 @@ import { cn } from "@/lib/utils";
  */
 export function Toc({ headings }: { headings: RichTextHeading[] }) {
   const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null);
+  /**
+   * 접힌 상태. 기본은 펴짐 — 목차는 이 지면이 주는 것이고, 감춰 두면 있는 줄도 모른다.
+   *
+   * 사이드바는 체크박스로 접는데 여기는 상태다. 이 컴포넌트는 이미 아일랜드라 상태를 하나
+   * 더 두어도 예산이 늘지 않고, 접힌 폭을 nav 자신이 들고 있어야 본문이 그 자리를 가져간다.
+   */
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     if (headings.length === 0) return;
@@ -88,11 +95,25 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
       <nav
         aria-label="목차"
         // sticky는 이 요소가 아니라 바깥 flex 아이템에 걸린다(지면 라우트) — 여기 걸면 부모가
-        // 이 높이만큼만 커서 붙을 자리가 없다
-        className="hidden border-edge border-l pl-4 lg:block"
+        // 이 높이만큼만 커서 붙을 자리가 없다.
+        //
+        // **폭이 여기 있다.** 지면 라우트가 들고 있으면 접어도 그 자리가 그대로 비어서 본문이
+        // 넓어지지 않는다 — 제목이 하나뿐이라 목차를 안 그릴 때도 13rem이 비어 있었다
+        className={cn(
+          "hidden border-edge border-l pl-4 lg:block",
+          open ? "lg:w-[13rem]" : "lg:w-auto",
+        )}
       >
-        <p className="mb-2.5 font-typewriter text-[10.5px] tracking-[0.14em] text-faint">목차</p>
-        {list}
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="mb-2.5 flex w-full items-center gap-3 font-typewriter text-[10.5px] tracking-[0.14em] text-faint hover:text-(--accent)"
+        >
+          목차
+          <span aria-hidden>{open ? "\u00ab" : "\u00bb"}</span>
+        </button>
+        {open && list}
       </nav>
     </>
   );

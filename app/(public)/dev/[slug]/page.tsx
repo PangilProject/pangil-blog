@@ -96,7 +96,8 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
           sticky는 **flex 아이템**에 걸어야 한다. 안쪽 nav에 걸면 그 부모(이 div)가 nav 높이만큼만
           커서 붙어 움직일 여지가 없다 — 목차가 스크롤을 따라오지 않던 이유다
         */}
-        <div className="order-1 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:w-[13rem] lg:flex-none lg:overflow-y-auto">
+        {/* 폭은 이 칸이 아니라 목차 자신이 들고 있다 — 접으면 그 자리를 본문이 가져가야 한다 */}
+        <div className="order-1 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto">
           <Toc headings={headings} />
         </div>
       </div>
