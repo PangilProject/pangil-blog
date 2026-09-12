@@ -54,7 +54,7 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다.
         // 폭을 숫자로 박지 않는 이유는 아래 여백과 같이 움직여야 해서다 — 손잡이가 제자리에
         // 있으려면 좌우 여백이 접히기 전과 같아야 하고, 그러면 폭은 내용이 정한다
-        "lg:has-checked:w-auto",
+        "lg:has-[#sidebar-collapse:checked]:w-auto",
         /**
          * **좁은 화면에서는 이 칸이 상단에 붙는 줄이 된다.**
          *
@@ -89,7 +89,7 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
             "lg:h-auto lg:flex-col-reverse lg:items-start lg:gap-4",
           )}
         >
-          <section className="flex flex-col gap-2 lg:group-has-checked/side:hidden">
+          <section className="flex flex-col gap-2 lg:group-has-[#sidebar-collapse:checked]/side:hidden">
             <Link
               href={siteHref(site, `/${site}`, { from: site })}
               className="font-typewriter font-bold text-[13px] text-ink"
@@ -119,8 +119,8 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         <div
           className={cn(
             "flex-col gap-7 pb-9",
-            "hidden group-has-checked/side:flex",
-            "lg:flex lg:pb-0 lg:group-has-checked/side:hidden",
+            "hidden group-has-[#sidebar-collapse:checked]/side:flex",
+            "lg:flex lg:pb-0 lg:group-has-[#sidebar-collapse:checked]/side:hidden",
           )}
         >
           <Suspense fallback={<CountSkeleton />}>
@@ -145,8 +145,12 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
  * 접는 손잡이.
  *
  * **자바스크립트를 쓰지 않는다.** 공개 지면의 클라이언트 아일랜드는 세어 둔 것이 전부고(04 §3.6),
- * "칸 하나 접기"에 그 예산을 쓰지 않는다. 숨긴 체크박스 하나와 `group-has-checked`면 끝이고,
+ * "칸 하나 접기"에 그 예산을 쓰지 않는다. 숨긴 체크박스 하나와 `group-has-*`면 끝이고,
  * 스크립트가 죽어도 접힌다.
+ *
+ * **선택자에 id를 적는다.** 한동안 `has-checked`로만 적었는데, 같은 줄에 목차 손잡이가
+ * 들어오자 그 체크박스까지 같이 잡혀서 **목차를 누르면 분류가 펼쳐졌다**. 이 줄에 손잡이가
+ * 더 붙을 수 있으므로 각자 자기 것만 본다.
  *
  * 대신 **새로고침하면 다시 펴진다** — 접힌 상태를 기억하려면 쿠키가 필요하고, 쿠키를 읽으려면
  * 아일랜드가 는다. 지면 안에서 옮겨 다니는 동안은 레이아웃이 안 갈리므로 접힌 채로 남는다.
@@ -173,12 +177,16 @@ function CollapseHandle() {
           겹치는 display 유틸리티가 서로를 지우지 않도록 바깥에서 한 번 갈라 둔다.
         */}
         <span aria-hidden className="lg:hidden">
-          <span className="group-has-checked/side:hidden">{FOLD_DOWN}</span>
-          <span className="hidden group-has-checked/side:inline">{FOLD_UP}</span>
+          <span className="group-has-[#sidebar-collapse:checked]/side:hidden">{FOLD_DOWN}</span>
+          <span className="hidden group-has-[#sidebar-collapse:checked]/side:inline">
+            {FOLD_UP}
+          </span>
         </span>
         <span aria-hidden className="hidden lg:inline">
-          <span className="group-has-checked/side:hidden">{FOLD_LEFT}</span>
-          <span className="hidden group-has-checked/side:inline">{FOLD_RIGHT}</span>
+          <span className="group-has-[#sidebar-collapse:checked]/side:hidden">{FOLD_LEFT}</span>
+          <span className="hidden group-has-[#sidebar-collapse:checked]/side:inline">
+            {FOLD_RIGHT}
+          </span>
         </span>
         <span className="sr-only">사이드바 접고 펴기</span>
       </label>

@@ -74,6 +74,23 @@ describe("접는 손잡이", () => {
    * 좁은 화면에서는 이 줄이 유일한 띠라 목차 손잡이도 여기 선다. 목차 칸이 남기는 표식과
    * 이 손잡이가 켜는 이름이 어긋나면, 눌러도 아무 일이 없고 다른 무엇도 잡지 못한다.
    */
+  /**
+   * **두 손잡이가 한 그룹 안에 있다.** `has-checked`처럼 대상을 안 적으면 그 그룹의 아무
+   * 체크박스나 잡혀서, 목차를 눌렀는데 분류가 펼쳐졌다(실제로 그랬다).
+   *
+   * jsdom에는 조판이 없어 "무엇이 펼쳐지는가"는 볼 수 없지만, **대상을 안 적은 선택자가
+   * 남아 있는가**는 볼 수 있다. 이 줄에 손잡이가 더 붙을 때 같은 사고가 되풀이된다.
+   */
+  it("접힘 선택자가 자기 체크박스만 본다", () => {
+    const { container } = render(<SiteSidebar site="dev" />);
+
+    const classes = [...container.querySelectorAll("[class]")]
+      .flatMap((element) => element.className.split(/\s+/))
+      .filter((name) => /(^|:)(group-)?has-checked/.test(name));
+
+    expect(classes).toEqual([]);
+  });
+
   it("목차 손잡이도 같은 줄에 선다", () => {
     render(<SiteSidebar site="dev" />);
 
