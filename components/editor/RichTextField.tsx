@@ -2,7 +2,7 @@
 
 import { CodeBlock } from "@tiptap/extension-code-block";
 import { Image } from "@tiptap/extension-image";
-import { Table, TableKit } from "@tiptap/extension-table";
+import { Table, TableCell, TableHeader, TableKit } from "@tiptap/extension-table";
 import { Placeholder } from "@tiptap/extensions";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
@@ -20,6 +20,7 @@ import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
 import { ImagePaste, type ImageUploadResult } from "@/lib/editor/imagePaste";
 import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
+import { cellColorClass } from "@/lib/editor/tableCellColors";
 import { cn } from "@/lib/utils";
 
 /**
@@ -121,10 +122,32 @@ export function RichTextField({
             // 이관해 온 138편에 표가 298개 있다. 확장이 없으면 그 글을 한 번 편집하는
             // 순간 Tiptap이 모르는 노드를 조용히 버린다 — 이관한 표를 지키는 장치이자,
             // 이제는 툴바에서 새 표를 놓는 길이기도 하다(TableToolbarRow)
-            TableKit.configure({ table: false }),
+            TableKit.configure({ table: false, tableCell: false, tableHeader: false }),
             // 행·열 손잡이를 표 위에 얹는다(TableNodeView). 조작 대상이 화면에 있어야 한다
             // 폭을 끌어서 정한다. 저장은 셀의 colwidth에 실리고, 공개 지면도 같은 폭으로
             // 그린다(lib/render/richText의 colgroup) — 안 그리면 지면이 에디터와 달라진다
+            // 칸에 색 한 칸을 더 연다. 값이 아니라 **토큰 이름**을 저장한다 —
+            // 팔레트를 고치면 이미 발행된 글도 따라온다(lib/editor/tableCellColors)
+            ...[TableCell, TableHeader].map((extension) =>
+              extension.extend({
+                addAttributes() {
+                  return {
+                    ...this.parent?.(),
+                    backgroundColor: {
+                      default: null,
+                      parseHTML: (element: HTMLElement) => element.getAttribute("data-cell-color"),
+                      renderHTML: (attributes: Record<string, unknown>) =>
+                        attributes.backgroundColor
+                          ? {
+                              "data-cell-color": String(attributes.backgroundColor),
+                              class: cellColorClass(attributes.backgroundColor),
+                            }
+                          : {},
+                    },
+                  };
+                },
+              }),
+            ),
             Table.configure({ resizable: true, cellMinWidth: 48 }).extend({
               addNodeView() {
                 // 안쪽 content 요소를 tbody로 만든다 — 기본값(div)이면 표 안에 div가

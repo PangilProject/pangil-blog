@@ -407,6 +407,16 @@
   margin-top: 0.4em;
 }
 
+/* 칸 색. 값이 아니라 토큰 이름을 저장하므로(lib/editor/tableCellColors) 여기가 유일한 출처다.
+   다크 모드에서도 같은 토큰을 쓰므로 따로 손볼 곳이 없다 */
+.record-prose .cell-accent {
+  background: color-mix(in oklch, var(--accent), transparent 88%);
+}
+
+.record-prose .cell-muted {
+  background: color-mix(in oklch, var(--edge), transparent 45%);
+}
+
 /* ---- 열 폭 끌기 -------------------------------------------
    칸 경계에 잡을 것이 있어야 끌 수 있다. prosemirror-tables가 경계마다 이 조각을 놓는다.
    평소에는 보이지 않고 표에 손을 올렸을 때만 드러난다 — 쓰는 동안 선이 늘 서 있으면

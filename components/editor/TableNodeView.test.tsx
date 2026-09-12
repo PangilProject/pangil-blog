@@ -86,6 +86,20 @@ describe("TableNodeView", () => {
     expect(screen.getByRole("button", { name: "삭제" })).toBeInTheDocument();
   });
 
+  it("노션이 주는 것들이 메뉴에 다 있다", async () => {
+    await renderEditor();
+
+    screen.getByLabelText("2번째 행 다루기").click();
+
+    for (const label of ["복제", "콘텐츠 삭제", "삭제"]) {
+      expect(await screen.findByRole("button", { name: label })).toBeInTheDocument();
+    }
+    // 색은 이름 대신 견본이다 — 세 칸뿐이라 고르는 데 한 번이면 된다
+    for (const color of ["없음", "강조", "회색"]) {
+      expect(screen.getByRole("button", { name: color })).toBeInTheDocument();
+    }
+  });
+
   it("열 손잡이는 좌우로 말한다 — 위아래가 아니다", async () => {
     await renderEditor();
 

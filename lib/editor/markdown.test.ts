@@ -121,10 +121,10 @@ describe("markdownToTiptapContent — 블록", () => {
     expect(nodes[0]?.content?.[0]?.text).toBe("첫 줄 이어지는 줄");
   });
 
-  it("표는 아직 변환하지 않고 원문으로 남긴다", () => {
+  it("표도 읽는다 — 내보내기가 파이프 표로 내보내므로 왕복이 되어야 한다", () => {
     const nodes = markdownToTiptapContent("| a | b |\n| --- | --- |\n| 1 | 2 |");
 
-    expect(nodes.every((node) => node.type === "paragraph")).toBe(true);
+    expect(nodes[0]?.type).toBe("table");
   });
 });
 
@@ -153,6 +153,53 @@ describe("markdownToTiptapContent — 목록", () => {
       text: "npm run build",
       marks: [{ type: "code" }],
     });
+  });
+});
+
+describe("markdownToTiptapContent — 표", () => {
+  /**
+   * **내보내기는 파이프 표로 내보낸다**(`postToMarkdown`). 읽지 못하면 내보낸 파일을 다시
+   * 붙여넣었을 때 표가 문단으로 풀린다 — 왕복이 끊긴다.
+   */
+  const table = "| 이름 | 값 |\n| --- | --- |\n| 가 | 1 |\n| 나 | 2 |";
+
+  it("머리 줄과 본문 줄을 표로 만든다", () => {
+    const [node] = markdownToTiptapContent(table);
+
+    expect(node?.type).toBe("table");
+    expect(node?.content).toHaveLength(3);
+    expect(node?.content?.[0]?.content?.[0]?.type).toBe("tableHeader");
+    expect(node?.content?.[1]?.content?.[0]?.type).toBe("tableCell");
+  });
+
+  it("칸 안의 서식도 읽는다", () => {
+    const [node] = markdownToTiptapContent("| **굵게** |\n| --- |\n| 값 |");
+    const cell = node?.content?.[0]?.content?.[0]?.content?.[0];
+
+    expect(cell?.content?.[0]?.marks?.[0]?.type).toBe("bold");
+  });
+
+  it("가르는 줄이 없으면 표가 아니다 — 세로줄이 든 문장을 표로 바꾸지 않는다", () => {
+    const [node] = markdownToTiptapContent("| 이건 표가 아니다 |");
+
+    expect(node?.type).toBe("paragraph");
+  });
+
+  it("줄마다 칸 수가 달라도 머리 줄에 맞춘다 — 어긋나면 붙여넣기가 통째로 실패한다", () => {
+    const [node] = markdownToTiptapContent("| 하나 | 둘 | 셋 |\n| --- | --- | --- |\n| 가 |");
+
+    expect(node?.content?.[1]?.content).toHaveLength(3);
+  });
+
+  it("이스케이프한 세로줄은 글자로 남긴다", () => {
+    const [node] = markdownToTiptapContent("| a \\| b |\n| --- |\n| 값 |");
+    const header = node?.content?.[0]?.content?.[0]?.content?.[0]?.content?.[0];
+
+    expect(header?.text).toBe("a | b");
+  });
+
+  it("신호로도 잡힌다 — 표만 붙여넣어도 변환한다", () => {
+    expect(looksLikeMarkdown(table)).toBe(true);
   });
 });
 
