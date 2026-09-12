@@ -1,4 +1,5 @@
 import { RecordCard } from "@/components/record/RecordCard";
+import { STAMP_SURFACE } from "@/components/record/StateStamp";
 import type { ListCard } from "@/lib/db/publicLists";
 import { formatCallNumber } from "@/lib/record/callNumber";
 import { freshPostIds } from "@/lib/record/freshPosts";
@@ -69,15 +70,26 @@ export function PostList({
 }
 
 /**
- * 방금 올라온 글 표시.
+ * 방금 올라온 글 표시 — **찍힌 도장**이되 줄 안에 선다.
  *
- * **도장으로 찍지 않는다.** 카드에는 빈 모서리가 없다 — 오른쪽 위는 날짜 자리라 찍으면
- * 날짜를 덮는다(실제로 덮었다). 청구기호 옆에 서면 윗줄의 문법과도 맞는다:
- * 왼쪽은 이 글이 무엇인가, 오른쪽은 언제인가.
+ * 카드에는 찍을 빈 모서리가 없다. 오른쪽 위는 날짜 자리라 거기 찍으면 날짜를 덮는다
+ * (실제로 덮었다). 그래서 자리는 청구기호 옆이고 — 윗줄의 문법과도 맞는다:
+ * 왼쪽은 이 글이 무엇인가, 오른쪽은 언제인가 — 손맛만 도장에서 가져온다(`STAMP_SURFACE`).
+ *
+ * 기울인 각과 테두리 바깥의 두 번째 선이 "찍은 것"으로 읽히게 한다. 카드 자체가 ±1도
+ * 기울어 있으므로 반대로 기울여 둘이 같은 각으로 겹쳐 보이지 않게 한다.
  */
 function FreshBadge() {
   return (
-    <span className="border border-(--card-accent) px-[5px] py-px leading-none text-[9.5px]">
+    <span
+      className={cn(
+        "-rotate-3 inline-block px-[6px] py-[2px] text-[9.5px] leading-none tracking-[0.1em]",
+        "border-(--card-accent) text-(--card-accent)",
+        // 테두리 밖의 두 번째 선 — 도장 테두리가 두 겹인 그 느낌이다
+        "outline outline-1 outline-offset-[2px] outline-(--card-accent)/35",
+        STAMP_SURFACE,
+      )}
+    >
       새 글
     </span>
   );

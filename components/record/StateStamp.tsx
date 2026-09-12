@@ -9,6 +9,14 @@ import { cn } from "@/lib/utils";
 
  */
 
+/**
+ * 도장의 손맛 — 얇은 테두리, 종이가 비치는 바탕, 타자기체.
+ *
+ * 자리와 크기는 쓰는 쪽이 정한다. 목록 카드처럼 **찍을 빈 모서리가 없는 곳**에서는 줄 안에
+ * 서야 하는데(`PostList`의 새 글 표시), 그렇다고 다른 문법을 하나 더 만들 이유는 없다.
+ */
+export const STAMP_SURFACE = "border-[1.5px] bg-[rgb(255_255_255_/_60%)] font-typewriter";
+
 export type StateStampKind = "draft-arrived" | "fresh-start" | "done" | "crawl-failed";
 
 const STAMP: Record<StateStampKind, { label: string; tone: string }> = {
@@ -24,8 +32,8 @@ export function StateStamp({ kind, className }: { kind: StateStampKind; classNam
   return (
     <span
       className={cn(
-        "absolute top-[15px] right-[15px] rotate-3 border-[1.5px] bg-[rgb(255_255_255_/_60%)]",
-        "px-[9px] py-[5px] font-typewriter text-[10.5px]",
+        "absolute top-[15px] right-[15px] rotate-3 px-[9px] py-[5px] text-[10.5px]",
+        STAMP_SURFACE,
         tone,
         className,
       )}
