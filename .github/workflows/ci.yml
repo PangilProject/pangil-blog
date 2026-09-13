@@ -49,3 +49,39 @@ jobs:
 
       - name: build
         run: npm run build
+
+      # CI가 끝나면 Slack으로 결과를 보낸다. 성공·실패 둘 다 보낸다(요청).
+      #
+      # 06 §1.1은 "웹훅 시크릿은 Vercel env에만"이지만, 그건 **크롤러 러너**에 자격증명을
+      # 두지 않겠다는 규칙이다. CI는 DB도 토큰도 만지지 않고, 알려야 할 대상이 앱이 아니라
+      # 이 워크플로우 자신이라 서버를 경유할 길이 없다 — 그래서 여기만 예외로 둔다.
+      #
+      # cancelled()는 제외한다. concurrency.cancel-in-progress 때문에 연속 푸시마다
+      # 취소가 나고, 그건 "다 돈" 결과가 아니다.
+      #
+      # 알림 실패가 CI 결과를 바꾸지 않는다(lib/notify/slack.ts와 같은 원칙).
+      - name: notify slack
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # 커밋 제목·PR 제목은 사람이 쓴 값이다. ${{ }}로 셸에 박으면 스크립트 주입이
+          # 되므로 반드시 env를 거쳐 "$VAR"로만 읽는다
+          CI_STATUS: ${{ job.status }}
+          CI_BRANCH: ${{ github.head_ref || github.ref_name }}
+          CI_TITLE: ${{ github.event.pull_request.title || github.event.head_commit.message }}
+          CI_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL 미설정 — 알림을 건너뜁니다"
+            exit 0
+          fi
+
+          if [ "$CI_STATUS" = "success" ]; then icon="🟢"; label="CI 통과"; else icon="🔴"; label="CI 실패"; fi
+
+          # 커밋 메시지는 여러 줄일 수 있다. 제목 줄만 쓴다
+          title=$(printf '%s' "$CI_TITLE" | head -n 1)
+
+          # 제목에 따옴표·백슬래시가 있어도 깨지지 않게 jq로 만든다
+          jq -n --arg text "$icon $label · $CI_BRANCH · $title · <$CI_URL|실행 보기>" '{text: $text}' \
+            | curl -sS --max-time 5 -X POST -H 'content-type: application/json' -d @- "$SLACK_WEBHOOK_URL"
