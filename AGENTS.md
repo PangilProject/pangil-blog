@@ -39,7 +39,7 @@
 - **Tailwind CSS + shadcn/ui**
 - **Zod** (JSONB content 스키마 검증 — 저장/발행/렌더링 3중)
 - **Tiptap** (에디터 리치 텍스트), **react-hook-form + @hookform/resolvers**, **dnd-kit**(찬양 섹션), **nanoid**
-- **Shiki**(서버 사이드 코드 하이라이팅), **@vercel/og**(OG 카드)
+- **Shiki**(서버 사이드 코드 하이라이팅), **satori**(OG 카드 — `@vercel/og`/`next/og`가 아니다. Node 24에서 그쪽 래스터화가 `Unsupported input`으로 죽어 satori를 직접 쓴다. `lib/og/card.tsx` 머리 주석에 경위가 있다)
 - **next-themes**(다크모드 수동 토글 + OS 기본 + 무FOUC)
 - **@upstash/ratelimit + Upstash Redis**(통계·향후 댓글 rate limit)
 - **pg_trgm**(Postgres 확장 — 검색 GIN. dev/prod 양쪽 프로젝트에 `create extension` 활성화)
