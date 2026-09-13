@@ -71,8 +71,9 @@ jobs:
           CI_BRANCH: ${{ github.head_ref || github.ref_name }}
           CI_TITLE: ${{ github.event.pull_request.title || github.event.head_commit.message }}
           CI_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          # PR 이벤트에서만 채워진다. main push에는 머지할 대상이 없다
+          # 둘 다 PR 이벤트에서만 채워진다. main push에는 머지할 대상도 번호도 없다
           CI_PR_URL: ${{ github.event.pull_request.html_url }}
+          CI_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ -z "$SLACK_WEBHOOK_URL" ]; then
             echo "SLACK_WEBHOOK_URL 미설정 — 알림을 건너뜁니다"
@@ -96,6 +97,10 @@ jobs:
           # 커밋 메시지는 여러 줄일 수 있다. 제목 줄만 쓴다
           title=$(printf '%s' "$CI_TITLE" | head -n 1)
 
+          # 브랜치 이름만으로는 어느 PR인지 한 번 더 찾아봐야 한다. 번호가 있으면 바로 안다
+          pr=""
+          if [ -n "$CI_PR_NUMBER" ]; then pr=" · #$CI_PR_NUMBER"; fi
+
           # 제목에 따옴표·백슬래시가 있어도 깨지지 않게 jq로 만든다
-          jq -n --arg text "$icon $label · $CI_BRANCH · $title · $link" '{text: $text}' \
+          jq -n --arg text "$icon $label$pr · $CI_BRANCH · $title · $link" '{text: $text}' \
             | curl -sS --max-time 5 -X POST -H 'content-type: application/json' -d @- "$SLACK_WEBHOOK_URL"
