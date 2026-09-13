@@ -3,8 +3,10 @@ import "server-only";
 import { watchdogVerdict } from "@/lib/crawler/watchdog";
 import { dumpDatabase } from "@/lib/db/backup";
 import { findCrawlRun } from "@/lib/db/crawlRuns";
+import { findWeeklyStats } from "@/lib/db/weeklyDigest";
 import { notifySlack } from "@/lib/notify/slack";
-import { kstDateKey } from "@/lib/record/kst";
+import { isSunday, kstDateKey } from "@/lib/record/kst";
+import { weeklyMessage } from "@/lib/stats/weeklyMessage";
 import { uploadBackup } from "@/lib/storage/backups";
 
 /**
@@ -49,4 +51,22 @@ export async function runBackup(now = new Date()): Promise<TaskResult> {
     await notifySlack(`🔴 백업 실패 · ${dateKey} · ${detail}`);
     return { ok: false, detail };
   }
+}
+
+/**
+ * 주간 요약 (06 §8 백로그 3·10).
+ *
+ * **새 크론을 쓰지 않는다.** Hobby는 프로젝트당 크론 2개고 둘 다 찼다. 아침 경로가 매일
+ * 부르되 일요일에만 보낸다 — 요일 판정 한 줄이 크론 자리 하나보다 싸다.
+ *
+ * 이 알림은 한 주에 한 번이라 `quiet`가 아니다. 매일 오는 숫자라면 읽히지 않겠지만
+ * (lib/notify/slack.ts), 주 1회는 그 문턱을 넘지 않는다.
+ */
+export async function runWeeklyDigest(now = new Date()): Promise<TaskResult> {
+  if (!isSunday(now)) return { ok: true, detail: "not-sunday" };
+
+  const stats = await findWeeklyStats(now);
+  await notifySlack(weeklyMessage(now, stats));
+
+  return { ok: true, detail: "sent" };
 }

@@ -1,5 +1,5 @@
 import { authorizeBearer } from "@/lib/crawler/auth";
-import { runBackup, runWatchdog } from "@/lib/cron/tasks";
+import { runBackup, runWatchdog, runWeeklyDigest } from "@/lib/cron/tasks";
 
 /**
  * `GET /api/cron/morning` — 아침 점검 (06 §5 watchdog + §8 백업).
@@ -8,6 +8,9 @@ import { runBackup, runWatchdog } from "@/lib/cron/tasks";
  * 아침(KST 11:00)에는 "어제·오늘 크롤이 돌았는가"와 백업, 저녁에는 리마인드.
  *
  * 크롤 창(KST 06:00)에서 다섯 시간 지난 시각이라, 이때 흔적이 없으면 오늘은 손으로 쓴다.
+ *
+ * 일요일에는 주간 요약도 여기서 나간다 — 크론 자리가 없어서지, 아침에 보낼 이유가 있어서가
+ * 아니다.
  */
 export async function GET(request: Request) {
   if (!authorizeBearer(request, process.env.CRON_SECRET)) {
@@ -19,6 +22,8 @@ export async function GET(request: Request) {
   // 백업이 실패해도 watchdog 알림은 나가야 한다 — 순서대로, 서로 막지 않게
   const watchdog = await runWatchdog(now);
   const backup = await runBackup(now);
+  // 요약은 맨 뒤다. 이게 느리거나 실패해도 앞의 두 개는 이미 끝나 있다
+  const weekly = await runWeeklyDigest(now);
 
-  return Response.json({ ok: watchdog.ok && backup.ok, watchdog, backup });
+  return Response.json({ ok: watchdog.ok && backup.ok && weekly.ok, watchdog, backup, weekly });
 }
