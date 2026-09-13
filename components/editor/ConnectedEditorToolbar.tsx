@@ -110,6 +110,29 @@ function applyTableCommand(editor: Editor, command: TableCommand) {
   }
 }
 
+/**
+ * 표에 지금 할 수 있는 일. **없으면 묻지도 않는다.**
+ *
+ * 표 확장은 full 구성에만 붙는다(RichTextField). slim 편집기(설교·찬양)의 `can()`에는
+ * `mergeCells` 자체가 없어서, 있는지 보지 않고 부르면 렌더 도중에 터지고 — 렌더라서
+ * 툴바만 죽는 게 아니라 페이지가 통째로 error boundary로 넘어간다. 실제로 찬양 글을
+ * 열고 묵상 칸에 커서를 넣는 순간 그렇게 됐다.
+ *
+ * variant로 가르지 않는 이유: 표 줄을 그리는 조건(variant)과 표 명령이 있는 조건(확장)은
+ * 지금 우연히 같을 뿐 다른 것이다. 있는 것을 보고 판단한다.
+ */
+function tableAvailability(
+  editor: Editor | null,
+): Partial<Record<TableCommand, boolean>> | undefined {
+  if (!editor || typeof editor.can().mergeCells !== "function") return undefined;
+
+  // 병합은 칸을 여럿 골랐을 때만, 나누기는 합쳐진 칸에서만 된다
+  return {
+    mergeCells: editor.can().mergeCells(),
+    splitCell: editor.can().splitCell(),
+  };
+}
+
 export function ConnectedEditorToolbar({
   variant = "full",
   hint,
@@ -139,11 +162,7 @@ export function ConnectedEditorToolbar({
           .run()
       }
       onTableCommand={(command) => editor && applyTableCommand(editor, command)}
-      canTable={{
-        // 병합은 칸을 여럿 골랐을 때만, 나누기는 합쳐진 칸에서만 된다
-        mergeCells: editor?.can().mergeCells() ?? false,
-        splitCell: editor?.can().splitCell() ?? false,
-      }}
+      canTable={tableAvailability(editor)}
     />
   );
 }
