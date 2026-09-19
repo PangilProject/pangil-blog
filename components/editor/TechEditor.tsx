@@ -162,6 +162,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
   return (
     <EditorFocusProvider>
       <EditorShell
+        type="TECH"
         breadcrumb={
           <>
             관리 · <b className="text-ink">기술 글</b>
