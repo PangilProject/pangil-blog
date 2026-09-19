@@ -257,6 +257,14 @@ async function announce(type: RecordType, slug: string) {
  * 뒤에도 지면이 그대로였다.
  *
  * updateTag는 Server Action 전용이고 이 파일의 모든 경로가 Server Action이다.
+ *
+ * **이 함수는 저장이 끝난 뒤의 값으로 태그를 만든다.** 그래서 세 가지가 자기 태그로는 만료되지
+ * 않는다 — ⓐ 방금 뗀 태그의 `tag:{site}:{옛이름}`, ⓑ 옮기기 전 카테고리의 `list:{site}:{옛slug}`,
+ * ⓒ 삭제된 글의 태그(연쇄 삭제로 이미 사라졌다).
+ *
+ * **증상이 없는 것은 겹쳐 둔 안전망 덕이다.** `listCacheTags`가 모든 목록 조회에 `list:{site}`를
+ * 함께 붙이고 그 태그는 모든 경로에서 만료된다. 우연이 아니라 그 겹침이 막고 있는 것이다 —
+ * **거기서 "중복이니 빼자"고 정리하는 날 이 세 구멍이 한꺼번에 열린다**(전수조사 개발 2-3).
  */
 async function revalidatePost(postId: string, type: RecordType, categoryId: string | null) {
   const [tagNames, categorySlug] = await Promise.all([
