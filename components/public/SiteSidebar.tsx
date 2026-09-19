@@ -415,6 +415,20 @@ export function axisHref(site: PublicSite, key: string): string {
   return siteHref(site, path, { from: site });
 }
 
+/**
+ * 최근 글 한 편으로 가는 주소.
+ *
+ * **떼어 둔 이유는 테스트다.** 이 링크는 `RecentPosts`(async 조각) 안에 있는데, jsdom은 그
+ * 조각을 await하지 못해 **서스펜드된 지점에서 멈추고 껍데기만 보고 통과한다.** 즉 여기가
+ * 깨져도 테스트는 초록이고 로컬도 멀쩡하며 **도메인이 붙은 프로덕션에서만 404다** —
+ * 이 레포에서 실제로 한 번 일어난 고장의 모양 그대로다(전수조사 개발 1-11).
+ *
+ * 조각을 억지로 await시키는 대신 **주소 조립만 꺼내 고정한다.** 바로 위 `axisHref`가 같은 방식이다.
+ */
+export function recentPostHref(site: PublicSite, slug: string): string {
+  return siteHref(site, `/${site}/${slug}`, { from: site });
+}
+
 function Count({ value }: { value: number }) {
   return <span className="font-typewriter text-[10.5px] text-faint">({value})</span>;
 }
@@ -433,10 +447,7 @@ async function RecentPosts({ site }: { site: PublicSite }) {
       <ul className="flex flex-col gap-2.5">
         {items.map((item) => (
           <li key={item.id}>
-            <Link
-              href={siteHref(site, `/${site}/${item.slug}`, { from: site })}
-              className="flex flex-col gap-0.5 group"
-            >
+            <Link href={recentPostHref(site, item.slug)} className="flex flex-col gap-0.5 group">
               <span className="line-clamp-2 text-[12.5px] leading-[1.5] group-hover:text-(--accent)">
                 {item.title}
               </span>

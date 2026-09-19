@@ -13,7 +13,7 @@ vi.mock("@/lib/db/publicLists", () => ({
   countPublishedPosts: async () => ({ thisMonth: 0, total: 0 }),
 }));
 
-const { axisHref, SiteSidebar } = await import("@/components/public/SiteSidebar");
+const { axisHref, recentPostHref, SiteSidebar } = await import("@/components/public/SiteSidebar");
 const { writeHref } = await import("@/components/public/SiteHeader");
 
 describe("SiteSidebar", () => {
@@ -135,5 +135,35 @@ describe("띠가 내놓는 글쓰기", () => {
       "href",
       writeHref("faith"),
     );
+  });
+});
+
+/**
+ * **이 주소는 화면으로 볼 수 없다.** `RecentPosts`가 async 조각이라 jsdom은 서스펜드된 지점에서
+ * 멈추고 껍데기만 보고 통과한다 — 여기가 깨져도 테스트는 초록이고 로컬도 멀쩡하며
+ * **도메인이 붙은 프로덕션에서만 404다.** 이 레포에서 실제로 한 번 일어난 고장이다.
+ *
+ * 그래서 조각을 억지로 await시키는 대신 주소 조립만 꺼내 고정한다.
+ */
+describe("recentPostHref — 서스펜드된 조각 안의 링크", () => {
+  it("도메인이 없으면 지면 접두사가 남는다", () => {
+    expect(recentPostHref("dev", "0520")).toBe("/dev/0520");
+    expect(recentPostHref("faith", "qt-0207")).toBe("/faith/qt-0207");
+  });
+
+  describe("도메인이 붙은 뒤", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    /** 호스트가 곧 지면이면 접두사가 사라진다 — 남기면 프로덕션에서만 404다 */
+    it("같은 지면 안에서는 접두사를 뗀다", () => {
+      vi.stubEnv("SITE_HOST_ROOT", "pangil.example");
+      vi.stubEnv("SITE_HOST_DEV", "dev.pangil.example");
+      vi.stubEnv("SITE_HOST_FAITH", "faith.pangil.example");
+
+      expect(recentPostHref("dev", "0520")).toBe("/0520");
+      expect(recentPostHref("faith", "qt-0207")).toBe("/qt-0207");
+    });
   });
 });
