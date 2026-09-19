@@ -2,6 +2,7 @@
 
 import { withAdmin } from "@/lib/actions/withAdmin";
 import { createAsset } from "@/lib/db/assets";
+import { toWebp } from "@/lib/images/transcode";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, uploadImage } from "@/lib/storage/images";
 
 /**
@@ -33,9 +34,16 @@ export const uploadPostImage = withAdmin(
 
     const postId = typeof form.get("postId") === "string" ? String(form.get("postId")) : null;
 
+    /*
+      **한도는 받은 파일로 재고, 저장은 줄인 것으로 한다.** 순서가 반대면 4MB짜리 PNG가
+      "webp로 줄이면 400KB인데" 거절된다 — 한도의 이유는 Vercel 함수 본문 4.5MB이고,
+      그건 이미 이 자리까지 온 시점에 통과한 것이다(lib/images/limits).
+    */
+    const image = await toWebp(await file.arrayBuffer(), file.type);
+
     const uploaded = await uploadImage({
-      bytes: await file.arrayBuffer(),
-      mimeType: file.type,
+      bytes: image.bytes,
+      mimeType: image.mimeType,
       postId,
     });
 
@@ -51,13 +59,14 @@ export const uploadPostImage = withAdmin(
     const width = sanitizeDimension(form.get("width"));
     const height = sanitizeDimension(form.get("height"));
 
+    // 적어 두는 것은 **저장소에 있는 것**이다 — 받은 파일이 아니라(용량 집계가 여기서 나온다)
     await createAsset({
       postId,
       storagePath: uploaded.storagePath,
-      mimeType: file.type,
+      mimeType: image.mimeType,
       width,
       height,
-      bytes: file.size,
+      bytes: image.bytes.byteLength,
     });
 
     return { ok: true, url: uploaded.url, width, height };
