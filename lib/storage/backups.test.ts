@@ -1,3 +1,5 @@
+import { gunzipSync } from "node:zlib";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { KEEP_BACKUPS, pruneBackups, uploadBackup } from "@/lib/storage/backups";
@@ -49,9 +51,9 @@ describe("uploadBackup", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe(
-      "https://example.supabase.co/storage/v1/object/backups/db/2026-08-24.json",
+      "https://example.supabase.co/storage/v1/object/backups/db/2026-08-24.json.gz",
     );
-    expect(result.path).toBe("backups/db/2026-08-24.json");
+    expect(result.path).toBe("backups/db/2026-08-24.json.gz");
   });
 
   it("400 본문의 'Bucket not found'를 보고 비공개 버킷을 만든 뒤 다시 올린다", async () => {
@@ -65,7 +67,7 @@ describe("uploadBackup", () => {
       name: "backups",
       public: false,
     });
-    expect(result.path).toBe("backups/db/2026-08-24.json");
+    expect(result.path).toBe("backups/db/2026-08-24.json.gz");
   });
 
   it("다른 실패는 버킷을 만들지 않고 그대로 던진다", async () => {
@@ -73,6 +75,26 @@ describe("uploadBackup", () => {
 
     await expect(uploadBackup("2026-08-24", "{}")).rejects.toThrow(/403 forbidden/);
     expect(calls).toHaveLength(1);
+  });
+
+  /**
+   * **푼 결과가 원본과 같아야 한다.** 압축은 용량을 줄이려고 넣은 것이고, 여기서 한 글자라도
+   * 어긋나면 백업이 아니라 못 읽는 파일 더미가 된다. 복원은 이 레포 밖에서 `gunzip`으로
+   * 이뤄지므로 그 도구가 읽는 형식인지까지 여기서 고정한다.
+   */
+  it("gzip으로 담고, 풀면 원본 그대로다", async () => {
+    const calls = stubFetch(response(200));
+    const body = JSON.stringify({ posts: [{ title: "주님이 네 악을", content: "한글도 그대로" }] });
+
+    const result = await uploadBackup("2026-08-24", body);
+
+    const sent = Buffer.from(calls[0].init.body as Uint8Array);
+    expect(gunzipSync(sent).toString("utf8")).toBe(body);
+    // gzip 매직 넘버 — gunzip이 읽는 그 형식이다
+    expect([sent[0], sent[1]]).toEqual([0x1f, 0x8b]);
+    expect(calls[0].init.headers).toMatchObject({ "content-type": "application/gzip" });
+    // 알리는 크기는 압축 후다 — 실제로 자리를 차지하는 값이어야 한다
+    expect(result.bytes).toBe(sent.byteLength);
   });
 
   it("버킷을 만든 뒤에도 실패하면 던진다", async () => {
@@ -94,7 +116,7 @@ describe("pruneBackups", () => {
   function days(count: number): string[] {
     return Array.from({ length: count }, (_, index) => {
       const day = new Date(Date.UTC(2026, 8, 19) - index * 86_400_000);
-      return `${day.toISOString().slice(0, 10)}.json`;
+      return `${day.toISOString().slice(0, 10)}.json.gz`;
     });
   }
 
@@ -107,14 +129,14 @@ describe("pruneBackups", () => {
     expect(deleted).toEqual(all.slice(KEEP_BACKUPS));
     expect(deleted).toHaveLength(3);
     // 지우는 것은 옛것뿐이다 — 오늘 것이 섞이면 백업이 아니라 사고다
-    expect(deleted).not.toContain("2026-09-19.json");
+    expect(deleted).not.toContain("2026-09-19.json.gz");
 
     expect(calls[1].url).toBe("https://example.supabase.co/storage/v1/object/backups");
     expect(calls[1].init.method).toBe("DELETE");
     expect(JSON.parse(String(calls[1].init.body)).prefixes).toEqual([
-      "db/2026-09-12.json",
-      "db/2026-09-11.json",
-      "db/2026-09-10.json",
+      "db/2026-09-12.json.gz",
+      "db/2026-09-11.json.gz",
+      "db/2026-09-10.json.gz",
     ]);
   });
 
@@ -133,7 +155,7 @@ describe("pruneBackups", () => {
     const { deleted } = await pruneBackups();
 
     // 자리 표시자를 한 장으로 셌다면 여기서 일곱 장만 남기려다 하나를 덜 지운다
-    expect(deleted).toEqual(["2026-09-12.json"]);
+    expect(deleted).toEqual(["2026-09-12.json.gz"]);
     expect(calls).toHaveLength(2);
   });
 
@@ -141,6 +163,24 @@ describe("pruneBackups", () => {
     stubFetch(response(500, "boom"));
 
     await expect(pruneBackups()).rejects.toThrow(/목록 조회 실패: 500 boom/);
+  });
+
+  /**
+   * 압축을 넣기 전에 쌓인 27장은 `.json`이다. 새 확장자만 세면 그 옛 파일들이 정리 대상에서
+   * 빠져 **영원히 남는다** — 애초에 용량을 넘긴 원인이 그것들이었다.
+   */
+  it("압축 이전의 `.json`도 함께 센다 — 그것들이 용량을 넘긴 장본인이다", async () => {
+    const legacy = ["2026-09-12.json", "2026-09-11.json", "2026-09-10.json"];
+    const calls = stubFetch(listed(...days(KEEP_BACKUPS), ...legacy), response(200));
+
+    const { deleted } = await pruneBackups();
+
+    expect(deleted).toEqual(legacy);
+    expect(JSON.parse(String(calls[1].init.body)).prefixes).toEqual([
+      "db/2026-09-12.json",
+      "db/2026-09-11.json",
+      "db/2026-09-10.json",
+    ]);
   });
 
   it("삭제가 거절되면 던진다", async () => {
