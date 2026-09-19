@@ -1,5 +1,7 @@
 import "server-only";
 
+import { noteUnreachable } from "@/lib/notify/unreachable";
+
 /**
  * Slack 알림 (06 §1.1 — "crawl_runs 기록과 Slack 알림을 서버 경로에 단일화").
  *
@@ -8,6 +10,10 @@ import "server-only";
  *
  * **알림 실패가 크롤을 죽이지 않는다.** 이 함수는 절대 throw하지 않는다. 초안은 이미
  * 만들어졌고, 알림을 못 보낸 것이 그 초안을 되돌릴 이유는 없다.
+ *
+ * **대신 실패를 눈에 보이는 곳에 남긴다**(`noteUnreachable`). 여태는 `console.error`로 끝났고
+ * 그 로그는 아무도 안 본다 — 조용한 채널의 약점은 **웹훅이 죽어도 똑같이 조용하다**는 것이다.
+ * 정상과 고장이 화면에서 구분되지 않으면 이 채널에 건 프리모템 #1 방어가 무의미해진다.
  *
  * 소음 관리: 실패는 항상 보내고, 성공·미게시는 기본으로 보내지 않는다. 매일 아침 오는
  * 🟢를 사람이 읽지 않게 되면 정작 🔴도 같이 흘려버린다(프리모템 #1의 실제 실패 모드).
@@ -41,12 +47,14 @@ export async function notifySlack(text: string, { quiet = false }: NotifyOptions
 
     if (!response.ok) {
       console.error(`[slack] ${response.status} — 알림 실패: ${text}`);
+      await noteUnreachable(`Slack이 ${response.status}을 돌려줬어요`);
       return { sent: false, reason: "http-error" as const };
     }
 
     return { sent: true, reason: null };
   } catch (error) {
     console.error(`[slack] 알림 실패: ${text}`, error);
+    await noteUnreachable("Slack에 닿지 못했어요");
     return { sent: false, reason: "network-error" as const };
   }
 }
