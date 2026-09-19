@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { uploadBackup } from "@/lib/storage/backups";
+import { KEEP_BACKUPS, pruneBackups, uploadBackup } from "@/lib/storage/backups";
 
 /**
  * 첫 백업에서 버킷을 만드는 경로 (06 §8).
@@ -79,5 +79,73 @@ describe("uploadBackup", () => {
     stubFetch(response(400, BUCKET_MISSING), response(200), response(500, "boom"));
 
     await expect(uploadBackup("2026-08-24", "{}")).rejects.toThrow(/500 boom/);
+  });
+});
+
+/**
+ * 지우는 코드가 없던 동안 백업이 27장 601MB까지 쌓였고, 그게 Supabase 무료 1GB를 넘긴
+ * 원인의 절반이었다. 한 장이 곧 블로그 전문 한 벌이라 **장수가 그대로 용량이다.**
+ */
+describe("pruneBackups", () => {
+  const listed = (...names: string[]) =>
+    new Response(JSON.stringify(names.map((name) => ({ name }))), { status: 200 });
+
+  /** 오래된 것부터 하루씩 거슬러 `db/2026-09-19.json` 꼴로 만든다 */
+  function days(count: number): string[] {
+    return Array.from({ length: count }, (_, index) => {
+      const day = new Date(Date.UTC(2026, 8, 19) - index * 86_400_000);
+      return `${day.toISOString().slice(0, 10)}.json`;
+    });
+  }
+
+  it("일주일치를 넘긴 만큼만 지운다 — 남는 것은 최신 7장이다", async () => {
+    const all = days(10);
+    const calls = stubFetch(listed(...all), response(200));
+
+    const { deleted } = await pruneBackups();
+
+    expect(deleted).toEqual(all.slice(KEEP_BACKUPS));
+    expect(deleted).toHaveLength(3);
+    // 지우는 것은 옛것뿐이다 — 오늘 것이 섞이면 백업이 아니라 사고다
+    expect(deleted).not.toContain("2026-09-19.json");
+
+    expect(calls[1].url).toBe("https://example.supabase.co/storage/v1/object/backups");
+    expect(calls[1].init.method).toBe("DELETE");
+    expect(JSON.parse(String(calls[1].init.body)).prefixes).toEqual([
+      "db/2026-09-12.json",
+      "db/2026-09-11.json",
+      "db/2026-09-10.json",
+    ]);
+  });
+
+  it("일곱 장 이하면 아무것도 지우지 않는다 — 삭제 요청 자체를 보내지 않는다", async () => {
+    const calls = stubFetch(listed(...days(KEEP_BACKUPS)));
+
+    const { deleted } = await pruneBackups();
+
+    expect(deleted).toEqual([]);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("폴더 자리 표시자는 세지 않는다", async () => {
+    const calls = stubFetch(listed(".emptyFolderPlaceholder", ...days(8)), response(200));
+
+    const { deleted } = await pruneBackups();
+
+    // 자리 표시자를 한 장으로 셌다면 여기서 일곱 장만 남기려다 하나를 덜 지운다
+    expect(deleted).toEqual(["2026-09-12.json"]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("목록을 못 읽으면 던진다 — 조용히 넘기면 정리가 안 된 채로 지나간다", async () => {
+    stubFetch(response(500, "boom"));
+
+    await expect(pruneBackups()).rejects.toThrow(/목록 조회 실패: 500 boom/);
+  });
+
+  it("삭제가 거절되면 던진다", async () => {
+    stubFetch(listed(...days(9)), response(403, "forbidden"));
+
+    await expect(pruneBackups()).rejects.toThrow(/삭제 실패: 403 forbidden/);
   });
 });
