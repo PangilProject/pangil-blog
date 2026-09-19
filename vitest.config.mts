@@ -32,7 +32,9 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
-          include: ["{lib,app,components}/**/*.{test,spec}.tsx"],
+          // node 쪽과 같은 범위여야 한다. `scripts`가 빠져 있던 동안 거기 .tsx 테스트를 두면
+          // 아무 말 없이 안 돌았다 — 지금은 0개라 증상이 없지만 하나 생기면 조용히 새는 자리다
+          include: ["{lib,scripts,app,components}/**/*.{test,spec}.tsx"],
           setupFiles: ["./vitest.setup.ts"],
         },
       },

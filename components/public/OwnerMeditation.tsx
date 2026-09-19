@@ -55,8 +55,16 @@ export function OwnerMeditation({
       try {
         const loaded = await load(postId);
         if (!cancelled) setBlocks(loaded);
-      } catch {
-        // 세션이 끊긴 것이다. 읽는 지면에 오류 문구를 띄울 일은 아니다
+      } catch (error) {
+        /**
+         * 읽는 지면에 오류 문구를 띄울 일은 아니다 — 여기까지 온 사람은 본인이고, 감춘 덩이가
+         * 안 보이는 것이 글을 못 읽게 만들지도 않는다.
+         *
+         * **다만 조용히 삼키지는 않는다.** 대개는 세션이 끊긴 것이지만 그물이 끊겼거나 서버가
+         * 답을 못 준 것일 수도 있고, 그때 화면은 "감춘 덩이가 없다"와 구분되지 않는다.
+         * 콘솔에 사유가 남으면 스크린샷 한 장으로 갈린다(`SaveErrorNote`와 같은 이유).
+         */
+        console.warn("[감춘 묵상] 받아오지 못했습니다", error);
       }
     })();
 

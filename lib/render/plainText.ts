@@ -13,6 +13,7 @@ import type { TiptapDoc } from "@/lib/content/schema";
 
 type UnknownNode = {
   type?: unknown;
+  attrs?: unknown;
   text?: unknown;
   content?: unknown;
 };
@@ -54,6 +55,17 @@ function walk(node: unknown, out: string[]): void {
 
   if (typeof candidate.text === "string") {
     out.push(candidate.text);
+  }
+
+  /**
+   * 이미지의 대체 글자도 줍는다. 마크다운 타깃은 처음부터 담고 있었다(`markdown.ts`).
+   *
+   * 옛 글을 찾을 때 기억하는 것에 **사진 설명**이 든다 — 색인이 그 말을 모르면 그 말로는
+   * 글을 못 찾는다(05 §4A "작성자가 기억하는 것들").
+   */
+  if (candidate.type === "image") {
+    const alt = (candidate as { attrs?: { alt?: unknown } }).attrs?.alt;
+    if (typeof alt === "string" && alt.trim() !== "") out.push(alt);
   }
 
   if (Array.isArray(candidate.content)) {

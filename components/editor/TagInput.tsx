@@ -3,6 +3,7 @@
 import { type KeyboardEvent, useState } from "react";
 
 import { isComposing } from "@/lib/editor/ime";
+import { normalizeTagNames } from "@/lib/record/tagNames";
 
 /**
  * 태그 입력 (02 §5.5 필드 6 · dev 태그 탐색 대응).
@@ -21,12 +22,17 @@ export function TagInput({
   const [draft, setDraft] = useState("");
 
   const commit = (raw: string) => {
-    const name = raw.trim().replace(/,$/, "").trim();
     setDraft("");
-    if (name === "") return;
-    // 같은 태그를 두 번 넣지 않는다 (대소문자 무시)
-    if (value.some((tag) => tag.toLowerCase() === name.toLowerCase())) return;
-    onChange([...value, name]);
+
+    /**
+     * **정리 규칙은 저장 경로와 같은 것을 쓴다**(`normalizeTagNames`).
+     *
+     * 여기서 `trim`만 하던 동안 정본은 내부 연속 공백까지 눕히고 있었다 — `내 태그`와
+     * `내  태그`가 **화면에서는 둘, 저장에서는 하나**였다. 화면이 받아 준 것이 조용히 사라진다.
+     */
+    const next = normalizeTagNames([...value, raw.replace(/,$/, "")]);
+    if (next.length === value.length) return;
+    onChange(next);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
