@@ -367,8 +367,16 @@ function TocHandle() {
   );
 }
 
+/**
+ * 사이드바 칸의 머리.
+ *
+ * **`h2`가 아니다.** 제목 층위가 `h1`(글 제목) → `h2`(여기) → `h3`(본문 소제목)이 되면서,
+ * 읽어 주는 목차에서 **본문 소제목이 사이드바 항목보다 낮은 층위**로 놓였다 — 글의 구조가
+ * 지면 부속물 아래로 들어간다(전수조사 디자인 4-5). 본문 쪽 `h3`은 이관해 온 데이터라
+ * 건드리지 않고, 이쪽을 내린다. 보이는 모양은 그대로다.
+ */
 function SidebarHeading({ children }: { children: string }) {
-  return <h2 className="font-typewriter text-[10px] tracking-[0.14em] text-faint">{children}</h2>;
+  return <p className="font-typewriter text-[10px] tracking-[0.14em] text-faint">{children}</p>;
 }
 
 /** 자리를 미리 잡아둔다 — 숫자가 흘러들 때 아래 목록이 밀리지 않게 */
