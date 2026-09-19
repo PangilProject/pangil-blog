@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  startsWithVerseNumber,
   stripScriptureMarks,
   toScriptureSegments,
   toScriptureVerses,
@@ -77,5 +78,37 @@ describe("강조 표시 — 저장은 글자열 그대로 (02 §5.2)", () => {
 
   it("stripScriptureMarks는 본문 전체에서 표시만 뗀다", () => {
     expect(stripScriptureMarks("**주님**이\n__말씀__하시니")).toBe("주님이\n말씀하시니");
+  });
+});
+
+/**
+ * **이 판정은 한 벌만 있어야 한다.** 마이그레이션 컨버터 둘이 각자 정규식을 들고 있었고 그쪽은
+ * 구두점을 필수로 봤다 — 그래서 구두점 없는 절이 말씀 영역 첫 줄로 오면 그 절 본문이 말씀 범위
+ * 칸에 들어앉았다(전수조사 개발 1-3). 같은 글자를 화면은 절로 읽었다.
+ *
+ * 아래 첫 항목이 **두 규칙이 서로 다른 답을 내던 바로 그 모양**이다.
+ */
+describe("startsWithVerseNumber — 절 번호로 시작하는 줄", () => {
+  it("구두점이 없어도 절이다", () => {
+    expect(startsWithVerseNumber("13 솔로몬이 하나님께 아뢰되")).toBe(true);
+  });
+
+  it("마침표·괄호가 붙어도 절이다", () => {
+    expect(startsWithVerseNumber("7. 너는 가서 기쁨으로")).toBe(true);
+    expect(startsWithVerseNumber("7) 너는 가서 기쁨으로")).toBe(true);
+  });
+
+  it("범위도 절이다", () => {
+    expect(startsWithVerseNumber("7-10 너는 가서")).toBe(true);
+    expect(startsWithVerseNumber("7~10 너는 가서")).toBe(true);
+  });
+
+  it("숫자로 시작해도 뒤에 글이 없으면 절이 아니다", () => {
+    expect(startsWithVerseNumber("13")).toBe(false);
+  });
+
+  it("숫자로 시작하지 않으면 절이 아니다 — 말씀 범위 줄이 여기 걸리면 안 된다", () => {
+    expect(startsWithVerseNumber("전도서 9장 7~10절")).toBe(false);
+    expect(startsWithVerseNumber("솔로몬이 아뢰되")).toBe(false);
   });
 });

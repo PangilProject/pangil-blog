@@ -1,4 +1,5 @@
 import { QT_QUESTION_GROUPS } from "@/lib/content/schema";
+import { startsWithVerseNumber } from "@/lib/record/scriptureVerses";
 import {
   explodeHardBreaks,
   isEmptyBlock,
@@ -35,7 +36,6 @@ const SUMMARY_HEADINGS = new Set(["summary", "요약", "오늘의요약", "정�
 const QUESTION_LABEL = /^(\d+(?:\s*-\s*\d+)?)\s*[.)]\s*(.*)$/;
 
 /** `26.` 으로 시작하는 절 */
-const VERSE_LINE = /^\d+(?:\s*[-~]\s*\d+)?\s*[.)]/;
 
 export type QtConversion = {
   content: {
@@ -139,7 +139,7 @@ export function convertQt(bodyHtml: string): QtConversion {
     // 말씀 영역
     if ((block as { type?: string }).type === "horizontalRule") continue;
 
-    if (scriptureRef === "" && !VERSE_LINE.test(line)) {
+    if (scriptureRef === "" && !startsWithVerseNumber(line)) {
       scriptureRef = line;
       continue;
     }
