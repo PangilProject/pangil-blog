@@ -156,6 +156,43 @@ describe("PraiseView", () => {
     expect(screen.getByLabelText("묵상과 기도 2 복사")).toBeInTheDocument();
   });
 
+  /**
+   * **눈으로 구분되어야 한다.** 덩이가 여럿이면 머리줄 복사 바로 아래에 첫 덩이의 복사가
+   * 붙어 서는데, 둘 다 화면 글자가 `복사`이던 동안 무엇이 다른지가 `aria-label`에만 있었다 —
+   * 읽어 주는 이름은 눈에 안 보인다. 덩이가 하나뿐이면 덩이 버튼이 없으므로 그대로 `복사`다
+   * (전수조사 디자인 5-6).
+   */
+  it("덩이가 여럿이면 머리줄은 `전체 복사`다 — 화면 글자가 서로 다르다", () => {
+    render(
+      <PraiseView
+        content={{
+          ...content,
+          meditationAndPrayer: [doc("묵상 덩이"), doc("기도 덩이")],
+        }}
+        title="손잡고 함께 가세"
+        postId="post-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("묵상과 기도 복사")).toHaveTextContent("전체 복사");
+    // 나란히 선 셋 중 같은 글자는 덩이 버튼 둘뿐이고, 그 둘은 서로 떨어져 있다
+    expect(screen.getByLabelText("묵상과 기도 1 복사")).toHaveTextContent("복사");
+    expect(screen.getAllByText("전체 복사")).toHaveLength(1);
+  });
+
+  it("덩이가 하나면 머리줄은 그냥 `복사`다 — 견줄 상대가 없으면 `전체`가 군더더기다", () => {
+    render(
+      <PraiseView
+        content={{ ...content, meditationAndPrayer: [doc("묵상 덩이 하나")] }}
+        title="손잡고 함께 가세"
+        postId="post-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("묵상과 기도 복사")).toHaveTextContent("복사");
+    expect(screen.queryByText("전체 복사")).toBeNull();
+  });
+
   it("옮겨 적을 글자가 없으면 복사 버튼도 세우지 않는다", () => {
     render(<PraiseView content={content} title="손잡고 함께 가세" postId="post-1" />);
 

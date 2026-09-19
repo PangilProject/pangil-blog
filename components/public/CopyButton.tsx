@@ -12,11 +12,17 @@ import { cn } from "@/lib/utils";
 export function CopyButton({
   text,
   label = "복사",
+  idle = "복사",
   className,
 }: {
   text: string;
-  /** 무엇을 복사하는지 — 화면에는 "복사"만 적히므로 여기에 목적어를 둔다 */
+  /** 무엇을 복사하는지 — 화면 글자보다 길게 적는다. 읽어 주는 이름이 된다 */
   label?: string;
+  /**
+   * 화면에 적을 말. **같은 화면에 복사 버튼이 둘 이상 설 때만** 바꾼다 — 나란히 선 둘이
+   * 똑같이 `복사`이면 무엇이 다른지 단서가 `aria-label`에만 있고, 그건 눈으로 안 보인다.
+   */
+  idle?: string;
   className?: string;
 }) {
   const { state, copy } = useCopyText();
@@ -31,7 +37,7 @@ export function CopyButton({
         className,
       )}
     >
-      {copyLabel(state, "복사")}
+      {copyLabel(state, idle)}
     </button>
   );
 }

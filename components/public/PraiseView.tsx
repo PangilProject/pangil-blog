@@ -88,8 +88,17 @@ export function PraiseView({
           <section className="border-edge border-t pt-5">
             <div className="mb-2 flex items-baseline justify-between gap-3">
               <h2 className="font-serif font-bold text-[15px]">묵상과 기도</h2>
-              {/* 읽는 사람에게는 공개된 글자만, 본인에게는 감춘 덩이까지 */}
-              <MeditationCopyButton publicText={copyText} />
+              {/*
+                읽는 사람에게는 공개된 글자만, 본인에게는 감춘 덩이까지.
+
+                **덩이별 복사가 함께 설 때는 `전체 복사`로 적는다.** 바로 아래 첫 덩이의 버튼이
+                붙어 서는데 둘 다 `복사`이면 무엇이 다른지가 `aria-label`에만 있었다 — 눈으로는
+                똑같은 글자 둘이다(전수조사 디자인 5-6).
+              */}
+              <MeditationCopyButton
+                publicText={copyText}
+                idle={meditation.length > 1 ? "전체 복사" : "복사"}
+              />
             </div>
 
             {/* 블록은 쓰는 사람이 끊어둔 자리다. 여백으로만 나눈다 — 소제목이 없는 덩이에
