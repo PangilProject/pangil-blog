@@ -106,7 +106,7 @@ export function RecordCard({
         "relative rotate-(--card-rotate,0deg) border border-edge bg-card px-5 pt-[18px] pb-[14px]",
         // 상단 괘 — 청구기호 줄 아래에 그어진다
         "before:absolute before:inset-x-0 before:top-10 before:h-[1.5px] before:bg-(--card-accent) before:content-['']",
-        "transition-[translate,rotate,box-shadow] duration-300 ease-record",
+        "motion-safe:transition-[translate,rotate,box-shadow] motion-safe:duration-300 ease-record",
         ACCENT_BY_VARIANT[variant],
         isEmpty ? "border-dashed" : cn(RULED_LINES, "shadow-card"),
         href && !isEmpty && "hover:-translate-y-[5px] hover:rotate-0 hover:shadow-card-hover",

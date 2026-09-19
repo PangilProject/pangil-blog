@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { ThemeToggle } from "@/components/public/ThemeToggle";
 import type { PublicSite } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
 import { profileFromEnv } from "@/lib/site/profile";
@@ -66,6 +67,22 @@ export function SiteFooter({ site }: { site: SiteKey }) {
         >
           개인정보처리방침
         </Link>
+
+        {/*
+          **소개 지면에서도 밝기를 바꿀 수 있어야 한다.** 토글이 `SiteHeader`와 `SiteSidebar`에만
+          있어서 허브에는 아예 없었다 — 이력서에 적히는 주소가 거기다(02 §2.1). 푸터는 세 면이
+          함께 쓰므로 한 자리면 끝난다.
+
+          아일랜드 **종류는 늘지 않는다**. 이미 세고 있는 토글 하나가 한 군데 더 서는 것이고,
+          좁은/넓은 화면에 두 벌 서는 것을 04 §3.6이 같은 근거로 이미 허용했다.
+
+          **선택이 세 면에 따라오게 하지는 않는다.** 프로덕션의 3면은 서로 다른 오리진이고,
+          맞추려면 쿠키를 첫 페인트 전에 읽어야 해서 지면 캐시와 부딪친다(전수조사 디자인 2-2 ②).
+
+          소개 지면에서만 그린다. 푸터는 셋이 함께 쓰는데 dev·faith에는 이미 위쪽에 토글이 있어서,
+          여기 두면 한 화면에 두 개가 선다.
+        */}
+        {site === "hub" && <ThemeToggle />}
       </nav>
 
       {/* 이름이 없으면 그리지 않는다 — 자리표시자가 남은 프로필이 빈 프로필보다 나쁘다 */}
