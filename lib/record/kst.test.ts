@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  countKstDays,
   formatKstDay,
   isSunday,
   kstDateAsUtcMidnight,
   kstDateKey,
   startOfKstDay,
   startOfKstMonth,
+  startOfKstWeek,
   toKstDate,
 } from "@/lib/record/kst";
 
@@ -93,5 +95,80 @@ describe("startOfKstMonth", () => {
     expect(startOfKstMonth(new Date("2026-08-31T14:00:00Z")).toISOString()).toBe(
       "2026-07-31T15:00:00.000Z",
     );
+  });
+});
+
+/**
+ * **이 블로그의 주는 일요일에 시작한다.** 설교가 주일 예배에서 나오므로(02 §2.4) 월요일로
+ * 끊으면 설교와 그 주의 나머지가 다른 주로 갈린다 — `이번 주 N/7`이 매주 첫날부터 어긋난다.
+ */
+describe("startOfKstWeek — 주는 일요일에 시작한다", () => {
+  it("수요일에서 보면 그 주 일요일 0시다", () => {
+    // 2026-09-16(수) KST 낮 → 그 주 일요일은 9/13
+    const wednesday = new Date("2026-09-16T05:00:00.000Z");
+
+    expect(kstDateKey(startOfKstWeek(wednesday))).toBe("2026-09-13");
+  });
+
+  it("일요일에는 그날 0시다 — 한 주 전으로 밀리지 않는다", () => {
+    const sunday = new Date("2026-09-13T05:00:00.000Z");
+
+    expect(kstDateKey(startOfKstWeek(sunday))).toBe("2026-09-13");
+  });
+
+  /** KST 자정 직전은 아직 어제다. UTC로 재면 하루 밀려 주가 통째로 어긋난다 */
+  it("KST 토요일 밤 11시는 아직 그 주다", () => {
+    // 2026-09-19(토) KST 23:00 = UTC 14:00
+    const saturdayNight = new Date("2026-09-19T14:00:00.000Z");
+
+    expect(kstDateKey(startOfKstWeek(saturdayNight))).toBe("2026-09-13");
+  });
+
+  it("KST 일요일 0시를 넘기면 새 주다", () => {
+    // 2026-09-20(일) KST 00:30 = UTC 2026-09-19 15:30
+    const justPastMidnight = new Date("2026-09-19T15:30:00.000Z");
+
+    expect(kstDateKey(startOfKstWeek(justPastMidnight))).toBe("2026-09-20");
+  });
+});
+
+/**
+ * `이번 주 N/7`이 묻는 것은 "며칠 썼나"다. 이 셈이 틀리면 매일 여는 화면의 숫자가 틀린다.
+ */
+describe("countKstDays — 날을 세지 장수를 세지 않는다", () => {
+  it("같은 날 세 편은 하루다", () => {
+    const times = [
+      new Date("2026-09-13T01:00:00.000Z"),
+      new Date("2026-09-13T05:00:00.000Z"),
+      new Date("2026-09-13T09:00:00.000Z"),
+    ];
+
+    expect(countKstDays(times)).toBe(1);
+  });
+
+  /**
+   * **여기가 UTC로 세면 틀리는 자리다.** KST 밤 9시 이후는 UTC로 다음 날이라,
+   * 같은 날 저녁에 쓴 둘이 이틀로 세어진다.
+   */
+  it("KST 같은 날의 아침과 밤은 하루다", () => {
+    const morning = new Date("2026-09-13T00:00:00.000Z"); // KST 09:00
+    const night = new Date("2026-09-13T14:00:00.000Z"); // KST 23:00
+
+    expect(countKstDays([morning, night])).toBe(1);
+  });
+
+  it("KST 자정을 넘기면 이틀이다", () => {
+    const beforeMidnight = new Date("2026-09-13T14:00:00.000Z"); // KST 9/13 23:00
+    const afterMidnight = new Date("2026-09-13T16:00:00.000Z"); // KST 9/14 01:00
+
+    expect(countKstDays([beforeMidnight, afterMidnight])).toBe(2);
+  });
+
+  it("발행 안 한 글은 세지 않는다 — 날짜가 없다", () => {
+    expect(countKstDays([null, undefined, new Date("2026-09-13T05:00:00.000Z")])).toBe(1);
+  });
+
+  it("하나도 없으면 0이다", () => {
+    expect(countKstDays([])).toBe(0);
   });
 });

@@ -53,6 +53,36 @@ export function startOfKstMonth(now: Date): Date {
   return new Date(new Date(label).getTime() - KST_OFFSET_MS);
 }
 
+/**
+ * KST 이번 주 시작(일요일 0시)의 실제 시각(UTC).
+ *
+ * **이 블로그의 주는 일요일에 시작한다.** 설교가 주일 예배에서 나오고(02 §2.4), `isSunday`가
+ * 이미 오늘 카드의 축이다 — 월요일로 끊으면 설교와 그 주의 나머지가 다른 주로 갈린다.
+ */
+export function startOfKstWeek(now: Date): Date {
+  const { weekday } = toKstDate(now);
+  return new Date(startOfKstDay(now).getTime() - weekday * DAY_MS);
+}
+
+/**
+ * 이 시각들이 KST로 **며칠**인가.
+ *
+ * `이번 주 N/7`이 묻는 것은 "몇 편 썼나"가 아니라 "며칠 썼나"다 — 매일 몫이라는 기대치에
+ * 답하는 숫자이므로, 하루에 세 편을 몰아 써도 그날은 하루다.
+ *
+ * 날짜 경계를 KST로 보는 것이 핵심이다. UTC로 세면 밤 9시 이후에 쓴 글이 다음 날로 넘어가
+ * 같은 날 쓴 둘이 이틀로 세어진다.
+ */
+export function countKstDays(times: (Date | null | undefined)[]): number {
+  const days = new Set<string>();
+
+  for (const time of times) {
+    if (time) days.add(kstDateKey(time));
+  }
+
+  return days.size;
+}
+
 /** CrawlRun.runDate 비교용 — KST 날짜의 자정을 UTC 자정으로 적은 값(@db.Date 관례) */
 export function kstDateAsUtcMidnight(now: Date): Date {
   return new Date(`${kstDateKey(now)}T00:00:00.000Z`);
