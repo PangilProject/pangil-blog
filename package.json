@@ -29,7 +29,8 @@
     "content:sermon-title": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/001-sermon-title.mts",
     "content:tech-slug": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/002-tech-index-slug.mts",
     "content:faith-slug": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/003-faith-index-slug.mts",
-    "content:search-text": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/004-search-text-line-breaks.mts"
+    "content:search-text": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/004-search-text-line-breaks.mts",
+    "content:images-webp": "node --env-file-if-exists=.env --import ./scripts/aliasHook.mts scripts/content-migrations/005-images-to-webp.mts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
