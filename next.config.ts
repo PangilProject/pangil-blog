@@ -21,7 +21,8 @@ const nextConfig: NextConfig = {
    *
    * 둘 다 실제로 그렇게 깨졌다. 배포 환경에서는 npm이 각 플랫폼 바이너리를 설치한다.
    */
-  serverExternalPackages: ["@resvg/resvg-js", "satori"],
+  // sharp는 네이티브 바이너리다. 번들에 넣으려 하면 빌드가 깨진다(업로드 시 webp 변환)
+  serverExternalPackages: ["@resvg/resvg-js", "satori", "sharp"],
 
   /**
    * Server Action 본문 한도 (04 §3.3).
