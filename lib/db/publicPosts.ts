@@ -3,7 +3,7 @@ import "server-only";
 import { cacheTag } from "next/cache";
 
 import type { PostContent } from "@/lib/content/schema";
-import { type ContentParseResult, parsePublishContent } from "@/lib/db/content";
+import { type ContentParseResult, parsePublishContent, scriptureRefOf } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
 import { listTag, type PublicSite, postTag, siteOf } from "@/lib/revalidate/tags";
@@ -231,15 +231,10 @@ export async function findOgCard(id: string): Promise<OgCard | null> {
   cacheTag(postTag(id));
 
   const type = row.type as RecordType;
-  const scriptureRef = (row.content as { scriptureRef?: unknown } | null)?.scriptureRef;
-
   return {
     type,
     title: row.title,
-    subtitle:
-      typeof scriptureRef === "string" && scriptureRef.trim() !== ""
-        ? scriptureRef
-        : (row.excerpt ?? null),
+    subtitle: scriptureRefOf(row.content) ?? row.excerpt ?? null,
     callNumber: row.callNumber,
     categoryName: row.category?.name ?? null,
     publishedAt: row.publishedAt
