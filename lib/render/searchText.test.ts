@@ -214,3 +214,30 @@ describe("extractSearchText — 05 §4A", () => {
     expect(text).toBe("제목 시편 1편 복 있는 사람은");
   });
 });
+
+/**
+ * 옛 글을 찾을 때 기억하는 것에 **사진 설명**이 든다. 색인이 그 말을 모르면 그 말로는 글을
+ * 못 찾는다(05 §4A). 마크다운 타깃은 처음부터 담고 있었다.
+ */
+describe("이미지의 대체 글자", () => {
+  const withImage: TiptapDoc = {
+    type: "doc",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "본문" }] },
+      { type: "image", attrs: { src: "/a.png", alt: "루틴 목록 스크린샷" } },
+    ],
+  };
+
+  it("색인에 담긴다", () => {
+    expect(tiptapToPlainText(withImage)).toContain("루틴 목록 스크린샷");
+  });
+
+  it("설명이 없으면 아무것도 넣지 않는다", () => {
+    const noAlt: TiptapDoc = {
+      type: "doc",
+      content: [{ type: "image", attrs: { src: "/a.png", alt: "" } }],
+    };
+
+    expect(tiptapToPlainText(noAlt)).toBe("");
+  });
+});

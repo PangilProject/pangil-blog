@@ -60,3 +60,37 @@ describe("TagInput — 한글 조합 (IME)", () => {
     expect(screen.getByRole("button", { name: "태그 Prisma 삭제" })).toBeInTheDocument();
   });
 });
+
+/**
+ * **화면과 저장이 같은 규칙을 써야 한다.** 여기가 `trim`만 하던 동안 저장 경로는 내부 연속
+ * 공백까지 눕히고 있었다 — `내 태그`와 `내  태그`가 화면에서는 둘, 저장에서는 하나였다.
+ * 화면이 받아 준 것이 조용히 사라진다(전수조사 개발 2-5).
+ */
+describe("TagInput — 정리 규칙은 저장과 같다", () => {
+  it("가운데 공백만 다른 태그는 같은 태그다", async () => {
+    render(<Harness />);
+
+    await act(async () => {
+      type("내 태그");
+      pressEnter();
+    });
+    await act(async () => {
+      type("내  태그");
+      pressEnter();
+    });
+
+    // 하나만 남는다 — 둘이면 화면이 받아 준 것이 저장에서 조용히 사라진다
+    expect(screen.getAllByRole("button", { name: /태그 .* 삭제/ })).toHaveLength(1);
+  });
+
+  it("가운데 공백은 하나로 눕혀 담는다", async () => {
+    render(<Harness />);
+
+    await act(async () => {
+      type("내  태그");
+      pressEnter();
+    });
+
+    expect(screen.getByRole("button", { name: "태그 내 태그 삭제" })).toBeInTheDocument();
+  });
+});
