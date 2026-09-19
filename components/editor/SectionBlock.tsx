@@ -64,14 +64,25 @@ export function SectionBlock({
           </span>
         )}
       </header>
-      <p
-        className={cn(
-          "min-h-[52px] whitespace-pre-line px-[13px] py-[11px] font-serif text-sm leading-body",
-          lyrics ? "text-ink" : "text-faint",
-        )}
-      >
-        {lyrics || emptyLabel}
-      </p>
+      {/*
+        **그릴 것이 없으면 상자도 없다.** 공개 지면은 `emptyLabel`을 주지 않으므로 연주 구간
+        (`Intro`·`Interlude`)에서 `min-h`만 남은 **빈 52px 상자**가 섰다 — 그 상자가 가사 상자와
+        같은 생김새라 "여기 가사가 빠졌나"로 읽혔다. 라벨 줄만 남기면 그게 연주 구간이라는 뜻이
+        그대로 읽힌다(전수조사 디자인 5-5).
+
+        마디 수를 적어 둔 섹션은 그 글자가 가사 자리에 그대로 나온다(`"4 Bar"` — `praiseForm`).
+        에디터는 `emptyLabel`이 있으므로 빈 칸이 그대로 서고, 그쪽은 적으라는 뜻이라 맞다.
+      */}
+      {(lyrics || emptyLabel) && (
+        <p
+          className={cn(
+            "min-h-[52px] whitespace-pre-line px-[13px] py-[11px] font-serif text-sm leading-body",
+            lyrics ? "text-ink" : "text-faint",
+          )}
+        >
+          {lyrics || emptyLabel}
+        </p>
+      )}
     </section>
   );
 }

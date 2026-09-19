@@ -22,3 +22,15 @@ export const PANEL_TOGGLE =
  */
 export const FOLD_LEFT = "«";
 export const FOLD_RIGHT = "»";
+
+/**
+ * 손잡이를 읽어 주는 이름.
+ *
+ * **지금 상태를 말한다**(`{이름} 열기` / `{이름} 닫기`). 한동안 넓은 화면 쪽만 `목차 접고 펴기`로
+ * **동작 한 장**을 썼고 좁은 화면은 상태 두 장을 썼다 — 한 물건에 두 문법이었다
+ * (전수조사 디자인 4-4). `ThemeToggle`도 상태 쪽이다(`밝은 화면으로` / `어두운 화면으로`).
+ *
+ * 생김새를 한 자리에 둔 것과 같은 이유로 여기 둔다 — 따로 적으면 갈린다.
+ */
+export const openLabel = (name: string) => `${name} 열기`;
+export const closeLabel = (name: string) => `${name} 닫기`;

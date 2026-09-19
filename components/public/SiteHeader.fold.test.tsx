@@ -15,7 +15,7 @@ describe("SiteHeader — 목차 손잡이", () => {
   it("목차가 있는 지면에만 손잡이를 둔다", () => {
     render(<SiteHeader site="dev" foldsToc />);
 
-    expect(screen.getByRole("checkbox", { name: "목차 접고 펴기" })).toHaveAttribute(
+    expect(screen.getByRole("checkbox", { name: /목차 (열기|닫기)/ })).toHaveAttribute(
       "id",
       "toc-fold",
     );
@@ -24,6 +24,6 @@ describe("SiteHeader — 목차 손잡이", () => {
   it("목차가 없는 지면에는 두지 않는다 — 눌러도 아무 일이 없는 버튼을 남기지 않는다", () => {
     render(<SiteHeader site="faith" />);
 
-    expect(screen.queryByRole("checkbox", { name: "목차 접고 펴기" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: /목차 (열기|닫기)/ })).toBeNull();
   });
 });

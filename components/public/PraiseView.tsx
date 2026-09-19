@@ -99,14 +99,22 @@ export function PraiseView({
                 // 블록에는 id가 없다. 순서가 곧 자리이고, 이 목록은 다시 정렬되지 않는다
                 // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 유일한 식별자다
                 <div key={index} className="flex flex-col gap-1.5">
-                  {/* 덩이마다 복사한다 — 묵상 한 덩이, 기도 한 덩이가 따로 옮겨진다.
-                      끊어 쓴 자리가 곧 복사 단위다 */}
-                  <div className="flex justify-end">
-                    <CopyButton
-                      text={tiptapToCopyText(block.doc)}
-                      label={`묵상과 기도 ${index + 1} 복사`}
-                    />
-                  </div>
+                  {/*
+                    덩이마다 복사한다 — 묵상 한 덩이, 기도 한 덩이가 따로 옮겨진다.
+                    끊어 쓴 자리가 곧 복사 단위다.
+
+                    **덩이가 하나뿐이면 그리지 않는다.** 그때는 바로 위 머리줄의 `묵상과 기도 복사`가
+                    곧 그것이라, 같은 크기·같은 색의 `복사` 둘이 세로로 붙어 서고 화면에 무엇이 다른지
+                    단서가 없다 — 대상이 읽어 주는 이름에만 있었다(전수조사 디자인 5-6).
+                  */}
+                  {meditation.length > 1 && (
+                    <div className="flex justify-end">
+                      <CopyButton
+                        text={tiptapToCopyText(block.doc)}
+                        label={`묵상과 기도 ${index + 1} 복사`}
+                      />
+                    </div>
+                  )}
                   <RichTextBody doc={block.doc} />
                 </div>
               ))}

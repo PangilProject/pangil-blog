@@ -114,6 +114,9 @@ export function Toc({ headings }: { headings: RichTextHeading[] }) {
           "group-has-[#panel-toc:checked]/site:block",
         )}
       >
+        {/* 분류 판은 라벨을 달고 내려오는데 목차만 링크 목록이 맨몸으로 놓였다 — 같은 띠에서
+            내려오는 두 판이면 머리 모양도 같아야 한다(전수조사 디자인 5-7) */}
+        <p className="mb-2.5 font-typewriter text-[9.5px] tracking-[0.13em] text-faint">목차</p>
         {list}
       </div>
 
