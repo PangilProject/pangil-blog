@@ -7,7 +7,7 @@ import { findWeeklyStats } from "@/lib/db/weeklyDigest";
 import { notifySlack } from "@/lib/notify/slack";
 import { isSunday, kstDateKey } from "@/lib/record/kst";
 import { weeklyMessage } from "@/lib/stats/weeklyMessage";
-import { uploadBackup } from "@/lib/storage/backups";
+import { pruneBackups, uploadBackup } from "@/lib/storage/backups";
 
 /**
  * 크론 작업 본체 (06 §5 · §8).
@@ -32,6 +32,23 @@ export async function runWatchdog(now = new Date()): Promise<TaskResult> {
   return { ok: true, detail: "alerted" };
 }
 
+/**
+ * 옛 백업 정리. **실패해도 백업은 성공이다.**
+ *
+ * 오늘 한 장은 이미 올라가 있고, 잃으면 안 되는 것은 그것이다 — 정리에 실패했다고 🔴을
+ * 올리면 "백업이 실패했다"로 읽힌다. 대신 조용한 완료 줄에 한 마디를 붙여 둔다.
+ */
+async function sweepOldBackups(dateKey: string): Promise<string> {
+  try {
+    const { deleted } = await pruneBackups();
+    return deleted.length > 0 ? ` · 옛것 ${deleted.length}장 정리` : "";
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    await notifySlack(`🟠 옛 백업 정리 실패 · ${dateKey} · ${detail}`);
+    return " · 정리 실패";
+  }
+}
+
 export async function runBackup(now = new Date()): Promise<TaskResult> {
   const dateKey = kstDateKey(now);
 
@@ -40,7 +57,9 @@ export async function runBackup(now = new Date()): Promise<TaskResult> {
     const uploaded = await uploadBackup(dateKey, JSON.stringify(backup));
     const size = `${Math.round(uploaded.bytes / 1024)}KB`;
 
-    await notifySlack(`🗄 백업 완료 · ${dateKey} · 글 ${backup.counts.posts}개 · ${size}`, {
+    const swept = await sweepOldBackups(dateKey);
+
+    await notifySlack(`🗄 백업 완료 · ${dateKey} · 글 ${backup.counts.posts}개 · ${size}${swept}`, {
       quiet: true,
     });
 

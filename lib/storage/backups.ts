@@ -12,6 +12,7 @@ import "server-only";
  */
 
 const BUCKET = "backups";
+const PREFIX = "db/";
 
 function storageEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,7 +59,7 @@ function isMissingBucket(status: number, body: string): boolean {
 /** `backups/db/2026-08-24.json` — 같은 날 두 번 돌면 덮어쓴다(하루 한 장) */
 export async function uploadBackup(dateKey: string, body: string): Promise<BackupUpload> {
   const { url, key } = storageEnv();
-  const path = `${BUCKET}/db/${dateKey}.json`;
+  const path = `${BUCKET}/${PREFIX}${dateKey}.json`;
   const bytes = new TextEncoder().encode(body);
 
   const put = () =>
@@ -87,4 +88,74 @@ export async function uploadBackup(dateKey: string, body: string): Promise<Backu
   }
 
   return { path, bytes: bytes.byteLength };
+}
+
+/**
+ * 남겨 둘 장수. **일주일치다.**
+ *
+ * 되돌릴 일이 생기면 그건 "어제 글이 이상해졌다"이지 "반년 전으로 가고 싶다"가 아니다.
+ * 한 장이 곧 블로그 전문 한 벌(글 1111편 · 23MB)이라 장수가 그대로 용량이다 — 지우는
+ * 코드가 없던 동안 27장 601MB가 쌓였고, 그게 Supabase 무료 1GB를 넘긴 원인의 절반이었다.
+ */
+export const KEEP_BACKUPS = 7;
+
+/** `db/2026-09-19.json` — 이름이 곧 날짜라 사전순이 날짜순이다 */
+type StoredObject = { name: string };
+
+async function listBackups(url: string, key: string): Promise<string[]> {
+  const response = await fetch(`${url}/storage/v1/object/list/${BUCKET}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    // 장수가 KEEP_BACKUPS 언저리라 한 번에 다 온다. 넉넉히 불러 두고 넘치면 지운다
+    body: JSON.stringify({
+      prefix: PREFIX,
+      limit: 1000,
+      sortBy: { column: "name", order: "desc" },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `백업 목록 조회 실패: ${response.status} ${(await response.text()).slice(0, 200)}`,
+    );
+  }
+
+  const rows = (await response.json()) as StoredObject[];
+  // 폴더 자리 표시자가 섞여 오는 일이 있다 — 날짜 파일만 센다
+  return rows.map((row) => row.name).filter((name) => name.endsWith(".json"));
+}
+
+export type BackupPrune = { deleted: string[] };
+
+/**
+ * 일주일치만 남기고 옛 백업을 지운다.
+ *
+ * **백업을 올린 직후에 부른다.** 따로 크론을 두지 않는 이유는 Hobby의 크론 두 자리가 이미
+ * 찼기 때문이고(06 §8), 무엇보다 "새로 한 장 생겼으니 옛것 한 장 버린다"가 자연스럽다.
+ *
+ * 여기서 던지는 것은 **백업 자체의 실패가 아니다.** 부르는 쪽이 그렇게 다뤄야 한다 —
+ * 정리에 실패해도 오늘 백업은 이미 올라가 있다(`lib/cron/tasks.ts`).
+ */
+export async function pruneBackups(keep = KEEP_BACKUPS): Promise<BackupPrune> {
+  const { url, key } = storageEnv();
+
+  const names = await listBackups(url, key);
+  // 이름 내림차순이므로 앞쪽이 최신이다. 뒤에 남는 것이 버릴 것
+  const stale = names.slice(keep);
+
+  if (stale.length === 0) return { deleted: [] };
+
+  const response = await fetch(`${url}/storage/v1/object/${BUCKET}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({ prefixes: stale.map((name) => `${PREFIX}${name}`) }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `옛 백업 삭제 실패: ${response.status} ${(await response.text()).slice(0, 200)}`,
+    );
+  }
+
+  return { deleted: stale };
 }
