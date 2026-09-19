@@ -137,6 +137,7 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
   return (
     <EditorFocusProvider>
       <EditorShell
+        type="QT"
         breadcrumb={
           <>
             관리 · <b className="text-ink">오늘의 큐티</b>

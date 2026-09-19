@@ -128,6 +128,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
   return (
     <EditorFocusProvider>
       <EditorShell
+        type="SERMON"
         breadcrumb={
           <>
             관리 · <b className="text-ink">설교 묵상</b>

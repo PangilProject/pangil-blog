@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import type { RecordType } from "@/lib/record/callNumber";
+import { siteOf } from "@/lib/revalidate/tags";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,8 +16,16 @@ import { cn } from "@/lib/utils";
  *
  * 발행 버튼에 확인 모달을 붙이지 않는다(02 §3.4). 설교는 "끝나면 바로 발행"이 요구사항이고,
  * 실수는 PRIVATE 전환으로 복구되므로 모달이 더 비싸다.
+ *
+ * **셸이 그 글의 지면 색을 입는다**(`data-site`). 관리 화면에는 그 속성이 없어 `--accent`가
+ * 기본값(인주 빨강)이었고, 그래서 **기술 글을 쓸 때도 에디터가 빨갰다**. 지금 어느 지면 글을
+ * 쓰는지는 색으로 읽히는 편이 낫다 — 공개 지면이 이미 그 한 축으로만 갈린다(03 §2.1).
+ *
+ * 관리 화면 전체가 아니라 **에디터만** 입는다. 대시보드·목록·통계는 특정 지면의 것이 아니고,
+ * 넓히면 다크 검증 면적만 세 배가 된다.
  */
 export function EditorShell({
+  type,
   breadcrumb,
   indicator,
   actions,
@@ -25,6 +35,8 @@ export function EditorShell({
   footer,
   className,
 }: {
+  /** 이 셸이 감싸는 글의 종류. 지면 색은 여기서 나온다 */
+  type: RecordType;
   breadcrumb: ReactNode;
   indicator: ReactNode;
   actions: ReactNode;
@@ -37,7 +49,7 @@ export function EditorShell({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-h-full flex-col bg-paper", className)}>
+    <div data-site={siteOf(type)} className={cn("flex min-h-full flex-col bg-paper", className)}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-edge border-b bg-paper px-[5%] py-[13px]">
         <div className="font-typewriter text-[11.5px] text-faint">{breadcrumb}</div>
         <div className="flex flex-wrap items-center gap-2.5">

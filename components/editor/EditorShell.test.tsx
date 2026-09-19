@@ -61,6 +61,7 @@ describe("EditorShell — 발행은 시트 끝에", () => {
   it("헤더가 아니라 본문 아래에 선다", () => {
     render(
       <EditorShell
+        type="QT"
         breadcrumb="관리"
         indicator={<span>저장됨</span>}
         actions={<button type="button">임시저장</button>}
@@ -78,7 +79,7 @@ describe("EditorShell — 발행은 시트 끝에", () => {
 
   it("발행을 안 넘기면 그 자리를 만들지 않는다", () => {
     render(
-      <EditorShell breadcrumb="관리" indicator={null} actions={null}>
+      <EditorShell type="QT" breadcrumb="관리" indicator={null} actions={null}>
         <p>본문</p>
       </EditorShell>,
     );
@@ -196,5 +197,34 @@ describe("toSaveState — 기계 상태 → 화면 상태", () => {
     expect(toSaveState("typing")).toBe("typing");
     expect(toSaveState("saving")).toBe("saving");
     expect(toSaveState("saved")).toBe("saved");
+  });
+});
+
+/**
+ * **에디터가 그 글의 지면 색을 입는다.**
+ *
+ * 관리 화면에는 `data-site`가 없어 `--accent`가 기본값(인주 빨강)이었고, 그래서 기술 글을
+ * 쓸 때도 에디터가 빨갰다. 색 자체는 조판이라 여기서 못 보지만, **그 색을 정하는 속성이
+ * 종류를 따라가는지**는 볼 수 있다 — 여기가 어긋나면 화면은 멀쩡해 보이고 색만 틀린다.
+ */
+describe("EditorShell — 지면 색", () => {
+  it("기술 글은 dev, 묵상 글은 faith다", () => {
+    const { container, unmount } = render(
+      <EditorShell type="TECH" breadcrumb="관리" indicator={null} actions={null}>
+        <p>본문</p>
+      </EditorShell>,
+    );
+    expect(container.querySelector("[data-site]")).toHaveAttribute("data-site", "dev");
+    unmount();
+
+    for (const type of ["QT", "SERMON", "PRAISE"] as const) {
+      const { container: faith, unmount: close } = render(
+        <EditorShell type={type} breadcrumb="관리" indicator={null} actions={null}>
+          <p>본문</p>
+        </EditorShell>,
+      );
+      expect(faith.querySelector("[data-site]")).toHaveAttribute("data-site", "faith");
+      close();
+    }
   });
 });

@@ -179,6 +179,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
   return (
     <EditorFocusProvider>
       <EditorShell
+        type="PRAISE"
         breadcrumb={
           <>
             관리 · <b className="text-ink">오늘의 찬양</b>
