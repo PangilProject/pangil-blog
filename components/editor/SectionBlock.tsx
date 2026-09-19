@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { PRAISE_SECTION_LABELS } from "@/lib/content/schema";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,17 +12,12 @@ import { cn } from "@/lib/utils";
  * M1은 시각까지다. dnd-kit 정렬·인라인 편집은 M2에서 붙인다.
  */
 
-export const SECTION_LABELS = [
-  "Intro",
-  "Verse",
-  "Pre-Chorus",
-  "Chorus",
-  "Bridge",
-  "Interlude",
-  "Outro",
-] as const;
-
-export type SectionLabel = (typeof SECTION_LABELS)[number];
+/**
+ * 라벨 목록은 **스키마가 가진다**(`lib/content`). 여기 한 벌 더 두었던 동안 둘을 묶는 장치가
+ * "지금 값이 같다"뿐이었다 — 라벨이 여덟 종이 되면 한쪽만 고쳐지고, 그때 에디터는 새 라벨을
+ * 그릴 수 있는데 저장이 거절된다(AGENTS.md 경계 규칙 · 전수조사 개발 1-6).
+ */
+export type SectionLabel = (typeof PRAISE_SECTION_LABELS)[number];
 
 export type SectionBlockProps = {
   /** enum 7종 또는 직접 입력한 라벨(02 §5.4 — Tag·Refrain 등 예외 대응) */
