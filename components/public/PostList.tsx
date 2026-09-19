@@ -49,7 +49,7 @@ export function PostList({
       {cards.map((card, index) => (
         <li key={card.id}>
           <RecordCard
-            variant={card.type === "TECH" ? "dev" : "faith"}
+            variant={siteOf(card.type)}
             rotate={ROTATIONS[index % ROTATIONS.length]}
             href={postHref(card.type, card.slug, siteOf(card.type))}
             callNumber={formatCallNumber({

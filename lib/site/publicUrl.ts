@@ -1,5 +1,6 @@
 import type { RecordType } from "@/lib/record/callNumber";
 import { publicPostPath } from "@/lib/record/paths";
+import { siteOf } from "@/lib/revalidate/tags";
 import { type SiteKey, siteHostsFromEnv } from "@/lib/site/resolveSite";
 
 /**
@@ -51,7 +52,7 @@ export function absoluteUrl(site: SiteKey, path: string, context: UrlContext): s
 
 /** 글 하나의 절대 URL */
 export function absolutePostUrl(type: RecordType, slug: string, context: UrlContext): string {
-  const site = type === "TECH" ? "dev" : "faith";
+  const site = siteOf(type);
   return absoluteUrl(site, publicPostPath(type, slug), context);
 }
 
@@ -110,6 +111,6 @@ export function postHref(
   from?: SiteKey,
   env: Record<string, string | undefined> = process.env,
 ): string {
-  const site = type === "TECH" ? "dev" : "faith";
+  const site = siteOf(type);
   return siteHref(site, publicPostPath(type, slug), { from, env });
 }

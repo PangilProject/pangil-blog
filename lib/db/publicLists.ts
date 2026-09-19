@@ -2,6 +2,7 @@ import "server-only";
 
 import { cacheTag } from "next/cache";
 
+import { scriptureRefOf } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import type { RecordType } from "@/lib/record/callNumber";
@@ -66,16 +67,6 @@ const CARD_SELECT = {
   category: { select: { name: true, slug: true } },
   tags: { select: { tag: { select: { name: true } } } },
 } as const;
-
-/**
- * 카드 부제로 쓸 말씀 범위. content 전체를 스키마로 통과시키지 않는 유일한 자리다 —
- * 목록은 수십 건이고 카드에 필요한 건 한 줄뿐이다. 없으면 없는 대로 그린다(ADR-002 근거 6).
- */
-function scriptureRefOf(content: unknown): string | null {
-  if (!content || typeof content !== "object") return null;
-  const value = (content as { scriptureRef?: unknown }).scriptureRef;
-  return typeof value === "string" && value.trim() !== "" ? value : null;
-}
 
 export async function findPublishedPosts(query: ListQuery): Promise<ListPage> {
   "use cache";

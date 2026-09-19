@@ -30,3 +30,20 @@ export function parsePublishContent(raw: unknown): ContentParseResult<PostConten
   if (result.success) return { ok: true, content: result.data };
   return { ok: false, issues: toIssues(result.error), raw };
 }
+
+/**
+ * 카드 부제로 쓸 말씀 범위 한 줄.
+ *
+ * **content 전체를 스키마로 통과시키지 않는 예외다**(ADR-002 근거 6) — 목록은 수십 건이고
+ * 카드에 필요한 건 한 줄뿐이다. 없으면 없는 대로 그린다.
+ *
+ * **예외는 셀 수 있어야 한다.** 이 규칙이 두 벌이던 동안 한쪽 주석은 스스로를 "유일한 자리"라고
+ * 적고 있었고, 다른 쪽(OG 카드)은 근거 없이 같은 캐스트를 하고 있었다. content 구조가 바뀌면
+ * 그쪽만 조용히 틀린 값을 냈을 것이다(전수조사 개발 1-5).
+ */
+export function scriptureRefOf(content: unknown): string | null {
+  if (!content || typeof content !== "object") return null;
+
+  const value = (content as { scriptureRef?: unknown }).scriptureRef;
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
