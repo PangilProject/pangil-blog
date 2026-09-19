@@ -66,6 +66,20 @@ export function stripScriptureMarks(body: string): string {
 /** "12", "12-13", "12~13" 뒤에 마침표·괄호가 붙을 수 있다 */
 const LEADING_NUMBER = /^(\d+(?:\s*[-~]\s*\d+)?)\s*[.)]?\s+(.+)$/;
 
+/**
+ * 이 줄이 절 번호로 시작하는가.
+ *
+ * **이 규칙은 여기 한 벌만 있어야 한다.** 마이그레이션 컨버터 둘이 각자 정규식을 들고 있었고,
+ * 그쪽은 구두점(`.`/`)`)을 **필수**로 봤다 — 그래서 `13 솔로몬이 하나님께 아뢰되`처럼 구두점
+ * 없는 절이 말씀 영역 첫 줄로 오면 **그 절 본문이 말씀 범위 칸에 들어앉았다.** 같은 글자를
+ * 화면은 13절로 읽는다. 규칙이 둘이면 둘이 서로 다른 결론을 낸다(전수조사 개발 1-3).
+ *
+ * 정본이 화면 쪽인 이유는 그게 **읽는 사람이 실제로 보는 판정**이어서다.
+ */
+export function startsWithVerseNumber(line: string): boolean {
+  return LEADING_NUMBER.test(line.trim());
+}
+
 export function toScriptureVerses(body: string): ScriptureVerse[] {
   return body
     .split("\n")

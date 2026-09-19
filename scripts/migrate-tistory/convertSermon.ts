@@ -1,3 +1,4 @@
+import { startsWithVerseNumber } from "@/lib/record/scriptureVerses";
 import {
   type Block,
   explodeHardBreaks,
@@ -24,7 +25,6 @@ import { htmlToTiptapContent } from "@/scripts/migrate-tistory/convertHtml";
 const SUMMARY_HEADINGS = new Set(["summary", "요약", "예배후요약", "정리"]);
 
 /** `26.` `8~9.` 처럼 번호로 시작하는 줄 */
-const VERSE_LINE = /^\d+(?:\s*[-~]\s*\d+)?\s*[.)]/;
 
 export type SermonConversion = {
   content: {
@@ -109,7 +109,11 @@ export function convertSermon(bodyHtml: string): SermonConversion {
 
     const lines = linesOf(block);
     // 절이 아닌 줄이 나오면 거기서부터 본문이다(hr이 없는 글)
-    if (lines.length > 0 && !VERSE_LINE.test(lines[0]) && (block as Block).type === "paragraph") {
+    if (
+      lines.length > 0 &&
+      !startsWithVerseNumber(lines[0]) &&
+      (block as Block).type === "paragraph"
+    ) {
       target = "body";
       body.push(block);
       continue;
