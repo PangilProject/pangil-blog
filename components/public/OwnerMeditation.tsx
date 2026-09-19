@@ -82,7 +82,14 @@ export function OwnerMeditation({
  * 본인이 보고 있으면 **감춘 덩이까지** 담는다 — 화면에 보이는 것을 복사한다는 규칙을 그대로
  * 따른다. 읽는 사람에게는 공개된 글자만 간다.
  */
-export function MeditationCopyButton({ publicText }: { publicText: string }) {
+export function MeditationCopyButton({
+  publicText,
+  idle,
+}: {
+  publicText: string;
+  /** 덩이별 복사가 함께 설 때 `전체 복사`가 온다 — 부르는 쪽이 그걸 안다(`PraiseView`) */
+  idle?: string;
+}) {
   const { blocks } = useContext(OwnerContext);
 
   const text = [publicText, ...blocks.map((block) => tiptapToCopyText(block.doc))]
@@ -91,7 +98,7 @@ export function MeditationCopyButton({ publicText }: { publicText: string }) {
 
   if (text === "") return null;
 
-  return <CopyButton text={text} label="묵상과 기도 복사" />;
+  return <CopyButton text={text} idle={idle} label="묵상과 기도 복사" />;
 }
 
 /** 감춘 덩이 목록. 받아 온 것이 없으면(읽는 사람) 아무것도 그리지 않는다 */
