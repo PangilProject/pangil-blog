@@ -2,9 +2,16 @@ import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
-import { kstDateAsUtcMidnight, startOfKstDay } from "@/lib/record/kst";
+import {
+  countKstDays,
+  kstDateAsUtcMidnight,
+  startOfKstDay,
+  startOfKstMonth,
+  startOfKstWeek,
+} from "@/lib/record/kst";
+import { TYPES_BY_SITE } from "@/lib/record/listQuery";
 import type { TodayCrawl, TodayPost } from "@/lib/record/todayCard";
-import type { PostType } from "@/prisma/generated/enums";
+import { PostStatus, type PostType } from "@/prisma/generated/enums";
 
 /**
  * A-01 오늘의 작성 카드용 조회 (02 §3.1).
@@ -50,4 +57,47 @@ export async function findTodayCrawl(now: Date): Promise<TodayCrawl | null> {
   });
 
   return run ? { status: run.status, postId: run.postId } : null;
+}
+
+export type WritingPace = {
+  /** 이번 주에 **발행한 날**의 수. 하루에 몇 편을 쓰든 1이다 */
+  daysThisWeek: number;
+  /** 이번 달 발행 장수 */
+  postsThisMonth: number;
+};
+
+/**
+ * 얼마나 쓰고 있나 (A-01 · 00 §4.1 ①작성 마찰).
+ *
+ * **묵상 지면만 센다.** 오늘의 카드가 묻는 것이 큐티·설교·찬양이고, 그 셋이 매일의 루틴이다.
+ * 기술 글은 비정기라(허브 카드가 그렇게 적는다) 같은 분모로 셀 수 없다.
+ *
+ * **날을 세지 장수를 세지 않는다.** 매일 몫이라는 기대치(`todayCard`)에 답하는 숫자는
+ * "며칠 썼나"이지 "몇 편 썼나"가 아니다 — 하루에 세 편을 몰아 써도 그날은 하루다.
+ *
+ * `use cache`를 쓰지 않는다. 관리 화면은 요청마다 지금을 봐야 하고(ADR-003), 이 숫자는
+ * 방금 발행한 글을 곧바로 반영해야 한다 — 캐시에 굳으면 쓴 다음에도 안 올라간다.
+ */
+export async function findWritingPace(now: Date): Promise<WritingPace> {
+  const [thisWeek, postsThisMonth] = await Promise.all([
+    prisma.post.findMany({
+      where: {
+        // 목록·사이드바가 쓰는 그 목록이다. 베껴 두면 한쪽만 고쳐지는 날이 온다
+        type: { in: TYPES_BY_SITE.faith },
+        status: PostStatus.PUBLISHED,
+        publishedAt: { gte: startOfKstWeek(now) },
+      },
+      select: { publishedAt: true },
+    }),
+    prisma.post.count({
+      where: {
+        // 목록·사이드바가 쓰는 그 목록이다. 베껴 두면 한쪽만 고쳐지는 날이 온다
+        type: { in: TYPES_BY_SITE.faith },
+        status: PostStatus.PUBLISHED,
+        publishedAt: { gte: startOfKstMonth(now) },
+      },
+    }),
+  ]);
+
+  return { daysThisWeek: countKstDays(thisWeek.map((row) => row.publishedAt)), postsThisMonth };
 }

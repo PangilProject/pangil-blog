@@ -9,7 +9,7 @@ import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { countOpenNits, listOpenNits } from "@/lib/db/nits";
 import { listDrafts } from "@/lib/db/posts";
-import { findTodayCrawl, findTodayPosts } from "@/lib/db/today";
+import { findTodayCrawl, findTodayPosts, findWritingPace } from "@/lib/db/today";
 import { crawlTriggerState } from "@/lib/record/crawlTrigger";
 import { formatKstDay, isSunday } from "@/lib/record/kst";
 import { formatRelativeTime } from "@/lib/record/relativeTime";
@@ -48,12 +48,13 @@ export default async function AdminDashboardPage() {
   const now = new Date();
   const types = todayCardTypes(now);
 
-  const [todayPosts, crawl, drafts, nits, nitTotal] = await Promise.all([
+  const [todayPosts, crawl, drafts, nits, nitTotal, pace] = await Promise.all([
     findTodayPosts(types, now),
     findTodayCrawl(now),
     listDrafts(6),
     listOpenNits(),
     countOpenNits(),
+    findWritingPace(now),
   ]);
 
   const cardPostIds = new Set([...todayPosts.values()].map((post) => post.id));
@@ -85,6 +86,18 @@ export default async function AdminDashboardPage() {
             <CrawlButton state={crawlTriggerState(now, crawl)} />
           </div>
         </div>
+
+        {/*
+          **얼마나 쓰고 있나** (00 §4.1 ①작성 마찰).
+
+          이 화면은 "오늘 뭘 쓸까"만 말하고 있었다. 그래서 **떨어지고 있다는 사실이 화면 밖에
+          있었다** — 9월 어느 주엔 엿새가 비었는데 매일 여는 자리에는 그 사실이 없었고,
+          같은 기간 기술 글은 계속 올라갔다. 못 쓰는 것이 아니라 안 보이는 것이었다.
+
+          **숫자 둘이 전부다.** 스트릭·그래프·배지는 만들지 않는다 — 게이미피케이션은 이미
+          내려진 결정이고(07 §3-3), 아침에 여는 화면이 복잡해지면 그게 곧 작성 마찰이다.
+        */}
+        <WritingPaceLine daysThisWeek={pace.daysThisWeek} postsThisMonth={pace.postsThisMonth} />
 
         <section className="grid gap-4 sm:grid-cols-2">
           {types.map((type, index) => {
@@ -140,6 +153,31 @@ export default async function AdminDashboardPage() {
         <NitList nits={nits} total={nitTotal} />
       </main>
     </div>
+  );
+}
+
+/**
+ * 이번 주 며칠 썼나 · 이번 달 몇 장인가.
+ *
+ * **날을 세지 장수를 세지 않는다.** 매일 몫이라는 기대치에 답하는 숫자는 "며칠 썼나"이고,
+ * 하루에 세 편을 몰아 써도 그날은 하루다.
+ *
+ * 칭찬도 꾸중도 하지 않는다 — 숫자만 둔다. 적은 날에 "아쉬워요"가 뜨면 그건 아침에 여는
+ * 화면이 나를 평가하는 것이고, 그 마찰이 이 도구가 없애려던 바로 그것이다.
+ */
+function WritingPaceLine({
+  daysThisWeek,
+  postsThisMonth,
+}: {
+  daysThisWeek: number;
+  postsThisMonth: number;
+}) {
+  return (
+    <p className="font-typewriter text-[11.5px] text-faint">
+      이번 주 <b className="text-ink">{daysThisWeek}/7</b>
+      <span className="px-2">·</span>
+      이번 달 <b className="text-ink">{postsThisMonth}장</b>
+    </p>
   );
 }
 
