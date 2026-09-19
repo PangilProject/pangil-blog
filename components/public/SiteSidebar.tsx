@@ -2,7 +2,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 
-import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
+import {
+  closeLabel,
+  FOLD_LEFT,
+  FOLD_RIGHT,
+  openLabel,
+  PANEL_TOGGLE,
+} from "@/components/public/panelToggle";
 import { writeHref } from "@/components/public/SiteHeader";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { ViewCount } from "@/components/public/ViewCount";
@@ -237,7 +243,7 @@ function PanelHandle({
 
       <label htmlFor={target} title={name} className={cn(chip, openWhenShut)}>
         {openGlyph}
-        <span className="sr-only">{name} 열기</span>
+        <span className="sr-only">{openLabel(name)}</span>
       </label>
 
       {/*
@@ -250,7 +256,7 @@ function PanelHandle({
         className={cn(chip, shutWhenOpen, "max-lg:border-(--accent) max-lg:text-(--accent)")}
       >
         {closeGlyph}
-        <span className="sr-only">{name} 닫기</span>
+        <span className="sr-only">{closeLabel(name)}</span>
       </label>
     </>
   );

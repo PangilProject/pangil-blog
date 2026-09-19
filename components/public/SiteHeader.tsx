@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-import { FOLD_LEFT, FOLD_RIGHT, PANEL_TOGGLE } from "@/components/public/panelToggle";
+import {
+  closeLabel,
+  FOLD_LEFT,
+  FOLD_RIGHT,
+  openLabel,
+  PANEL_TOGGLE,
+} from "@/components/public/panelToggle";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { editorPath } from "@/lib/record/todayCard";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -87,7 +93,13 @@ function TocFold() {
         <span aria-hidden className="hidden group-has-[#toc-fold:checked]/page:inline">
           {FOLD_LEFT}
         </span>
-        <span className="sr-only">목차 접고 펴기</span>
+        {/* 접힌 상태에 따라 말이 갈린다 — 한 물건에 두 문법을 두지 않는다(panelToggle) */}
+        <span className="sr-only group-has-[#toc-fold:checked]/page:hidden">
+          {closeLabel("목차")}
+        </span>
+        <span className="sr-only hidden group-has-[#toc-fold:checked]/page:inline">
+          {openLabel("목차")}
+        </span>
       </label>
     </>
   );
