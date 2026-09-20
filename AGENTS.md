@@ -70,6 +70,7 @@
 ├── components/
 │   ├── ui/                         # shadcn (스타일 오버라이드만)
 │   ├── record/                     # RecordCard, DividerTabs, ScriptureBlock, AnnotationBox …
+│   ├── hub/                        # 허브 랜딩 — HubScene(장면) + HubStage(연출 아일랜드 1개, ADR-004)
 │   └── editor/                     # EditorToolbar, SectionBlock, SaveIndicator …
 ├── lib/
 │   ├── content/                    # Zod: PostContent union, Draft/Publish 스키마
@@ -99,7 +100,8 @@
 - **UI 텍스트 = 한국어. 코드(변수/함수/타입/파일)·주석 언어 = 영어 코드 + 한국어 주석 허용**(커밋 본문 한글과 일관)
 - **화면 문구는 `docs/03` §7 문구 규약을 따른다** — 어조는 해요체(버튼·라벨은 명사형), 용어는 사전대로(글/기록, 없애는 행위는 `삭제` 하나), 구현 용어(비콘·표본·집계)와 문서 절 번호는 화면에 쓰지 않는다
 - 네이밍: 컴포넌트·타입 `PascalCase`, 변수·함수 `camelCase`, 라우트 폴더 `lowercase`, 유틸 파일 `camelCase.ts`
-- **서버 컴포넌트 우선. `"use client"`는 인터랙션 필요 시에만 최소.** 공개 페이지 클라이언트 아일랜드는 **UI 6개 + 그리지 않는 것 2개**로 제한(`docs/04` §3.6) — UI 6개(코드 복사·TOC 하이라이트·YouTube lite·다크모드 토글·상세의 관리 컨트롤·감춘 묵상 덩이) + **그리지 않는 것 2개**(통계 비콘·테마 공급자)
+- **서버 컴포넌트 우선. `"use client"`는 인터랙션 필요 시에만 최소.** 공개 페이지 클라이언트 아일랜드는 **UI 7개 + 그리지 않는 것 2개**로 제한(`docs/04` §3.6) — UI 7개(코드 복사·TOC 하이라이트·YouTube lite·다크모드 토글·상세의 관리 컨트롤·감춘 묵상 덩이·**허브 연출**) + **그리지 않는 것 2개**(통계 비콘·테마 공급자)
+  - **숫자는 `lib/site/clientIslands.test.ts`가 잠근다.** 늘어도 줄어도 실패한다 — 늘릴 때는 ADR을 먼저 쓴다(허브 연출은 ADR-004가 그 물음이었다). 한때 세 문서가 서로 다른 숫자를 적고 있었고, 그때 고친 것은 문장뿐이라 또 어긋났다
 - **타입별 content는 반드시 Zod를 거쳐 검증 후 저장/렌더링.** raw JSON 직접 조립 금지
 - path alias `@/` 사용. import는 외부→내부 순 정렬
 - 상태의 원천은 RHF 폼 1개, Tiptap은 입력 위젯(Controller 연결, `docs/04` §2.1)
