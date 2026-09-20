@@ -112,10 +112,713 @@
   --sidebar-ring: var(--accent);
 }
 
+/* ============================================================
+   가로 넘침 안전망
+
+   **색을 쓰지 않는 규칙으로, color-mix가 나오기 전에 세운다.**
+   빌드는 `color-mix`를 쓰는 규칙에 `@supports` 폴백을 만들면서 **이웃한 규칙까지 함께
+   감싼다.** 그렇게 감싸이면 그 문법을 모르는 브라우저에서는 클립이 통째로 걸리지 않고,
+   흐르는 글자가 문서 폭을 늘려 **지면이 옆으로 밀린다.** 실제로 폰에서 그렇게 밀렸다.
+
+   `clip`이지 `hidden`이 아니다 — `hidden`은 스크롤 상자를 만들어 안쪽의 `position: sticky`를
+   죽인다. 허브의 머무는 구간이 거기 걸린다. `clip`은 자르기만 한다.
+   ============================================================ */
+body {
+  overflow-x: clip;
+}
+
+/*
+  흐르는 글자를 담은 칸은 **`hidden`으로 완전히 가둔다.**
+  이 칸 안에는 `position: sticky`가 없으므로 스크롤 상자가 생겨도 잃을 것이 없고,
+  `clip`보다 오래된 브라우저까지 확실히 듣는다. 지면이 옆으로 밀린 근원이 여기였다.
+*/
+[data-hub-marquee] {
+  /*
+    **`flex`가 아니라 `block`이다.**
+    flex 컨테이너는 자식의 `max-content` 폭에 맞춰 **스스로 늘어나려 한다.** 그래서 흐르는
+    글자가 이 칸을 밀고, 칸이 바깥(`mx-auto`)을 밀어 지면이 좌우로 삐져나갔다 — 폰에서
+    글자가 왼쪽 여백 밖에서 시작한 것이 그 증상이다.
+
+    block 컨테이너의 폭은 부모가 정한다. 자식이 아무리 넓어도 부모를 밀지 못하고,
+    넘치는 만큼은 `overflow`가 자른다.
+  */
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* 행이 칸을 밀지 못하게 한다 — flex 자식의 기본 최소 폭은 내용 폭이다 */
+[data-hub-mq-row] {
+  min-width: 0;
+}
+
 /* 3면 무드 오버라이드 — 액센트 1축만 바꾼다(03 §2.1). 여기에 변수를 늘리면
    프리모템 #12(3면이 제각각 어긋남)이 되살아난다. */
 [data-site="dev"] {
   --accent: var(--accent-dev);
+}
+
+/* ============================================================
+   허브 장면 (ADR-004) — 장면마다 종이가 갈린다
+   03 §2.1이 "사이트별 오버라이드는 --accent 한 축"으로 못박았고 그건 그대로다.
+   여기서 갈리는 것은 사이트가 아니라 **한 지면 안의 장면**이고, 허브에만 선다.
+   faith·dev는 이 블록을 쓰지 않는다.
+
+   **새 토큰을 만들지 않는다.** 이미 있는 것의 값만 갈아끼운다 — 토큰이 늘면 다크에서
+   잊히는 것이 생긴다(위 다크 블록 주석의 그 실패). ink·shelf는 라이트/다크 양쪽에서
+   어둡기 때문에 한 번만 적는다.
+   ============================================================ */
+
+/* 먹지 — 글이 아니라 활자를 보는 장면 */
+html:not([data-hub-live]) [data-scene="ink"] {
+  --paper: #2b2823;
+  --card: #343029;
+  --ink: #f0eadd;
+  --ink-soft: #bdb4a2;
+  --faint: #968d7c;
+  --edge: #453f34;
+  --edge-strong: #544d40;
+  --line: #4a4136;
+  --accent-faith: #dd7259;
+  --accent-dev: #6f9ad0;
+  --shadow-card: 0 1px 0 #332e27, 0 8px 18px rgb(0 0 0 / 42%);
+  --shadow-card-hover: 0 1px 0 #332e27, 0 16px 30px rgb(0 0 0 / 56%);
+}
+
+/* 밤의 서고 — 가장 깊은 곳 */
+html:not([data-hub-live]) [data-scene="shelf"] {
+  --paper: #1c1a16;
+  --card: #262219;
+  --ink: #e8e2d4;
+  --ink-soft: #b0a894;
+  --faint: #918879;
+  --edge: #332e26;
+  --edge-strong: #403a2f;
+  --line: #3a4550;
+  --accent-faith: #d96b50;
+  --accent-dev: #648cc2;
+  --shadow-card: 0 1px 0 #262219, 0 8px 18px rgb(0 0 0 / 50%);
+  --shadow-card-hover: 0 1px 0 #262219, 0 16px 30px rgb(0 0 0 / 60%);
+}
+
+/* 트레이싱지 — 판권지. 종이보다 한 톤 차갑고 얇다 */
+html:not([data-hub-live]) [data-scene="trace"] {
+  --paper: #f1eee5;
+  --card: #f8f6ee;
+  --edge: #e0d9ca;
+  --edge-strong: #d3cbb9;
+}
+
+/* 허브 연출이 마운트된 동안 (components/hub/HubStage).
+   장면이 각자 배경을 칠하면 그 아래 잉크 자국이 가려지고 경계가 두 번 그어진다 —
+   live에서는 지면 배경 하나(--paper)가 연속으로 바뀌고 장면은 투명해진다. */
+html[data-hub-live] [data-hub-scene] {
+  background: transparent;
+}
+
+html[data-hub-live] [data-hub-scene]::before {
+  display: none; /* 색이 이어지므로 경계 그늘이 필요 없다 */
+}
+
+/* 배경이 중간 명도를 건너뛰는 몇 프레임 동안만 켜진다(HubStage가 값을 넣는다) */
+html[data-hub-live] body {
+  text-shadow: var(--hub-halo, none);
+}
+
+/* ── 머무는 구간 (sticky pin) — ADR-004 결정 2 ──
+   장면이 화면을 붙들고, 스크롤이 재생 헤드가 되어 항목을 하나씩 갈아 끼운다.
+
+   **연출이 없으면 이 규칙은 하나도 서지 않는다.** live가 아닌 동안 장면은 그냥 쌓인 문서이고
+   항목은 전부 보인다 — 그게 폴백이자 prefers-reduced-motion의 모습이다(04 §3.6). */
+html[data-hub-live] [data-hub-track] {
+  /* 항목 수 + 한 칸(들어오고 나가는 여유)만큼 스크롤 길이를 준다 */
+  height: calc((var(--steps) + 1) * var(--step-h));
+  padding-block: 0;
+}
+
+html[data-hub-live] [data-hub-stage] {
+  position: sticky;
+  top: 0;
+  display: grid;
+  /*
+    **`minmax(0, 1fr)`이지 `auto`가 아니다.**
+
+    grid의 `auto` 트랙은 자식의 `max-content` 폭까지 늘어난다. 흐르는 글자 한 줄이 화면의
+    몇 배라 트랙이 그만큼 커지고, 그 안의 칸이 함께 커진 채 아래 `overflow`가 잘라낸다 —
+    **문서는 넘치지 않으니 좌우로 밀 수도 없는데 오른쪽 글자만 잘려 나갔다.** 폰에서 활자
+    장면만 쏠려 보인 것이 이것이다.
+
+    `minmax(0, 1fr)`은 트랙을 무대 폭에 묶는다. 안쪽이 아무리 넓어도 트랙은 커지지 않는다.
+  */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* 겹쳐 두고 하나만 — 문장·역할·작업물 */
+html[data-hub-live] [data-hub-steps="swap"] {
+  position: relative;
+  /* **em으로 주면 안 된다** — 이 칸의 글자 크기는 15px인데 안에 든 제목은 clamp로 훨씬 크다.
+     부모 em을 기준 삼으면 높이가 1/4로 잡힌다. 화면 높이 기준으로 준다. */
+  min-height: var(--steps-min, clamp(180px, 28svh, 300px));
+}
+
+html[data-hub-live] [data-hub-steps="swap"] > [data-hub-step] {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  opacity: 0;
+  translate: 0 18px;
+  pointer-events: none;
+  transition:
+    opacity 0.5s var(--ease-record),
+    translate 0.5s var(--ease-record);
+}
+
+html[data-hub-live] [data-hub-steps="swap"] > [data-hub-step][data-on="1"] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+/*
+  **순차 등장 애니메이션은 머무는 구간에서 꺼야 한다.**
+  `.record-appear`는 `animation-fill-mode: both`라 끝난 뒤에도 `opacity: 1`을 붙들고 있고,
+  CSS 애니메이션은 일반 선언을 이긴다 — 위의 `opacity: 0`이 통째로 무시된다.
+  구간 안에서는 등장을 구간이 맡으므로 애니메이션 자체가 필요 없다.
+  live가 아닐 때는 그대로 남는다(폴백에서는 순차 등장이 맞다).
+*/
+html[data-hub-live] [data-hub-step] {
+  animation: none;
+}
+
+/* 전부 두고 강조만 옮긴다 — 활자함처럼 목록 자체가 그림인 장면 */
+html[data-hub-live] [data-hub-steps="highlight"] > [data-hub-step] {
+  opacity: 0.42;
+  transition:
+    opacity 0.4s var(--ease-record),
+    border-color 0.4s var(--ease-record);
+}
+
+html[data-hub-live] [data-hub-steps="highlight"] > [data-hub-step][data-on="1"] {
+  opacity: 1;
+}
+
+/*
+  **붙들기를 푸는 조건은 "세로가 아주 짧을 때"뿐이다.**
+
+  한때 좁은 화면 전체에서 풀었는데, 그러면 폰에서는 스크롤해도 아무 일이 일어나지 않는
+  정적인 문서가 된다 — 이 지면에서 보여줄 것의 절반이 사라진다. 폭이 좁은 것은 글자를
+  줄여 담으면 되고(아래 좁은 화면 블록), **한 화면에 담을 수 없는 것은 세로가 짧을 때다.**
+  가로로 눕힌 폰에서 고정 구간은 읽는 사람을 가둔다.
+
+  1단계 골격이 그대로 폴백이므로 되돌릴 곳은 언제나 있다.
+*/
+@media (height < 34rem) {
+  html[data-hub-live] [data-hub-track] {
+    height: auto;
+    padding-block: clamp(72px, 12vw, 132px);
+  }
+
+  html[data-hub-live] [data-hub-stage] {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+
+  html[data-hub-live] [data-hub-steps="swap"] {
+    min-height: 0;
+  }
+
+  html[data-hub-live] [data-hub-steps="swap"] > [data-hub-step] {
+    position: static;
+    opacity: 1;
+    translate: 0 0;
+    pointer-events: auto;
+  }
+
+  html[data-hub-live] [data-hub-steps="highlight"] > [data-hub-step] {
+    opacity: 1;
+  }
+
+  html[data-hub-live] [data-hub-ticks] {
+    display: none;
+  }
+
+  /*
+    **붙들지 않으면 딸린 연출도 설 자리가 없다.**
+    머무는 구간이 풀리면 스크롤 진행률이 0과 1 사이를 뛰어 버린다. 그 값을 쓰는 것들을
+    그대로 두면 마퀴가 뚝뚝 끊기고, 낱자는 흩어진 채로 굳는다.
+
+    낱자가 특히 위험하다 — 붙들지 않는 동안에는 흩어진 글자를 잘라 줄 무대가 없어
+    **지면 전체가 옆으로 밀린다.** (흩어지는 폭 자체는 화면 폭을 보고 정한다: HubStage)
+  */
+  html[data-hub-live] [data-hub-glyph] {
+    transform: none;
+  }
+
+  html[data-hub-live] [data-hub-mq-row] {
+    flex-wrap: wrap;
+    white-space: normal;
+    width: auto;
+    translate: none;
+    gap: var(--mq-gap);
+  }
+
+  html[data-hub-live] [data-hub-mq-set] {
+    display: contents;
+  }
+
+  html[data-hub-live] [data-hub-mq-dup] {
+    display: none;
+  }
+
+  /* 흐르지 않으면 가장자리를 흐릴 이유도 없다. 클립은 그대로 둔다 */
+  html[data-hub-live] [data-hub-marquee] {
+    mask-image: none;
+  }
+}
+
+/*
+  ── 좁은 화면의 치수 ──
+  **PC 규칙은 건드리지 않는다.** 여기 있는 것은 전부 재정의이고, 이 미디어쿼리 밖에서는
+  아무 일도 하지 않는다. 폭이 좁아졌을 때만 듣는다.
+*/
+@media (width < 40rem) {
+  /* 달력 칸을 한 단 줄여 한 화면에 더 들어오게 한다 */
+  [data-heat-scroll] {
+    --heat-cell: 9px;
+    --heat-gap: 2px;
+
+    /* 손가락으로 밀 때 옆 지면까지 따라 밀리지 않게 */
+    overscroll-behavior-x: contain;
+  }
+
+  /* 이름이 길면 줄을 바꾼다. 끝의 커서는 마지막 줄을 따라간다 */
+  [data-hub-type] {
+    flex-wrap: wrap;
+  }
+
+  /*
+    ── 한 화면에 담기게 줄인다 ──
+    붙들린 구간은 화면 높이에 갇혀 있고 넘치면 잘린다. 폰에서 연출을 살리려면
+    **해제하는 게 아니라 담기게 만드는 것**이 맞다. 여기서 줄이는 것은 전부 재정의라
+    넓은 화면에는 닿지 않는다.
+  */
+  html[data-hub-live] [data-hub-track] {
+    padding-block: 0;
+  }
+
+  html[data-hub-live] [data-hub-stage] {
+    /* 안쪽 여백을 줄여 글자에 자리를 넘긴다 */
+    padding-block: 12px;
+  }
+
+  html[data-hub-live] [data-hub-steps="swap"] {
+    /* 항목마다 높이가 달라 화면이 출렁이지 않게 한 값으로 묶는다 */
+    min-height: 56svh;
+  }
+
+  /* 장면의 큰 문장 — 폰에서는 두 줄을 넘기지 않게 */
+  html[data-hub-live] [data-hub-stage] .hub-statement {
+    font-size: clamp(21px, 6vw, 26px);
+    margin-bottom: 14px;
+  }
+
+  /* 작업물이 가장 길다. 글자를 한 단씩 내려 담는다 */
+  html[data-hub-live] [data-hub-step] .hub-work-title {
+    font-size: 17px;
+  }
+
+  html[data-hub-live] [data-hub-step] .hub-work-body {
+    font-size: 12.5px;
+    line-height: 1.85;
+  }
+
+  html[data-hub-live] [data-hub-step] .hub-work-dropped {
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  /* 눈금은 자리를 적게 쓴다 */
+  html[data-hub-live] [data-hub-ticks] {
+    margin-top: 16px;
+  }
+
+  [data-hub-ticks] > span {
+    width: 18px;
+  }
+}
+
+/* 지금 어디쯤인지 — 머무는 동안 화면이 멈춘 게 아니라는 표시 */
+html[data-hub-live] [data-hub-ticks] {
+  display: flex;
+}
+
+[data-hub-ticks] {
+  display: none;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+[data-hub-ticks] > span {
+  height: 2px;
+  width: 26px;
+  background: color-mix(in oklch, var(--faint), transparent 62%);
+  transition: background 0.35s var(--ease-record);
+}
+
+[data-hub-ticks] > span[data-on="1"] {
+  background: var(--accent);
+}
+
+/* ── 활자 마퀴 (ADR-004 · 활자 장면) ──
+   스택을 로고 나열로 두지 않는다. 이름 자체가 큰 활자로 흘러가고, 스크롤이 그 위치를 정한다.
+
+   **이동은 %로 돈다.** 한 벌을 두 번 이어 붙였으므로 -50%가 정확히 한 바퀴다 —
+   폭을 재서 계산하면 gap과 DOM 구조에 따라 어긋나고, 실제로 그렇게 어긋났다.
+
+   폴백에서는 그냥 줄바꿈되는 낱말 목록이다 — 흐르지 않을 뿐 읽는 데 문제가 없다. */
+[data-hub-marquee] {
+  user-select: none;
+}
+
+/* 줄 간격은 `gap`이 아니라 여백으로 — 이 칸은 flex가 아니다(위 주석) */
+[data-hub-mq-row] + [data-hub-mq-row] {
+  margin-top: clamp(2px, 0.8vw, 10px);
+}
+
+[data-hub-mq-row] {
+  /* 낱말 사이 간격을 변수로 빼 둔다 — 한 바퀴를 정확히 맞추는 데 이 값이 필요하다 */
+  --mq-gap: clamp(14px, 2.6vw, 38px);
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mq-gap);
+  font-family: var(--stack-serif);
+  font-weight: 700;
+  font-size: clamp(22px, 5vw, 62px);
+  line-height: 1.16;
+  /* 토큰을 그대로 쓴다. 여기서 color-mix를 쓰면 이웃 규칙까지 @supports로 끌려 들어간다 */
+  color: var(--faint);
+}
+
+/* 폴백에서는 낱말이 행에 직접 놓인 것처럼 줄바꿈된다 */
+[data-hub-mq-set] {
+  display: contents;
+}
+
+/* 두 벌째는 끊김 없이 잇기 위한 것이라 폴백에서는 없는 편이 낫다 */
+[data-hub-mq-dup] {
+  display: none;
+}
+
+/* 가장자리에서 흐려지며 사라진다 — 잘린 글자가 화면 끝에 딱 붙지 않게 */
+html[data-hub-live] [data-hub-marquee] {
+  mask-image: linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+}
+
+html[data-hub-live] [data-hub-mq-row] {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  width: max-content;
+  translate: calc(var(--mq-p, 0) * -50%) 0;
+  will-change: translate;
+}
+
+/*
+  **한 벌의 폭이 정확히 행의 절반이어야 한다.**
+  행이 낱말 간격을 들고 있으면 두 벌 사이에도 그 간격이 한 번 끼어, -50%가 한 바퀴보다
+  간격의 절반만큼 모자란다. 그 어긋남이 바퀴마다 쌓인다.
+  그래서 간격을 행에서 걷고 벌 안으로 옮긴다 — 벌 끝의 여백까지 벌이 들고 있으면
+  두 벌은 정확히 같은 폭이 된다.
+*/
+html[data-hub-live] [data-hub-mq-row] {
+  gap: 0;
+}
+
+html[data-hub-live] [data-hub-mq-set] {
+  display: flex;
+  gap: var(--mq-gap);
+  padding-inline-end: var(--mq-gap);
+}
+
+html[data-hub-live] [data-hub-mq-dup] {
+  display: flex;
+}
+
+/* 흐릿함 → 선명 → 흐릿함. 지금 읽고 있는 활자만 잉크가 올라온다 */
+[data-hub-mq-item] {
+  transition:
+    color 0.45s var(--ease-record),
+    opacity 0.45s var(--ease-record);
+  opacity: 0.55;
+}
+
+[data-hub-mq-item][data-near="1"] {
+  opacity: 0.85;
+  color: color-mix(in oklch, var(--ink), transparent 34%);
+}
+
+[data-hub-mq-item][data-on="1"] {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* ── 발행 달력 ──
+   하루 = 칸 하나. **빈 날도 칸을 차지한다** — 비어 있는 줄이 보여야 "매일"이 읽힌다. */
+/*
+  가로 스크롤은 **바깥 칸이 맡는다.** 격자와 월 표시가 같은 스크롤을 타야 두 줄이 어긋나지 않는다.
+  위아래 여백은 손 올렸을 때 뜨는 딱지 자리다 — `overflow-x: auto`는 세로도 함께 자른다.
+*/
+[data-heat-scroll] {
+  --heat-cell: 10px;
+  --heat-gap: 2.5px;
+
+  overflow-x: auto;
+  padding-block: 24px 2px;
+  scrollbar-width: thin;
+}
+
+[data-heat] {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: var(--heat-gap);
+  width: max-content;
+}
+
+/* 격자 아래 월 표시 — 어디서 시작하는지 모르면 격자는 무늬일 뿐이다 */
+[data-heat-months] {
+  display: flex;
+  width: max-content;
+  margin-top: 5px;
+  font-family: var(--stack-typewriter);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+[data-heat-months] > span {
+  /* 한 달이 차지하는 폭 = 그 달의 주 수 × (칸 + 간격) */
+  width: calc(var(--weeks) * (var(--heat-cell) + var(--heat-gap)));
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+[data-heat] > i {
+  position: relative;
+  display: block;
+  width: var(--heat-cell);
+  height: var(--heat-cell);
+  border: 1px solid var(--edge);
+  background: transparent;
+}
+
+[data-heat] > i[data-level="1"] {
+  background: color-mix(in oklch, var(--heat), transparent 70%);
+}
+
+[data-heat] > i[data-level="2"] {
+  background: color-mix(in oklch, var(--heat), transparent 45%);
+}
+
+[data-heat] > i[data-level="3"] {
+  background: color-mix(in oklch, var(--heat), transparent 18%);
+}
+
+/*
+  손을 올린 칸 — **JS 없이도 동작한다.** 하루치 기록을 확인하는 데 스크립트가 필요할 이유가 없다.
+  **손이 있는 기기에서만** 건다: 터치에서는 한 번 누른 칸의 `:hover`가 눌린 채 남아 딱지가
+  화면에 박힌다.
+*/
+@media (hover: hover) {
+  [data-heat] > i:hover {
+    z-index: 3;
+    border-color: var(--heat);
+    outline: 1px solid var(--heat);
+    outline-offset: 1px;
+  }
+}
+
+@media (hover: hover) {
+  [data-heat] > i[data-label]:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    translate: -50% 0;
+    z-index: 4;
+    padding: 3px 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--stack-typewriter);
+    font-size: 10.5px;
+    line-height: 1.5;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+/*
+  **달력에는 나타나는 연출을 걸지 않는다.**
+
+  스크롤 타임라인(`animation-timeline: view()`)으로 쓸어내는 연출을 넣었는데, 빌드가 그 규칙을
+  떨어뜨리면서 `clip-path` 시작값만 남았다 — 잘린 채로 굳어 **달력이 아예 보이지 않았다.**
+  이 자리에서 같은 실수를 세 번 했다(JS 상태 · 하이드레이션 · 이번). 보여야 하는 것에
+  사라질 수 있는 연출을 걸지 않는다.
+
+  달력에서 움직이는 것은 손을 올렸을 때 뜨는 딱지 하나면 된다.
+*/
+
+/* 이어 쓴 날 — 달력 옆에 붙는 한 줄 */
+[data-streak] {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-family: var(--stack-typewriter);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+[data-streak] b {
+  color: var(--heat);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 이름이 타자기로 찍힌다 (H-01 조판 장면) ──
+   **JS를 쓰지 않는다.** 서버가 낱자를 그려 두었으니 순서대로 켜기만 하면 되고,
+   스크립트로 하면 첫 페인트에 이름이 보였다 사라지는 깜빡임이 생긴다.
+
+   `steps(1)`이라 글자가 흐려지며 나타나지 않고 **한 번에 찍힌다** — 타자기에 중간 상태는 없다. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-hub-char] {
+    animation: hub-type 1ms steps(1) both;
+    animation-delay: calc(var(--i, 0) * 150ms + 250ms);
+  }
+
+  [data-hub-type]::after {
+    animation: hub-caret 1s steps(1) infinite;
+  }
+
+  [data-hub-swipe] {
+    animation: hub-swipe 0.9s var(--ease-record) both;
+    animation-delay: calc(var(--chars, 3) * 150ms + 350ms);
+  }
+}
+
+@keyframes hub-type {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 찍히는 자리를 가리키는 커서 */
+[data-hub-type] {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+[data-hub-type]::after {
+  content: "";
+  display: inline-block;
+  width: 0.07em;
+  height: 0.78em;
+  margin-left: 0.05em;
+  background: var(--accent);
+}
+
+@keyframes hub-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 이름 아래 그어지는 액센트 괘 */
+[data-hub-swipe] {
+  transform-origin: left;
+}
+
+@keyframes hub-swipe {
+  from {
+    scale: 0 1;
+  }
+
+  to {
+    scale: 1 1;
+  }
+}
+
+/* ── 진행 막대·상태 표시 (연출이 설 때만) ──
+   머무는 구간에서는 화면이 고정되므로 **어디쯤인지 알 길이 스크롤바밖에 없다.** */
+[data-hub-rail] {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  inset-inline: 0;
+  height: 2px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+[data-hub-rail] > i {
+  display: block;
+  height: 100%;
+  width: calc(var(--hub-progress, 0) * 100%);
+  background: var(--accent);
+}
+
+[data-hub-hud] {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  margin: 0;
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  font-family: var(--stack-typewriter);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  pointer-events: none;
+}
+
+[data-hub-hud] b {
+  color: var(--accent);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (width < 40rem) {
+  [data-hub-hud] {
+    display: none; /* 좁은 화면에서는 붙들지 않으므로 표시할 것도 없다 */
+  }
+}
+
+/* 활자 낱자. 스크롤이 --sx 계열을, 물리가 --px 계열을 쓴다 — 서로 덮지 않는다 */
+/*
+  낱자의 자리. **흩어짐과 밀림을 따로 둔다** — 스크롤이 `--px` 계열을, 커서가 `--mx` 계열을
+  쓰고 여기서 더한다. 한 변수를 둘이 쓰면 나중에 쓴 쪽이 앞의 것을 지운다.
+*/
+[data-hub-glyph] {
+  display: inline-block;
+  transform: translate3d(
+      calc(var(--px, 0px) + var(--mx, 0px)),
+      calc(var(--py, 0px) + var(--my, 0px)),
+      0
+    )
+    rotate(calc(var(--pr, 0deg) + var(--mr, 0deg)));
+}
+
+[data-hub-word] {
+  display: inline-block;
+  white-space: pre;
 }
 
 /* 다크 팔레트 (03 §2.1 "밤의 서고") — M6에서 실값 확정.
@@ -147,6 +850,15 @@
   --surface-hover: #322c23;
   --surface-tab: #2f2a21;
   --surface-sheet: #2d2820;
+
+  /* 허브 장면 중 밝은 쪽만 다크에서 다시 잡는다(ADR-004).
+     ink·shelf는 원래 어두워서 그대로 쓴다 — 여기 안 적었다고 빠뜨린 것이 아니다. */
+  html:not([data-hub-live]) [data-scene="trace"] {
+    --paper: #242019;
+    --card: #2b271e;
+    --edge: #3d382d;
+    --edge-strong: #494235;
+  }
 
   /* 그림자도 갈아야 한다. 라이트 값의 첫 레이어가 크림색 실선(#e3ddcd)이라
      어두운 배경 위에서는 카드 밑에 밝은 줄이 그어진다 — M6 실측에서 잡았다.
