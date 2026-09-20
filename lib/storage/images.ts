@@ -17,6 +17,16 @@ import { MAX_IMAGE_BYTES } from "@/lib/images/limits";
 
 const BUCKET = "post-images";
 
+/**
+ * 한 번 올린 파일은 다시 바뀌지 않는다 — 이름이 `nanoid`라 내용이 달라지면 이름도 달라진다.
+ * 그러니 영구히 캐시해도 안전하고, 그게 **안전할 뿐 아니라 필요하다.**
+ *
+ * Supabase Storage의 기본값은 `no-cache`다. 그 값이면 CDN도 브라우저도 아무것도 쥐고 있지
+ * 않아 **글을 열 때마다 원본이 다시 나간다.** Vercel 최적화기가 앞에서 받아 주는 동안에는
+ * 가려져 있었는데, 그걸 끄자(`next.config.ts`) 하루 만에 Egress가 5GB 한도를 넘었다.
+ */
+const IMMUTABLE = "public, max-age=31536000, immutable";
+
 /** 05 §1.4의 경로 규칙: `post-images/{postId|orphan}/{nanoid}.{ext}` */
 const ORPHAN_PREFIX = "orphan";
 
@@ -78,6 +88,7 @@ export async function uploadImage({
     headers: {
       authorization: `Bearer ${key}`,
       "content-type": mimeType,
+      "cache-control": IMMUTABLE,
       // 같은 경로가 겹칠 일은 없지만(nanoid), 덮어쓰기를 허용하지 않는 편이 사고를 줄인다
       "x-upsert": "false",
     },
