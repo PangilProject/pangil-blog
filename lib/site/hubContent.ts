@@ -162,7 +162,11 @@ export type HubWork = {
   stack: string[];
   /** 역할 — 1인 개발인지 팀인지가 읽는 사람에게 가장 먼저 필요한 정보다 */
   role: string;
-  /** 서비스 주소·저장소. **PDF에서 전체 URL을 읽을 수 없어 비워 두었다** — 채우면 그때 그려진다 */
+  /**
+   * 서비스 주소·저장소. **둘 다 없어도 되고, 없으면 그 줄을 그리지 않는다.**
+   * 저장소는 동료 개발자가 코드를 보러 갈 수 있어야 하므로 공개 저장소만 적는다 —
+   * 눌러서 404가 나는 링크는 없는 것만 못하다.
+   */
   href?: string;
   repo?: string;
 };
@@ -177,6 +181,8 @@ export type HubWork = {
 export const hubWorks: HubWork[] = [
   {
     call: "WORK · 001",
+    href: "https://relog.shop",
+    repo: "https://github.com/PangilProject/re-log",
     year: "2025.11 — 운영 중 · 1인",
     role: "기획 · 프론트엔드 · QA · 배포",
     title: "re-log",
@@ -187,6 +193,8 @@ export const hubWorks: HubWork[] = [
   },
   {
     call: "WORK · 002",
+    href: "https://checky.today",
+    repo: "https://github.com/PangilProject/checky",
     year: "2026.01 — 운영 중 · 1인",
     role: "기획 · 정보 구조 · 프론트엔드",
     title: "checky",
@@ -207,6 +215,7 @@ export const hubWorks: HubWork[] = [
   },
   {
     call: "WORK · 004",
+    repo: "https://github.com/Official-QRapo/QRapo_FE",
     year: "2025.01 — 2025.05 · 5개월 · 팀",
     role: "PM · 디자인 · 프론트엔드 리드",
     title: "QRapo",
@@ -217,6 +226,8 @@ export const hubWorks: HubWork[] = [
   },
   {
     call: "WORK · 005",
+    href: "https://kwangilkim.com",
+    repo: "https://github.com/PangilProject/pangil-blog",
     year: "2026 — 운영 중 · 1인",
     role: "기획 · 설계 · 구현 · 운영",
     title: "지금 보고 있는 이 지면",
