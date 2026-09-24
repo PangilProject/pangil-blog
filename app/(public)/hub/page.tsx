@@ -289,16 +289,48 @@ export default function HubPage() {
                       {work.dropped}
                     </p>
                   </div>
-                  <ul className="flex flex-wrap gap-1.5 self-start lg:pt-7">
-                    {work.stack.map((item) => (
-                      <li
-                        key={item}
-                        className="border border-edge px-2 py-0.5 font-code text-[10.5px] text-ink-soft"
-                      >
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex flex-col gap-3 self-start lg:pt-7">
+                    <ul className="flex flex-wrap gap-1.5">
+                      {work.stack.map((item) => (
+                        <li
+                          key={item}
+                          className="border border-edge px-2 py-0.5 font-code text-[10.5px] text-ink-soft"
+                        >
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/*
+                      **없으면 그리지 않는다.** 눌러서 404가 나는 링크는 없는 것만 못하다.
+                      새 창으로 여는 것은 이 지면이 목록이기 때문이다 — 하나 보고 돌아와
+                      다음을 보게 된다.
+                    */}
+                    {(work.href || work.repo) && (
+                      <p className="flex flex-wrap gap-3 font-typewriter text-[11px]">
+                        {work.href && (
+                          <a
+                            href={work.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border-site-accent border-b pb-0.5 text-site-accent hover:opacity-70"
+                          >
+                            바로가기 ↗
+                          </a>
+                        )}
+                        {work.repo && (
+                          <a
+                            href={work.repo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="border-edge-strong border-b pb-0.5 text-ink-soft hover:text-ink"
+                          >
+                            코드 보기 ↗
+                          </a>
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}
