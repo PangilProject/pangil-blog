@@ -42,3 +42,7 @@ yarn-error.log*
 
 # docs — 설계 문서·ADR·리팩터 노트는 로컬에만 둔다
 /docs
+
+# 작업물 스크린샷의 굽기 전 원본 (ADR-005). webp만 올라간다 —
+# 원본은 곁에 둬도 되지만 레포에 들어가면 그대로 서빙되고 굽는 의미가 없어진다
+public/projects/*/origin/

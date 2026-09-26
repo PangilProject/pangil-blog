@@ -89,6 +89,11 @@ describe("스크린샷 파일 (ADR-005 상한)", () => {
         // 파인더로 폴더를 한 번 연 것만으로 테스트가 빨개진다
         if (entry.name.startsWith(".")) continue;
 
+        // `origin/`은 **원본 보관함**이다. 굽기 전 PNG를 곁에 두고 싶은 것은 자연스럽고,
+        // 지우라고 하면 유일한 원본을 지우게 된다. `.gitignore`가 올라가는 것을 막으므로
+        // 서빙되지도 않는다 — 여기서는 세지 않는 것으로 족하다
+        if (entry.isDirectory() && entry.name === "origin") continue;
+
         const path = join(dir, entry.name);
         if (entry.isDirectory()) walk(path);
         else found.push(path);

@@ -63,6 +63,18 @@ async function expand(entry: string): Promise<string[]> {
 
   if (!info.isDirectory()) return [entry];
 
+  // 굽기 전 원본은 `origin/`에 둔다(ADR-005). 출력 폴더를 줬는데 그 안에 있으면
+  // 그쪽을 원본으로 본다 — `npm run shots -- checky ./public/projects/checky` 한 줄이
+  // 다시 굽기가 된다
+  const origin = join(entry, "origin");
+  if (
+    await stat(origin).then(
+      (o) => o.isDirectory(),
+      () => false,
+    )
+  )
+    return expand(origin);
+
   const files = (await readdir(entry))
     .filter((file) => !file.startsWith(".") && IMAGE.test(file) && !BAKED.test(file))
     // 숫자를 값으로 센다 — 사전순이면 `10.`이 `2.`보다 앞에 온다
