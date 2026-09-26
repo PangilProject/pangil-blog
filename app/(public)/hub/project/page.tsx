@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { projects } from "@/lib/site/projectContent";
@@ -47,11 +48,21 @@ export default function ProjectListPage() {
               href={siteHref("hub", `/hub/project/${project.slug}`, { from: "hub" })}
               className="group flex flex-col gap-3 py-7 sm:flex-row sm:gap-8"
             >
-              {/* 청구기호 칸. 좁은 화면에서는 한 줄로 눕는다 */}
-              <div className="flex shrink-0 items-baseline gap-3 font-typewriter text-[11px] text-faint sm:w-[132px] sm:flex-col sm:gap-1.5">
-                <span className="tracking-[0.12em]">{project.call}</span>
-                <span>{project.kind}</span>
-                <span>{project.period}</span>
+              {/*
+                대표 화면. 상세의 첫 장을 그대로 쓴다 — 따로 고르게 하면 그 값이 본문과
+                어긋난다. **자리는 그림이 없어도 비워 둔다**: 있는 줄과 없는 줄이 섞일 때
+                왼쪽 끝이 들쭉날쭉하면 목록이 목록으로 안 읽힌다.
+              */}
+              <div className="hidden w-[132px] shrink-0 sm:block">
+                {project.shots[0] && (
+                  <Image
+                    src={project.shots[0].src}
+                    alt=""
+                    width={project.shots[0].width}
+                    height={project.shots[0].height}
+                    className="h-[84px] w-full border border-line object-cover"
+                  />
+                )}
               </div>
 
               <div className="flex min-w-0 flex-col gap-2">
@@ -63,6 +74,10 @@ export default function ProjectListPage() {
                 </div>
 
                 <p className="text-[14px] leading-body text-ink-soft">{project.tagline}</p>
+
+                <p className="font-typewriter text-[11px] text-faint">
+                  {project.kind} · {project.period}
+                </p>
 
                 <p className="font-typewriter text-[11px] text-faint">
                   {project.stack
