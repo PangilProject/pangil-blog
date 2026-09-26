@@ -1292,7 +1292,8 @@ html[data-hub-live] [data-hub-mq-dup] {
   화면 밖으로 밀려난 장의 화살표가 Tab에 걸리지 않는 이유는 **화살표가 `<label>`이라서**다 —
   라벨은 포커스를 받지 않으므로 잘린 칸을 따로 막을 필요가 없다.
 
-  한 건의 상한이 6장이므로(ADR-005) 규칙도 여섯 벌이면 된다. `color-mix`를 쓰지 않는다 —
+  한 건의 상한이 10장이므로(ADR-005) 규칙도 열 벌이다. **상한을 올리면 여기도 함께 올려야 한다** —
+  규칙의 개수가 곧 넘길 수 있는 장수다. `projectContent.test.ts`가 둘이 어긋나면 실패한다. `color-mix`를 쓰지 않는다 —
   빌드가 이웃 규칙까지 `@supports`로 감싸 통째로 떨어뜨린 적이 있다(ADR-004 구현 노트).
 */
 [data-shot-track] {
@@ -1326,6 +1327,18 @@ html[data-hub-live] [data-hub-mq-dup] {
 [data-shots] > input:nth-of-type(6):checked ~ * [data-shot-track] {
   --shot-i: 5;
 }
+[data-shots] > input:nth-of-type(7):checked ~ * [data-shot-track] {
+  --shot-i: 6;
+}
+[data-shots] > input:nth-of-type(8):checked ~ * [data-shot-track] {
+  --shot-i: 7;
+}
+[data-shots] > input:nth-of-type(9):checked ~ * [data-shot-track] {
+  --shot-i: 8;
+}
+[data-shots] > input:nth-of-type(10):checked ~ * [data-shot-track] {
+  --shot-i: 9;
+}
 
 /* 썸네일 — 지금 장을 잉크로 세운다. 나머지는 물러난다 */
 [data-shot-thumb] {
@@ -1339,7 +1352,15 @@ html[data-hub-live] [data-hub-mq-dup] {
 [data-shots] > input:nth-of-type(3):checked ~ [data-shot-thumbs] li:nth-child(3) [data-shot-thumb],
 [data-shots] > input:nth-of-type(4):checked ~ [data-shot-thumbs] li:nth-child(4) [data-shot-thumb],
 [data-shots] > input:nth-of-type(5):checked ~ [data-shot-thumbs] li:nth-child(5) [data-shot-thumb],
-[data-shots] > input:nth-of-type(6):checked ~ [data-shot-thumbs] li:nth-child(6) [data-shot-thumb] {
+[data-shots] > input:nth-of-type(6):checked ~ [data-shot-thumbs] li:nth-child(6) [data-shot-thumb],
+[data-shots] > input:nth-of-type(7):checked ~ [data-shot-thumbs] li:nth-child(7) [data-shot-thumb],
+[data-shots] > input:nth-of-type(8):checked ~ [data-shot-thumbs] li:nth-child(8) [data-shot-thumb],
+[data-shots] > input:nth-of-type(9):checked ~ [data-shot-thumbs] li:nth-child(9) [data-shot-thumb],
+[data-shots]
+  > input:nth-of-type(10):checked
+  ~ [data-shot-thumbs]
+  li:nth-child(10)
+  [data-shot-thumb] {
   opacity: 1;
   border-color: var(--ink);
 }
@@ -1354,7 +1375,11 @@ html[data-hub-live] [data-hub-mq-dup] {
 [data-shots] > input:nth-of-type(3):checked ~ * [data-shot-count] > span:nth-child(3),
 [data-shots] > input:nth-of-type(4):checked ~ * [data-shot-count] > span:nth-child(4),
 [data-shots] > input:nth-of-type(5):checked ~ * [data-shot-count] > span:nth-child(5),
-[data-shots] > input:nth-of-type(6):checked ~ * [data-shot-count] > span:nth-child(6) {
+[data-shots] > input:nth-of-type(6):checked ~ * [data-shot-count] > span:nth-child(6),
+[data-shots] > input:nth-of-type(7):checked ~ * [data-shot-count] > span:nth-child(7),
+[data-shots] > input:nth-of-type(8):checked ~ * [data-shot-count] > span:nth-child(8),
+[data-shots] > input:nth-of-type(9):checked ~ * [data-shot-count] > span:nth-child(9),
+[data-shots] > input:nth-of-type(10):checked ~ * [data-shot-count] > span:nth-child(10) {
   display: inline;
 }
 

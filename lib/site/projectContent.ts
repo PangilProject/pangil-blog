@@ -22,7 +22,7 @@
  * 품질을 내려 다시 굽고, **붙여 넣을 `shots` 배열을 치수까지 찍어 준다.** 치수를 손으로
  * 옮기면 틀리고, 틀리면 그림이 도착할 때 지면이 튄다.
  *
- * **상한(ADR-005): webp · 긴 변 1400px · 건당 6장 이하 · 장당 200KB 이하.**
+ * **상한(ADR-005): webp · 긴 변 1400px · 건당 10장 이하 · 장당 200KB 이하.**
  * 지금 `images.unoptimized: true`라(2026-09 Storage 초과 회차) **올린 바이트가 그대로
  * 내려간다.** 최적화기가 뒤에서 구해 주지 않는다. `projectContent.test.ts`가 이 상한을 잠근다.
  *
@@ -123,7 +123,16 @@ export const projects: Project[] = [
       "초기 JS 번들을 약 90% 줄였습니다. 먼저 정한 것은 무엇을 줄일지가 아니라 **초기 렌더에 정말 필요한 코드가 무엇인가**였고, 답이 나온 뒤에야 vendor chunk 분리와 코드 스플리팅이 의미를 가졌습니다.",
       "화면을 옮길 때마다 같은 요청이 반복되고 있었습니다. 캐시 기준을 데이터 성격별로 나눠 세우고 나서 사라졌습니다.",
     ],
-    shots: [],
+    shots: [
+      { src: "/projects/checky/01.webp", alt: "주별 달성 현황", width: 1400, height: 768 },
+      { src: "/projects/checky/02.webp", alt: "월별 달성 현황", width: 1400, height: 765 },
+      { src: "/projects/checky/03.webp", alt: "캘린더와 루틴", width: 1400, height: 766 },
+      { src: "/projects/checky/04.webp", alt: "할 일 목록", width: 1400, height: 766 },
+      { src: "/projects/checky/05.webp", alt: "카테고리 관리", width: 1400, height: 763 },
+      { src: "/projects/checky/06.webp", alt: "루틴 등록", width: 1400, height: 769 },
+      { src: "/projects/checky/07.webp", alt: "마이 정보", width: 1400, height: 765 },
+      { src: "/projects/checky/08.webp", alt: "공지", width: 1400, height: 768 },
+    ],
     links: [
       { label: "바로가기", href: "https://checky.today" },
       { label: "코드 보기", href: "https://github.com/PangilProject/checky" },
