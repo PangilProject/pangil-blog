@@ -176,6 +176,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         ← 작업물
       </Link>
 
+      {/*
+        **화면이 제목보다 먼저 온다.** 이 지면에 온 사람이 알고 싶은 것은 이름이 아니라
+        "무엇을 만들었길래"이고, 그 답은 글자보다 그림이 빠르다. 제목은 바로 아래에서
+        받는다 — 그림만 있고 이름이 없는 구간은 한 화면을 넘지 않는다.
+
+        목록의 썸네일과 같은 `shots[0]`에서 시작하므로, 눌러서 들어온 사람이 보던 그림이
+        그대로 커진다.
+      */}
+      {project.shots.length > 0 && (
+        <div className="mt-8">
+          <ProjectShots slug={project.slug} shots={project.shots} />
+        </div>
+      )}
+
       <header className="mt-8 flex flex-col gap-4">
         <p className="font-typewriter text-[11px] tracking-[0.12em] text-faint">{project.kind}</p>
 
@@ -211,7 +225,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         )}
       </header>
 
-      <section className="mt-12 flex flex-col gap-3 border-line border-t pt-7">
+      <section className="mt-10 flex flex-col gap-3 border-line border-t pt-7">
         <SectionLabel>개요</SectionLabel>
         {project.summary.map((paragraph) => (
           <p key={paragraph} className="max-w-measure text-[14px] leading-body text-ink-soft">
@@ -219,13 +233,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </p>
         ))}
       </section>
-
-      {project.shots.length > 0 && (
-        <section className="mt-12 flex flex-col gap-4 border-line border-t pt-7">
-          <SectionLabel>화면</SectionLabel>
-          <ProjectShots slug={project.slug} shots={project.shots} />
-        </section>
-      )}
 
       {project.features.length > 0 && (
         <section className="mt-12 flex flex-col gap-4 border-line border-t pt-7">
