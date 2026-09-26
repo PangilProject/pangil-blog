@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -306,7 +307,7 @@ export default function HubPage() {
                       새 창으로 여는 것은 이 지면이 목록이기 때문이다 — 하나 보고 돌아와
                       다음을 보게 된다.
                     */}
-                    {(work.href || work.repo) && (
+                    {(work.href || work.repo || work.project) && (
                       <p className="flex flex-wrap gap-3 font-typewriter text-[11px]">
                         {work.href && (
                           <a
@@ -327,6 +328,14 @@ export default function HubPage() {
                           >
                             코드 보기 ↗
                           </a>
+                        )}
+                        {work.project && (
+                          <Link
+                            href={siteHref("hub", `/hub/project/${work.project}`, { from: "hub" })}
+                            className="border-edge-strong border-b pb-0.5 text-ink-soft hover:text-ink"
+                          >
+                            자세히 ↗
+                          </Link>
                         )}
                       </p>
                     )}
