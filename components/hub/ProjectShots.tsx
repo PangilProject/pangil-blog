@@ -22,6 +22,27 @@ import type { ProjectShot } from "@/lib/site/projectContent";
 /** 목록은 작게, 상세는 크게. 둘은 크기만 다르고 도는 방식이 같다 */
 export type ProjectShotsVariant = "detail" | "list";
 
+/**
+ * 아직 화면을 못 넣은 작업물의 자리.
+ *
+ * **비우지 않는다.** 그림이 있는 줄과 없는 줄이 섞일 때 왼쪽 끝이 들쭉날쭉하면 목록이
+ * 목록으로 안 읽히고, 상세에서는 제목과 개요가 붙어 버려 다른 지면처럼 보인다.
+ * 빈 자리보다 **"아직 없다"고 말하는 자리**가 낫다 — 읽는 사람은 빠진 것과 없는 것을
+ * 구별하지 못한다.
+ */
+function ShotsPending({ list }: { list: boolean }) {
+  return (
+    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 border border-line bg-surface-hover">
+      <p aria-hidden className="font-typewriter text-[15px] text-faint">
+        · · ·
+      </p>
+      <p className={`font-typewriter text-faint ${list ? "text-[10px]" : "text-[11px]"}`}>
+        화면 준비 중
+      </p>
+    </div>
+  );
+}
+
 export function ProjectShots({
   slug,
   shots,
@@ -31,11 +52,11 @@ export function ProjectShots({
   shots: ProjectShot[];
   variant?: ProjectShotsVariant;
 }) {
-  if (shots.length === 0) return null;
-
   const many = shots.length > 1;
   const list = variant === "list";
   const id = (index: number) => `${slug}-${variant}-shot-${index}`;
+
+  if (shots.length === 0) return <ShotsPending list={list} />;
 
   const arrow = list
     ? "size-7 text-[11px] opacity-0 transition-opacity group-hover/shots:opacity-100 focus-visible:opacity-100"

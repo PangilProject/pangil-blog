@@ -99,13 +99,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         "무엇을 만들었길래"이고, 그 답은 글자보다 그림이 빠르다.
 
         목록 썸네일과 같은 `shots[0]`에서 시작하므로, 눌러서 들어온 사람이 보던 그림이
-        그대로 커진다.
+        그대로 커진다. **아직 화면이 없는 작업물도 이 자리는 그대로 둔다** — 비우면
+        제목과 개요가 붙어 다른 지면처럼 보인다.
       */}
-      {project.shots.length > 0 && (
-        <div className="mt-10">
-          <ProjectShots slug={project.slug} shots={project.shots} />
-        </div>
-      )}
+      <div className="mt-10">
+        <ProjectShots slug={project.slug} shots={project.shots} />
+      </div>
 
       <section className="mt-10 flex flex-col gap-3 border-line border-t pt-7">
         <SectionLabel>개요</SectionLabel>
