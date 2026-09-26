@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -27,11 +27,6 @@ describe("작업물 콘텐츠 (ADR-005)", () => {
   it("slug가 겹치지 않는다", () => {
     const slugs = projects.map((project) => project.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
-  });
-
-  it("청구기호가 겹치지 않는다", () => {
-    const calls = projects.map((project) => project.call);
-    expect(new Set(calls).size).toBe(calls.length);
   });
 
   it("허브 작업물의 `자세히` 링크가 전부 존재하는 지면을 가리킨다", () => {
@@ -111,5 +106,47 @@ describe("스크린샷 파일 (ADR-005 상한)", () => {
       .map((path) => `${path} (${Math.round(statSync(path).size / 1024)}KB)`);
 
     expect(heavy).toEqual([]);
+  });
+});
+
+/**
+ * 캐러셀 CSS 가드 (ADR-005).
+ *
+ * 화면 넘김이 라디오 + CSS라 **규칙의 개수가 곧 넘길 수 있는 장수**다. 상한만 올리고
+ * 규칙을 안 늘리면 7번째 장은 화살표를 눌러도 서지 않는다 — 화면에서는 "가끔 안 넘어간다"로만
+ * 보이고 원인은 CSS에 있다. 그래서 숫자 둘을 여기서 묶는다.
+ *
+ * `color-mix` 금지는 ADR-004의 구현 노트에서 온다: 빌드가 그 규칙에 폴백을 만들면서
+ * 이웃 규칙까지 `@supports`로 감싸 통째로 떨어뜨린 적이 있다.
+ */
+describe("화면 캐러셀 CSS (ADR-005)", () => {
+  const css = readFileSync("app/globals.css", "utf8");
+  const squashed = css.replace(/\s+/g, "");
+  /** 주석을 걷어낸 본문. "쓰지 않는다"는 설명글이 아니라 선언만 보고 판단한다 */
+  const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("상한만큼의 장 규칙이 있다", () => {
+    const rules = squashed.match(/--shot-i:\d+/g) ?? [];
+    expect(new Set(rules).size).toBe(MAX_SHOTS_PER_PROJECT);
+  });
+
+  it("썸네일과 장 번호도 같은 수만큼 받는다", () => {
+    expect((squashed.match(/\[data-shot-thumbs\]li:nth-child\(\d+\)/g) ?? []).length).toBe(
+      MAX_SHOTS_PER_PROJECT,
+    );
+    expect((squashed.match(/\[data-shot-count\]>span:nth-child\(\d+\)/g) ?? []).length).toBe(
+      MAX_SHOTS_PER_PROJECT,
+    );
+  });
+
+  it("캐러셀 규칙에 color-mix를 쓰지 않는다", () => {
+    const block = declarations.slice(declarations.indexOf("[data-shot-track]"));
+    expect(block).not.toContain("color-mix");
+  });
+
+  it("움직임을 줄여 달라고 하면 미끄러지지 않는다", () => {
+    expect(squashed).toContain(
+      "@media(prefers-reduced-motion:reduce){[data-shot-track]{transition:none;}",
+    );
   });
 });

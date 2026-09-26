@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { findProject, projects } from "@/lib/site/projectContent";
+import { findProject, type ProjectShot, projects } from "@/lib/site/projectContent";
 import { siteHref } from "@/lib/site/publicUrl";
 
 /**
@@ -14,7 +14,7 @@ import { siteHref } from "@/lib/site/publicUrl";
  * **비어 있는 블록은 그리지 않는다.** 스크린샷이 없어도, 링크가 없어도 지면이 깨지지 않아야
  * `projectContent.ts`를 편하게 고칠 수 있다.
  *
- * 화면 넘김은 `scroll-snap`이다. 라이트박스를 쓰면 공개 아일랜드가 8개가 되고,
+ * 화면 넘김은 **숨긴 라디오**다(`ProjectShots`). 라이트박스를 쓰면 공개 아일랜드가 8개가 되고,
  * 그건 ADR-005가 걸지 않기로 한 값이다(04 §3.6).
  */
 
@@ -39,6 +39,124 @@ function SectionLabel({ children }: { children: string }) {
   return <h2 className="font-typewriter text-[11px] tracking-[0.14em] text-faint">{children}</h2>;
 }
 
+/**
+ * 화면 캐러셀. **클라이언트 코드가 없다** — 숨긴 라디오 한 무리가 "몇 번째 장인가"를 들고,
+ * 화살표와 썸네일은 그 라디오를 가리키는 `<label>`이다(ADR-005 · globals.css `[data-shots]`).
+ *
+ * 한 장뿐이면 넘길 것이 없으므로 라디오도 화살표도 썸네일도 그리지 않는다.
+ */
+function ProjectShots({ slug, shots }: { slug: string; shots: ProjectShot[] }) {
+  const many = shots.length > 1;
+  const id = (index: number) => `${slug}-shot-${index}`;
+
+  return (
+    /*
+      `fieldset`인 이유: 라디오 한 무리에 이름을 붙이는 자리가 원래 여기다. `div`에
+      `role="radiogroup"`을 얹으면 한 장뿐일 때 라디오 없는 라디오 무리가 되고,
+      조건부로 붙이면 정적 검사가 `aria-label`을 지원하지 않는 요소로 읽는다.
+      `legend`는 `input`이 아니라 `nth-of-type` 셈에 끼어들지 않는다.
+    */
+    <fieldset data-shots className="flex min-w-0 flex-col gap-3">
+      <legend className="sr-only">화면</legend>
+
+      {many &&
+        shots.map((shot, index) => (
+          <input
+            key={shot.src}
+            id={id(index)}
+            name={`${slug}-shot`}
+            type="radio"
+            defaultChecked={index === 0}
+            className="sr-only"
+            aria-label={`${index + 1}번째 화면`}
+          />
+        ))}
+
+      {/* 무대. 넘치는 쪽을 잘라 한 장만 세운다 */}
+      <div className="relative overflow-hidden border border-line has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-site-accent has-[:focus-visible]:outline-offset-2">
+        <ul data-shot-track>
+          {shots.map((shot, index) => (
+            <li key={shot.src} data-shot-slide>
+              <Image
+                src={shot.src}
+                alt={shot.alt}
+                width={shot.width}
+                height={shot.height}
+                className="h-auto w-full"
+                priority={index === 0}
+              />
+
+              {many && index > 0 && (
+                <label
+                  htmlFor={id(index - 1)}
+                  className="absolute top-1/2 left-3 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center border border-edge-strong bg-paper font-typewriter text-[13px] text-ink hover:bg-surface-sheet"
+                >
+                  ←<span className="sr-only">이전 화면</span>
+                </label>
+              )}
+
+              {many && index < shots.length - 1 && (
+                <label
+                  htmlFor={id(index + 1)}
+                  className="absolute top-1/2 right-3 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center border border-edge-strong bg-paper font-typewriter text-[13px] text-ink hover:bg-surface-sheet"
+                >
+                  →<span className="sr-only">다음 화면</span>
+                </label>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {/* 몇 번째인지. 화살표만 있으면 끝이 어디인지 모른다 */}
+        {many && (
+          <p
+            data-shot-count
+            className="absolute right-3 bottom-3 border border-edge-strong bg-paper px-2 py-1 font-typewriter text-[11px] text-ink-soft"
+          >
+            {shots.map((shot, index) => (
+              <span key={shot.src}>
+                {index + 1} / {shots.length}
+              </span>
+            ))}
+          </p>
+        )}
+      </div>
+
+      {/* 썸네일. 누르면 그 장으로 간다 */}
+      {many && (
+        <ul data-shot-thumbs className="flex flex-wrap gap-2">
+          {shots.map((shot, index) => (
+            <li key={shot.src}>
+              <label htmlFor={id(index)} data-shot-thumb className="block cursor-pointer border">
+                <Image
+                  src={shot.src}
+                  alt=""
+                  width={shot.width}
+                  height={shot.height}
+                  className="h-14 w-auto"
+                />
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* 설명은 장마다 다르므로 목록으로 둔다 — 넘길 때 같이 따라오면 글이 튄다 */}
+      {shots.some((shot) => shot.caption) && (
+        <ol className="flex flex-col gap-1 font-typewriter text-[11px] text-faint">
+          {shots.map((shot, index) =>
+            shot.caption ? (
+              <li key={shot.src}>
+                {index + 1}. {shot.caption}
+              </li>
+            ) : null,
+          )}
+        </ol>
+      )}
+    </fieldset>
+  );
+}
+
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = findProject(slug);
@@ -59,9 +177,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </Link>
 
       <header className="mt-8 flex flex-col gap-4">
-        <p className="font-typewriter text-[11px] tracking-[0.12em] text-faint">
-          {project.call} · {project.kind}
-        </p>
+        <p className="font-typewriter text-[11px] tracking-[0.12em] text-faint">{project.kind}</p>
 
         <h1 className="font-serif font-bold text-[30px] leading-tight">{project.title}</h1>
         <p className="max-w-measure text-[15px] leading-body text-ink-soft">{project.tagline}</p>
@@ -107,26 +223,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.shots.length > 0 && (
         <section className="mt-12 flex flex-col gap-4 border-line border-t pt-7">
           <SectionLabel>화면</SectionLabel>
-          {/* 좌우로 밀어 넘긴다. 한 장씩 물리도록 snap을 건다 */}
-          <ul className="-mx-[6%] flex snap-x snap-mandatory gap-4 overflow-x-auto px-[6%] pb-3 lg:mx-0 lg:px-0">
-            {project.shots.map((shot) => (
-              <li
-                key={shot.src}
-                className="flex w-[78%] shrink-0 snap-center flex-col gap-2 sm:w-[60%]"
-              >
-                <Image
-                  src={shot.src}
-                  alt={shot.alt}
-                  width={shot.width}
-                  height={shot.height}
-                  className="h-auto w-full border border-line"
-                />
-                {shot.caption && (
-                  <p className="font-typewriter text-[11px] text-faint">{shot.caption}</p>
-                )}
-              </li>
-            ))}
-          </ul>
+          <ProjectShots slug={project.slug} shots={project.shots} />
         </section>
       )}
 

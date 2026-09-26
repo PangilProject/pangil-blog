@@ -22,10 +22,8 @@
  * 지금 `images.unoptimized: true`라(2026-09 Storage 초과 회차) **올린 바이트가 그대로
  * 내려간다.** 최적화기가 뒤에서 구해 주지 않는다. `projectContent.test.ts`가 이 상한을 잠근다.
  *
- * ## 청구기호
- *
- * `call`은 **시작한 순서대로 고정**이다. 목록의 표시 순서(최근순)와 무관하고, 한 번 준
- * 번호는 바꾸지 않는다 — 글의 청구기호와 같은 규칙이다(05 §3.4).
+ * **목록의 썸네일은 `shots[0]`이다.** 따로 고르게 하지 않는다 — 고르는 자리를 만들면
+ * 그 값이 본문과 어긋나기 시작하고, 첫 장이 대표가 아니면 상세에서도 첫 장이 아니어야 한다.
  *
  * **재검토: 2027-03-20** — 그때까지 항목이 하나도 안 늘었으면 이 지면을 걷는다(ADR-005).
  */
@@ -58,8 +56,6 @@ export type ProjectShot = {
 export type Project = {
   /** `/project/{slug}`. 한 번 정하면 바꾸지 않는다 — 주소는 불변이다(05 §6.4) */
   slug: string;
-  /** 시작 순서대로 고정된 번호 */
-  call: string;
   kind: ProjectKind;
   title: string;
   /** 한 줄. 목록에서 제목 아래 선다 */
@@ -82,12 +78,11 @@ export type Project = {
 
 /**
  * **표시 순서는 이 배열 그대로다** — 최근 손댄 것이 위다. 정렬 코드를 두지 않는다.
- * 순서를 바꾸고 싶으면 이 배열을 옮긴다(그때도 `call`은 따라가지 않는다).
+ * 순서를 바꾸고 싶으면 이 배열을 옮긴다.
  */
 export const projects: Project[] = [
   {
     slug: "checky",
-    call: "PROJECT · 011",
     kind: "서비스",
     title: "checky",
     tagline: "일회성 할 일과 반복 루틴을 나눠 기록하는 습관 관리 서비스",
@@ -132,7 +127,6 @@ export const projects: Project[] = [
   },
   {
     slug: "jogak",
-    call: "PROJECT · 016",
     kind: "서비스",
     title: "조각",
     tagline: "그룹 미션을 인증하고 조각 판을 채워가는 조직용 미션 인증 서비스",
@@ -170,7 +164,6 @@ export const projects: Project[] = [
   },
   {
     slug: "repeak",
-    call: "PROJECT · 015",
     kind: "실험",
     title: "RePeak",
     tagline: "운동을 기록하면 코인을 얻고, 코인으로 캐릭터의 방을 꾸미는 게이미피케이션 서비스",
@@ -206,7 +199,6 @@ export const projects: Project[] = [
   },
   {
     slug: "if-kbo",
-    call: "PROJECT · 014",
     kind: "서비스",
     title: "만약에KBO",
     tagline: "남은 경기를 가정해 순위 변화를 보는 KBO 순위·일정 서비스",
@@ -254,7 +246,6 @@ export const projects: Project[] = [
   },
   {
     slug: "digital-yutnori-board",
-    call: "PROJECT · 013",
     kind: "실험",
     title: "윷놀이 디지털 말판",
     tagline: "윷은 손으로 던지고, 말은 화면에서 옮기는 디지털 말판",
@@ -293,7 +284,6 @@ export const projects: Project[] = [
   },
   {
     slug: "sdrum-guitar",
-    call: "PROJECT · 012",
     kind: "팀",
     title: "에스드럼기타 학원 관리 시스템",
     tagline: "학생·수강·스케줄·청구를 한곳에서 관리하는 교습소 운영 도구",
@@ -322,7 +312,6 @@ export const projects: Project[] = [
   },
   {
     slug: "hgu-student-union",
-    call: "PROJECT · 002",
     kind: "팀",
     title: "한동대학교 총학생회 웹사이트",
     tagline: "학교 구성원이 보는 공개 지면과 운영진이 쓰는 관리자 콘솔",
@@ -356,7 +345,6 @@ export const projects: Project[] = [
   },
   {
     slug: "pangil-blog",
-    call: "PROJECT · 017",
     kind: "서비스",
     title: "지금 보고 있는 이 지면",
     tagline: "하나의 앱이 호스트에 따라 소개·기술 블로그·묵상 블로그 세 지면으로 갈립니다",
@@ -404,7 +392,6 @@ export const projects: Project[] = [
   },
   {
     slug: "public-of-essence",
-    call: "PROJECT · 004",
     kind: "팀",
     title: "ESSENCE 공식 홈페이지",
     tagline: "집회 일정과 지난 예배 아카이브를 담은 선교단체 공식 지면",
@@ -438,7 +425,6 @@ export const projects: Project[] = [
   },
   {
     slug: "my-christmas-card",
-    call: "PROJECT · 010",
     kind: "실험",
     title: "나의 크리스마스 카드",
     tagline: "열두 문항으로 크리스마스 유형을 찾고 결과 카드를 저장하는 테스트",
@@ -466,7 +452,6 @@ export const projects: Project[] = [
   },
   {
     slug: "re-log",
-    call: "PROJECT · 009",
     kind: "서비스",
     title: "re-log",
     tagline: "회고를 어떻게 써야 할지 막막한 사람을 위한 회고 기록 서비스",
@@ -506,7 +491,6 @@ export const projects: Project[] = [
   },
   {
     slug: "blridge",
-    call: "PROJECT · 008",
     kind: "팀",
     title: "BL-ridge",
     tagline: "헌혈 가능 여부를 스스로 진단하고 챌린지로 이어 가는 앱",
@@ -537,7 +521,6 @@ export const projects: Project[] = [
   },
   {
     slug: "qrapo",
-    call: "PROJECT · 006",
     kind: "팀",
     title: "QRapo",
     tagline: "처음 만난 사람들이 단계별 콘텐츠로 관계를 쌓게 돕는 서비스",
@@ -572,7 +555,6 @@ export const projects: Project[] = [
   },
   {
     slug: "team-cc",
-    call: "PROJECT · 007",
     kind: "팀",
     title: "팀CC",
     tagline: "학교의 팀 교류 프로그램을 온라인에서 운영하는 서비스",
@@ -599,7 +581,6 @@ export const projects: Project[] = [
   },
   {
     slug: "pard-app-admin",
-    call: "PROJECT · 003",
     kind: "팀",
     title: "PARD 관리자 페이지",
     tagline: "동아리 운영진이 구성원·일정·출결·점수를 한곳에서 관리하는 내부 도구",
@@ -638,7 +619,6 @@ export const projects: Project[] = [
   },
   {
     slug: "bwchef",
-    call: "PROJECT · 005",
     kind: "실험",
     title: "흑백요리사 소개 사이트",
     tagline: "출연 셰프와 요리, 운영 식당을 모아 보는 정보 사이트",
@@ -668,7 +648,6 @@ export const projects: Project[] = [
   },
   {
     slug: "hancamsa",
-    call: "PROJECT · 001",
     kind: "실험",
     title: "한캠사",
     tagline: "한동대학교 캠퍼스를 건물 단위로 소개하는 정적 사이트",

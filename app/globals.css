@@ -1276,3 +1276,90 @@ html[data-hub-live] [data-hub-mq-dup] {
   color: inherit;
   font-family: inherit;
 }
+
+/*
+  ─────────────────────────────────────────────────────────────
+  작업물 화면 캐러셀 (H-04 · ADR-005)
+  ─────────────────────────────────────────────────────────────
+
+  **아일랜드를 쓰지 않는다.** 숨긴 라디오 한 무리가 "지금 몇 번째 장인가"를 들고 있고,
+  화살표와 썸네일은 그 라디오를 가리키는 `<label>`이다 — 사이드바 접기를 푼 것과 같은
+  수법이다(04 §3.6, 2026-09-12). 스크립트가 죽어도 넘어가고, 넘길 것이 한 장뿐이면
+  화살표도 썸네일도 애초에 그려지지 않는다.
+
+  라디오는 `sr-only`지만 **display: none이 아니다** — 포커스를 받을 수 있어야 키보드
+  화살표로 장을 넘길 수 있다. `role="radiogroup"`이 그 사실을 읽어 주는 쪽에도 말한다.
+  화면 밖으로 밀려난 장의 화살표가 Tab에 걸리지 않는 이유는 **화살표가 `<label>`이라서**다 —
+  라벨은 포커스를 받지 않으므로 잘린 칸을 따로 막을 필요가 없다.
+
+  한 건의 상한이 6장이므로(ADR-005) 규칙도 여섯 벌이면 된다. `color-mix`를 쓰지 않는다 —
+  빌드가 이웃 규칙까지 `@supports`로 감싸 통째로 떨어뜨린 적이 있다(ADR-004 구현 노트).
+*/
+[data-shot-track] {
+  display: flex;
+  translate: calc(var(--shot-i, 0) * -100%);
+  transition: translate 0.35s ease;
+}
+
+/* 칸을 `li`가 아니라 속성으로 고른다 — 본문 목록 규칙과 특정도로 다투지 않게 */
+[data-shot-track] > [data-shot-slide] {
+  position: relative;
+  width: 100%;
+  flex: 0 0 100%;
+}
+
+[data-shots] > input:nth-of-type(1):checked ~ * [data-shot-track] {
+  --shot-i: 0;
+}
+[data-shots] > input:nth-of-type(2):checked ~ * [data-shot-track] {
+  --shot-i: 1;
+}
+[data-shots] > input:nth-of-type(3):checked ~ * [data-shot-track] {
+  --shot-i: 2;
+}
+[data-shots] > input:nth-of-type(4):checked ~ * [data-shot-track] {
+  --shot-i: 3;
+}
+[data-shots] > input:nth-of-type(5):checked ~ * [data-shot-track] {
+  --shot-i: 4;
+}
+[data-shots] > input:nth-of-type(6):checked ~ * [data-shot-track] {
+  --shot-i: 5;
+}
+
+/* 썸네일 — 지금 장을 잉크로 세운다. 나머지는 물러난다 */
+[data-shot-thumb] {
+  opacity: 0.45;
+  border-color: var(--line);
+  transition: opacity 0.2s ease;
+}
+
+[data-shots] > input:nth-of-type(1):checked ~ [data-shot-thumbs] li:nth-child(1) [data-shot-thumb],
+[data-shots] > input:nth-of-type(2):checked ~ [data-shot-thumbs] li:nth-child(2) [data-shot-thumb],
+[data-shots] > input:nth-of-type(3):checked ~ [data-shot-thumbs] li:nth-child(3) [data-shot-thumb],
+[data-shots] > input:nth-of-type(4):checked ~ [data-shot-thumbs] li:nth-child(4) [data-shot-thumb],
+[data-shots] > input:nth-of-type(5):checked ~ [data-shot-thumbs] li:nth-child(5) [data-shot-thumb],
+[data-shots] > input:nth-of-type(6):checked ~ [data-shot-thumbs] li:nth-child(6) [data-shot-thumb] {
+  opacity: 1;
+  border-color: var(--ink);
+}
+
+/* 몇 번째 장인지 — 화살표만 있으면 끝이 어디인지 모른다 */
+[data-shot-count] > span {
+  display: none;
+}
+
+[data-shots] > input:nth-of-type(1):checked ~ * [data-shot-count] > span:nth-child(1),
+[data-shots] > input:nth-of-type(2):checked ~ * [data-shot-count] > span:nth-child(2),
+[data-shots] > input:nth-of-type(3):checked ~ * [data-shot-count] > span:nth-child(3),
+[data-shots] > input:nth-of-type(4):checked ~ * [data-shot-count] > span:nth-child(4),
+[data-shots] > input:nth-of-type(5):checked ~ * [data-shot-count] > span:nth-child(5),
+[data-shots] > input:nth-of-type(6):checked ~ * [data-shot-count] > span:nth-child(6) {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shot-track] {
+    transition: none;
+  }
+}
