@@ -1365,26 +1365,69 @@ html[data-hub-live] [data-hub-mq-dup] {
   border-color: var(--ink);
 }
 
-/* 몇 번째 장인지 — 화살표만 있으면 끝이 어디인지 모른다 */
-[data-shot-count] > span {
-  display: none;
+/*
+  **자동 전환.** 아무 라디오도 안 켜져 있는 동안만 돈다 — 손이 닿는 순간
+  (`:has(input:checked)`) 규칙이 안 맞게 되고, 다시 켜지지 않는다. 읽는 사람이 한 장을
+  붙들고 있는데 지면이 저 혼자 넘어가면 그건 방해다.
+
+  그래서 `ProjectShots`는 첫 장에 `defaultChecked`를 주지 않는다. 주면 시작부터 꺼진다.
+
+  `steps(..., jump-none)`이라 **자동으로는 판이 갈리고, 손으로 넘기면 미끄러진다**
+  (미끄러지는 쪽은 위의 `transition`이 맡는다). 한 칸을 3.6초씩 세운다.
+
+  규칙이 장수만큼인 이유는 `steps()`가 실제 숫자를 요구하기 때문이다. 상한을 올리면
+  여기도 함께 늘려야 하고, `projectContent.test.ts`가 둘이 어긋나면 실패한다.
+
+  `:has()`를 모르는 브라우저에서는 이 규칙이 통째로 안 맞는다 — 자동 전환만 없고
+  손으로 넘기는 것은 그대로다. 없어져도 되는 것에만 `:has()`를 건다.
+*/
+@keyframes shot-auto {
+  to {
+    translate: calc(var(--shot-last) * -100%);
+  }
 }
 
-[data-shots] > input:nth-of-type(1):checked ~ * [data-shot-count] > span:nth-child(1),
-[data-shots] > input:nth-of-type(2):checked ~ * [data-shot-count] > span:nth-child(2),
-[data-shots] > input:nth-of-type(3):checked ~ * [data-shot-count] > span:nth-child(3),
-[data-shots] > input:nth-of-type(4):checked ~ * [data-shot-count] > span:nth-child(4),
-[data-shots] > input:nth-of-type(5):checked ~ * [data-shot-count] > span:nth-child(5),
-[data-shots] > input:nth-of-type(6):checked ~ * [data-shot-count] > span:nth-child(6),
-[data-shots] > input:nth-of-type(7):checked ~ * [data-shot-count] > span:nth-child(7),
-[data-shots] > input:nth-of-type(8):checked ~ * [data-shot-count] > span:nth-child(8),
-[data-shots] > input:nth-of-type(9):checked ~ * [data-shot-count] > span:nth-child(9),
-[data-shots] > input:nth-of-type(10):checked ~ * [data-shot-count] > span:nth-child(10) {
-  display: inline;
+[data-shots][data-shot-n="2"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 7.2s steps(2, jump-none) infinite;
+}
+[data-shots][data-shot-n="3"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 10.8s steps(3, jump-none) infinite;
+}
+[data-shots][data-shot-n="4"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 14.4s steps(4, jump-none) infinite;
+}
+[data-shots][data-shot-n="5"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 18s steps(5, jump-none) infinite;
+}
+[data-shots][data-shot-n="6"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 21.6s steps(6, jump-none) infinite;
+}
+[data-shots][data-shot-n="7"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 25.2s steps(7, jump-none) infinite;
+}
+[data-shots][data-shot-n="8"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 28.8s steps(8, jump-none) infinite;
+}
+[data-shots][data-shot-n="9"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 32.4s steps(9, jump-none) infinite;
+}
+[data-shots][data-shot-n="10"]:not(:has(input:checked)) [data-shot-track] {
+  animation: shot-auto 36s steps(10, jump-none) infinite;
+}
+
+/* 보고 있는 동안에는 세운다. 마우스를 얹거나 키보드가 그 안에 들어와 있을 때 */
+[data-shots]:hover [data-shot-track],
+[data-shots]:focus-within [data-shot-track] {
+  animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-shot-track] {
     transition: none;
+  }
+
+  /* 스스로 움직이는 것부터 끈다. 손으로 넘기는 길은 남는다 */
+  [data-shots] [data-shot-track] {
+    animation: none;
   }
 }

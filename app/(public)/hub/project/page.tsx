@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 
+import { ProjectShots } from "@/components/hub/ProjectShots";
 import { projects } from "@/lib/site/projectContent";
 import { siteHref } from "@/lib/site/publicUrl";
 
@@ -44,31 +44,30 @@ export default function ProjectListPage() {
       <ol className="mt-10 flex flex-col">
         {projects.map((project) => (
           <li key={project.slug} className="border-line border-t">
-            <Link
-              href={siteHref("hub", `/hub/project/${project.slug}`, { from: "hub" })}
-              className="group flex flex-col gap-3 py-7 sm:flex-row sm:gap-8"
-            >
+            {/*
+              **줄 전체를 링크로 두지 않는다.** 왼쪽 칸이 캐러셀이 되면서 그 안에 라디오와
+              라벨이 들어갔고, 링크 안에 누를 것을 또 두면 HTML이 성립하지 않는다.
+              그래서 제목이 링크를 맡는다.
+            */}
+            <div className="flex flex-col gap-4 py-7 sm:flex-row sm:gap-8">
               {/*
-                대표 화면. 상세의 첫 장을 그대로 쓴다 — 따로 고르게 하면 그 값이 본문과
-                어긋난다. **자리는 그림이 없어도 비워 둔다**: 있는 줄과 없는 줄이 섞일 때
-                왼쪽 끝이 들쭉날쭉하면 목록이 목록으로 안 읽힌다.
+                대표 화면들. 상세와 같은 장, 같은 순서다 — 눌러서 들어간 사람이 보던 그림이
+                그대로 이어진다. **자리는 그림이 없어도 비워 둔다**: 있는 줄과 없는 줄이
+                섞일 때 왼쪽 끝이 들쭉날쭉하면 목록이 목록으로 안 읽힌다.
               */}
-              <div className="hidden w-[132px] shrink-0 sm:block">
-                {project.shots[0] && (
-                  <Image
-                    src={project.shots[0].src}
-                    alt=""
-                    width={project.shots[0].width}
-                    height={project.shots[0].height}
-                    className="h-[84px] w-full border border-line object-cover"
-                  />
-                )}
+              <div className="w-full shrink-0 sm:w-[260px]">
+                <ProjectShots slug={project.slug} shots={project.shots} variant="list" />
               </div>
 
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h2 className="font-serif font-bold text-[19px] text-ink group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4">
-                    {project.title}
+                  <h2 className="font-serif font-bold text-[19px]">
+                    <Link
+                      href={siteHref("hub", `/hub/project/${project.slug}`, { from: "hub" })}
+                      className="text-ink hover:underline hover:decoration-1 hover:underline-offset-4"
+                    >
+                      {project.title}
+                    </Link>
                   </h2>
                   <span className="font-typewriter text-[11px] text-faint">{project.status}</span>
                 </div>
@@ -86,7 +85,7 @@ export default function ProjectListPage() {
                     .join(" · ")}
                 </p>
               </div>
-            </Link>
+            </div>
           </li>
         ))}
       </ol>
