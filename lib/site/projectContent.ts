@@ -496,7 +496,21 @@ export const projects: Project[] = [
       "렌더링 직전에 DOMPurify를 태워 XSS 통로를 막았습니다. 사용자가 쓴 마크다운을 그대로 그리는 화면에서는 이 한 줄이 없으면 본문이 곧 실행 경로가 됩니다.",
       "MVP 이후 15명을 모아 QA를 돌렸습니다. 고친 것의 대부분은 기능이 아니라 “여기서 뭘 해야 하는지 모르겠다”였습니다.",
     ],
-    shots: [],
+    shots: [
+      { src: "/projects/re-log/01.webp", alt: "랜딩 화면", width: 1400, height: 773 },
+      { src: "/projects/re-log/02.webp", alt: "회고 목록", width: 1400, height: 766 },
+      { src: "/projects/re-log/03.webp", alt: "회고 상세", width: 1400, height: 764 },
+      { src: "/projects/re-log/04.webp", alt: "공유 링크로 연 회고", width: 1400, height: 766 },
+      { src: "/projects/re-log/05.webp", alt: "회고 종류 고르기", width: 1400, height: 765 },
+      { src: "/projects/re-log/06.webp", alt: "임시 저장 불러오기", width: 1400, height: 764 },
+      {
+        src: "/projects/re-log/07.webp",
+        alt: "회고 작성 — 마크다운 에디터",
+        width: 1400,
+        height: 767,
+      },
+      { src: "/projects/re-log/08.webp", alt: "관리자 대시보드", width: 1400, height: 779 },
+    ],
     links: [
       { label: "바로가기", href: "https://relog.shop" },
       { label: "코드 보기", href: "https://github.com/PangilProject/re-log" },

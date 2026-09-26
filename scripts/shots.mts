@@ -1,5 +1,5 @@
-import { access, mkdir, readdir } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { access, mkdir, readdir, stat } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 
 import sharp, { type OutputInfo } from "sharp";
 
@@ -18,8 +18,16 @@ import sharp, { type OutputInfo } from "sharp";
  * 옮기면 틀리고, 틀리면 그림이 도착할 때 지면이 튄다(`next/image`가 그 값으로 자리를 잡는다).
  *
  * ```bash
- * npm run shots -- checky ~/Desktop/캡처1.png ~/Desktop/캡처2.png
+ * npm run shots -- checky ~/Desktop/캡처1.png ~/Desktop/캡처2.png   # 파일을 늘어놓거나
+ * npm run shots -- re-log ./public/projects/re-log                  # 폴더 하나만 줘도 된다
  * ```
+ *
+ * **폴더를 주면 그 안의 그림을 이름순으로 굽는다.** 이름순이라 원본을 `1. 홈.png`,
+ * `2. 목록.png`처럼 번호로 시작하게 두면 그 순서가 그대로 장 순서가 된다. 숫자는
+ * 자릿수가 아니라 값으로 센다(`2`가 `10`보다 앞이다).
+ *
+ * 굽고 나온 `01.webp`~`NN.webp`는 **원본 목록에서 빼므로**, 출력 폴더를 그대로 입력으로
+ * 줘도 자기가 구운 것을 다시 굽지 않는다.
  *
  * 같은 slug로 다시 돌리면 **01부터 덮어쓴다.** 순서를 바꾸고 싶으면 원본 순서를 바꿔
  * 통째로 다시 굽는다 — 중간에 한 장만 끼워 넣는 길은 두지 않는다. 번호와 순서가 어긋나기
@@ -34,12 +42,42 @@ const MAX_BYTES = 200 * 1024;
 /** 넘칠 때 한 번 더 줄여 보는 품질. 여기서도 안 되면 사람이 자를 문제다 */
 const QUALITY_STEPS = [82, 72, 62];
 
-const [slug, ...sources] = process.argv.slice(2);
+/** sharp가 읽는 것 중 캡처로 들어올 만한 것만. 폴더를 훑을 때 쓴다 */
+const IMAGE = /\.(png|jpe?g|webp|avif|tiff?|gif)$/i;
 
-if (!slug || sources.length === 0) {
-  console.error("쓰는 법: npm run shots -- <slug> <원본 파일...>");
+/** 이 스크립트가 구워 낸 파일. 출력 폴더를 입력으로 줘도 자기 것을 다시 굽지 않게 */
+const BAKED = /^\d{2}\.webp$/;
+
+const [slug, ...given] = process.argv.slice(2);
+
+if (!slug || given.length === 0) {
+  console.error("쓰는 법: npm run shots -- <slug> <원본 파일...|폴더>");
   process.exit(1);
 }
+
+/** 폴더면 안의 그림을 이름순으로 편다. 파일이면 그대로 둔다 */
+async function expand(entry: string): Promise<string[]> {
+  const info = await stat(entry).catch(() => null);
+
+  if (!info) return [entry]; // 없는 것은 아래 검사에서 잡는다
+
+  if (!info.isDirectory()) return [entry];
+
+  const files = (await readdir(entry))
+    .filter((file) => !file.startsWith(".") && IMAGE.test(file) && !BAKED.test(file))
+    // 숫자를 값으로 센다 — 사전순이면 `10.`이 `2.`보다 앞에 온다
+    .sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
+
+  if (files.length === 0) {
+    console.error(`${entry} 안에 구울 그림이 없습니다.`);
+    console.error("이미 구워 둔 01.webp 같은 파일은 원본으로 세지 않습니다.");
+    process.exit(1);
+  }
+
+  return files.map((file) => join(entry, file));
+}
+
+const sources = (await Promise.all(given.map(expand))).flat();
 
 if (sources.length > MAX_SHOTS) {
   console.error(`한 작업물에 ${MAX_SHOTS}장까지다 (받은 것 ${sources.length}장, ADR-005).`);
@@ -111,6 +149,16 @@ console.log("    ],\n");
 
 if (left.length > 0) {
   console.log(`  전에 구운 파일이 남아 있습니다: ${left.join(", ")} — 안 쓸 것이면 지우세요.`);
+}
+
+// 원본이 출력 폴더 안에 있으면 그것도 `public/`이라 **그대로 서빙된다.** 굽는 의미가
+// 없어지고, `projectContent.test.ts`의 "webp만 둔다"가 막는다. 지우는 것은 사람이 한다 —
+// 이 폴더에 둔 것이 유일한 원본일 수도 있다
+const inside = sources.filter((source) => resolve(source).startsWith(resolve(dir)));
+
+if (inside.length > 0) {
+  console.log(`\n  원본 ${inside.length}장이 ${dir} 안에 남아 있습니다.`);
+  console.log("  거기 두면 원본도 함께 서빙됩니다 — 레포 밖으로 옮기거나 지우세요.");
 }
 
 if (over > 0) {
