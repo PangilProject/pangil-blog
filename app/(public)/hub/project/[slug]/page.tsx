@@ -122,11 +122,20 @@ function ProjectShots({ slug, shots }: { slug: string; shots: ProjectShot[] }) {
         )}
       </div>
 
-      {/* 썸네일. 누르면 그 장으로 간다 */}
+      {/*
+        썸네일. 누르면 그 장으로 간다.
+
+        **줄을 바꾸지 않고 옆으로 민다.** 열 장까지 받는데 줄바꿈을 두면 장수에 따라
+        아래 글이 한 줄씩 밀려 내려가고, 그러면 같은 지면이 작업물마다 다른 높이로 선다.
+        한 줄로 고정하면 장수와 무관하게 조판이 같다.
+      */}
       {many && (
-        <ul data-shot-thumbs className="flex flex-wrap gap-2">
+        <ul
+          data-shot-thumbs
+          className="-mx-[6%] flex snap-x gap-2 overflow-x-auto px-[6%] pb-1 lg:mx-0 lg:px-0"
+        >
           {shots.map((shot, index) => (
-            <li key={shot.src}>
+            <li key={shot.src} className="shrink-0 snap-start">
               <label htmlFor={id(index)} data-shot-thumb className="block cursor-pointer border">
                 <Image
                   src={shot.src}
@@ -176,20 +185,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         ← 작업물
       </Link>
 
-      {/*
-        **화면이 제목보다 먼저 온다.** 이 지면에 온 사람이 알고 싶은 것은 이름이 아니라
-        "무엇을 만들었길래"이고, 그 답은 글자보다 그림이 빠르다. 제목은 바로 아래에서
-        받는다 — 그림만 있고 이름이 없는 구간은 한 화면을 넘지 않는다.
-
-        목록의 썸네일과 같은 `shots[0]`에서 시작하므로, 눌러서 들어온 사람이 보던 그림이
-        그대로 커진다.
-      */}
-      {project.shots.length > 0 && (
-        <div className="mt-8">
-          <ProjectShots slug={project.slug} shots={project.shots} />
-        </div>
-      )}
-
       <header className="mt-8 flex flex-col gap-4">
         <p className="font-typewriter text-[11px] tracking-[0.12em] text-faint">{project.kind}</p>
 
@@ -224,6 +219,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </p>
         )}
       </header>
+
+      {/*
+        **화면이 개요 위에 선다.** 머리(제목·기간·링크)가 "여기가 어디인지"를 먼저 말하고,
+        그다음 오는 것이 글이 아니라 그림이다 — 이 지면에 온 사람이 알고 싶은 것은
+        "무엇을 만들었길래"이고, 그 답은 글자보다 그림이 빠르다.
+
+        목록 썸네일과 같은 `shots[0]`에서 시작하므로, 눌러서 들어온 사람이 보던 그림이
+        그대로 커진다.
+      */}
+      {project.shots.length > 0 && (
+        <div className="mt-10">
+          <ProjectShots slug={project.slug} shots={project.shots} />
+        </div>
+      )}
 
       <section className="mt-10 flex flex-col gap-3 border-line border-t pt-7">
         <SectionLabel>개요</SectionLabel>
