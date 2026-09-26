@@ -32,8 +32,14 @@
  * **재검토: 2027-03-20** — 그때까지 항목이 하나도 안 늘었으면 이 지면을 걷는다(ADR-005).
  */
 
-/** 목록에서 묶는 축. 서비스·팀·실험 셋 말고 늘리지 않는다 */
-export type ProjectKind = "서비스" | "팀" | "실험";
+/**
+ * 목록에서 묶는 축. **혼자 만들었나, 같이 만들었나** 하나뿐이다.
+ *
+ * 전에는 `서비스·팀·실험`이었는데 축이 섞여 있었다 — 무엇인가(서비스)와 누구와(팀)와
+ * 얼마나 진지한가(실험)가 한 칸에 들어가 있어서, 팀으로 만든 서비스는 어느 쪽에도 못 들어갔다.
+ * 읽는 사람이 이 목록에서 실제로 궁금해하는 것은 **어디까지가 내 손이었나**다.
+ */
+export type ProjectKind = "1인 개발" | "협업 개발";
 
 export type ProjectLink = { label: string; href: string };
 
@@ -67,8 +73,6 @@ export type Project = {
   period: string;
   /** 운영 중 · 운영 종료 · 완료 */
   status: string;
-  /** 1인인지 팀인지 */
-  team: string;
   role: string;
   /** 어떤 서비스인가. 문단 배열 — 두세 문단을 넘기지 않는다 */
   summary: string[];
@@ -87,13 +91,12 @@ export type Project = {
 export const projects: Project[] = [
   {
     slug: "checky",
-    kind: "서비스",
+    kind: "1인 개발",
     title: "checky",
     tagline: "일회성 할 일과 반복 루틴을 나눠 기록하는 습관 관리 서비스",
     period: "2026.01 —",
     status: "운영 중",
-    team: "1인",
-    role: "기획 · 정보 구조 · 프론트엔드 · 배포",
+    role: "기획 · 디자인 · 프론트엔드 · 배포",
     summary: [
       "할 일 앱은 대개 단기 할 일과 반복 습관을 한 목록에 섞어 둡니다. 그러면 오늘 반드시 해야 하는 일과 꾸준히 유지해야 하는 행동이 같은 무게로 보이고, 목록이 길어질수록 둘 다 흐려집니다.",
       "checky는 그 둘을 저장 단계에서 갈라 둡니다. 날짜가 고정된 일회성 할 일은 Task, 요일·기간 규칙을 가진 습관은 Routine입니다. 화면은 이 구분을 그대로 따라가서, 하루 단위 실행과 월 단위 추이를 동시에 볼 수 있습니다.",
@@ -116,7 +119,10 @@ export const projects: Project[] = [
     ],
     stack: [
       { group: "화면", items: ["React", "TypeScript", "Vite", "Tailwind CSS"] },
-      { group: "상태·데이터", items: ["TanStack Query", "Zustand", "Firebase"] },
+      {
+        group: "상태·데이터",
+        items: ["TanStack Query", "Zustand", "Firebase"],
+      },
       { group: "그 외", items: ["dnd-kit", "Recharts", "Vitest"] },
     ],
     notes: [
@@ -124,14 +130,54 @@ export const projects: Project[] = [
       "화면을 옮길 때마다 같은 요청이 반복되고 있었습니다. 캐시 기준을 데이터 성격별로 나눠 세우고 나서 사라졌습니다.",
     ],
     shots: [
-      { src: "/projects/checky/01.webp", alt: "주별 달성 현황", width: 1400, height: 768 },
-      { src: "/projects/checky/02.webp", alt: "월별 달성 현황", width: 1400, height: 765 },
-      { src: "/projects/checky/03.webp", alt: "캘린더와 루틴", width: 1400, height: 766 },
-      { src: "/projects/checky/04.webp", alt: "할 일 목록", width: 1400, height: 766 },
-      { src: "/projects/checky/05.webp", alt: "카테고리 관리", width: 1400, height: 763 },
-      { src: "/projects/checky/06.webp", alt: "루틴 등록", width: 1400, height: 769 },
-      { src: "/projects/checky/07.webp", alt: "마이 정보", width: 1400, height: 765 },
-      { src: "/projects/checky/08.webp", alt: "공지", width: 1400, height: 768 },
+      {
+        src: "/projects/checky/01.webp",
+        alt: "주별 달성 현황",
+        width: 1400,
+        height: 768,
+      },
+      {
+        src: "/projects/checky/02.webp",
+        alt: "월별 달성 현황",
+        width: 1400,
+        height: 765,
+      },
+      {
+        src: "/projects/checky/03.webp",
+        alt: "캘린더와 루틴",
+        width: 1400,
+        height: 766,
+      },
+      {
+        src: "/projects/checky/04.webp",
+        alt: "할 일 목록",
+        width: 1400,
+        height: 766,
+      },
+      {
+        src: "/projects/checky/05.webp",
+        alt: "카테고리 관리",
+        width: 1400,
+        height: 763,
+      },
+      {
+        src: "/projects/checky/06.webp",
+        alt: "루틴 등록",
+        width: 1400,
+        height: 769,
+      },
+      {
+        src: "/projects/checky/07.webp",
+        alt: "마이 정보",
+        width: 1400,
+        height: 765,
+      },
+      {
+        src: "/projects/checky/08.webp",
+        alt: "공지",
+        width: 1400,
+        height: 768,
+      },
     ],
     links: [
       { label: "바로가기", href: "https://checky.today" },
@@ -140,12 +186,11 @@ export const projects: Project[] = [
   },
   {
     slug: "re-log",
-    kind: "서비스",
+    kind: "1인 개발",
     title: "re-log",
     tagline: "회고를 어떻게 써야 할지 막막한 사람을 위한 회고 기록 서비스",
     period: "2025.11 —",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 프론트엔드 · QA · 배포",
     summary: [
       "회고를 쓰려다 빈 화면 앞에서 멈추는 사람을 위해 만들었습니다. KPT처럼 구조가 잡힌 회고 폼을 먼저 고르게 하고, 섹션마다 무엇을 적는 자리인지 안내를 붙였습니다.",
@@ -156,14 +201,29 @@ export const projects: Project[] = [
         name: "마크다운 에디터",
         body: "실시간 미리보기와 코드 하이라이팅. 작성 중 화면이 갈리지 않습니다.",
       },
-      { name: "구조화된 회고 폼", body: "KPT 같은 형식을 고르면 섹션과 안내가 함께 놓입니다." },
-      { name: "감정 기록", body: "쓸 때의 감정을 함께 남기고, 목록에서 한눈에 봅니다." },
-      { name: "목록 관리", body: "분류 필터, 제목·내용 검색, 정렬, 더 불러오기." },
+      {
+        name: "구조화된 회고 폼",
+        body: "KPT 같은 형식을 고르면 섹션과 안내가 함께 놓입니다.",
+      },
+      {
+        name: "감정 기록",
+        body: "쓸 때의 감정을 함께 남기고, 목록에서 한눈에 봅니다.",
+      },
+      {
+        name: "목록 관리",
+        body: "분류 필터, 제목·내용 검색, 정렬, 더 불러오기.",
+      },
       { name: "회고 공유", body: "고유 링크를 만들어 밖으로 넘깁니다." },
-      { name: "관리자 대시보드", body: "사용자·게시물·피드백 현황을 차트로 봅니다." },
+      {
+        name: "관리자 대시보드",
+        body: "사용자·게시물·피드백 현황을 차트로 봅니다.",
+      },
     ],
     stack: [
-      { group: "화면", items: ["SvelteKit", "Svelte 5", "TypeScript", "Tailwind CSS"] },
+      {
+        group: "화면",
+        items: ["SvelteKit", "Svelte 5", "TypeScript", "Tailwind CSS"],
+      },
       { group: "에디터", items: ["markdown-it", "prism.js", "DOMPurify"] },
       { group: "데이터·검증", items: ["Firebase", "Vitest", "Playwright"] },
     ],
@@ -172,19 +232,54 @@ export const projects: Project[] = [
       "MVP 이후 15명을 모아 QA를 돌렸습니다. 고친 것의 대부분은 기능이 아니라 “여기서 뭘 해야 하는지 모르겠다”였습니다.",
     ],
     shots: [
-      { src: "/projects/re-log/01.webp", alt: "랜딩 화면", width: 1400, height: 773 },
-      { src: "/projects/re-log/02.webp", alt: "회고 목록", width: 1400, height: 766 },
-      { src: "/projects/re-log/03.webp", alt: "회고 상세", width: 1400, height: 764 },
-      { src: "/projects/re-log/04.webp", alt: "공유 링크로 연 회고", width: 1400, height: 766 },
-      { src: "/projects/re-log/05.webp", alt: "회고 종류 고르기", width: 1400, height: 765 },
-      { src: "/projects/re-log/06.webp", alt: "임시 저장 불러오기", width: 1400, height: 764 },
+      {
+        src: "/projects/re-log/01.webp",
+        alt: "랜딩 화면",
+        width: 1400,
+        height: 773,
+      },
+      {
+        src: "/projects/re-log/02.webp",
+        alt: "회고 목록",
+        width: 1400,
+        height: 766,
+      },
+      {
+        src: "/projects/re-log/03.webp",
+        alt: "회고 상세",
+        width: 1400,
+        height: 764,
+      },
+      {
+        src: "/projects/re-log/04.webp",
+        alt: "공유 링크로 연 회고",
+        width: 1400,
+        height: 766,
+      },
+      {
+        src: "/projects/re-log/05.webp",
+        alt: "회고 종류 고르기",
+        width: 1400,
+        height: 765,
+      },
+      {
+        src: "/projects/re-log/06.webp",
+        alt: "임시 저장 불러오기",
+        width: 1400,
+        height: 764,
+      },
       {
         src: "/projects/re-log/07.webp",
         alt: "회고 작성 — 마크다운 에디터",
         width: 1400,
         height: 767,
       },
-      { src: "/projects/re-log/08.webp", alt: "관리자 대시보드", width: 1400, height: 779 },
+      {
+        src: "/projects/re-log/08.webp",
+        alt: "관리자 대시보드",
+        width: 1400,
+        height: 779,
+      },
     ],
     links: [
       { label: "바로가기", href: "https://relog.shop" },
@@ -193,12 +288,11 @@ export const projects: Project[] = [
   },
   {
     slug: "jogak",
-    kind: "서비스",
+    kind: "1인 개발",
     title: "조각",
     tagline: "그룹 미션을 인증하고 조각 판을 채워가는 조직용 미션 인증 서비스",
     period: "2026.07 —",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 설계 · 프론트엔드 · 백엔드 · 배포",
     summary: [
       "조직을 그룹으로 나누고, 그룹별로 미션을 수행·인증하게 해서 목표 활동을 게임처럼 관리하는 서비스입니다. 관리자는 미션과 일정을 설계하고, 구성원은 사진이나 글로 인증하고, 관리자가 승인하거나 거절합니다.",
@@ -217,11 +311,20 @@ export const projects: Project[] = [
         name: "검토 흐름",
         body: "관리자가 승인하거나 거절합니다. 미처리 건수는 사이드바에 배지로 남습니다.",
       },
-      { name: "조각 판", body: "그룹별 완료율과 진행 순위를 판 위에서 봅니다." },
-      { name: "앱처럼 설치", body: "PWA라서 홈 화면에 올리면 주소창 없이 실행됩니다." },
+      {
+        name: "조각 판",
+        body: "그룹별 완료율과 진행 순위를 판 위에서 봅니다.",
+      },
+      {
+        name: "앱처럼 설치",
+        body: "PWA라서 홈 화면에 올리면 주소창 없이 실행됩니다.",
+      },
     ],
     stack: [
-      { group: "화면", items: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Radix UI"] },
+      {
+        group: "화면",
+        items: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Radix UI"],
+      },
       { group: "데이터", items: ["Supabase", "Postgres", "Prisma", "Zod"] },
       { group: "배포", items: ["Vercel"] },
     ],
@@ -230,12 +333,11 @@ export const projects: Project[] = [
   },
   {
     slug: "repeak",
-    kind: "실험",
+    kind: "1인 개발",
     title: "RePeak",
     tagline: "운동을 기록하면 코인을 얻고, 코인으로 캐릭터의 방을 꾸미는 게이미피케이션 서비스",
     period: "2026.06",
     status: "완료",
-    team: "1인",
     role: "기획 · 설계 · 구현",
     summary: [
       "운동이 안 이어지는 이유는 대개 의지가 아니라 되돌아오는 것이 없어서입니다. RePeak은 운동 기록을 코인으로 바꾸고, 그 코인으로 캐릭터의 방을 꾸미게 합니다. 누적할수록 캐릭터가 다섯 단계로 자랍니다.",
@@ -265,12 +367,11 @@ export const projects: Project[] = [
   },
   {
     slug: "if-kbo",
-    kind: "서비스",
+    kind: "1인 개발",
     title: "만약에KBO",
     tagline: "남은 경기를 가정해 순위 변화를 보는 KBO 순위·일정 서비스",
     period: "2026.04 —",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 설계 · 구현 · 자동화 · 운영",
     summary: [
       "시즌 후반이 되면 순위표만으로는 궁금한 것이 안 풀립니다. 알고 싶은 것은 지금 몇 위인지가 아니라 “우리 5위 가나”이기 때문입니다.",
@@ -303,8 +404,14 @@ export const projects: Project[] = [
       },
     ],
     stack: [
-      { group: "화면", items: ["React 19", "TypeScript", "Vite", "Tailwind CSS v4"] },
-      { group: "상태·데이터", items: ["TanStack Query", "Zustand", "Supabase"] },
+      {
+        group: "화면",
+        items: ["React 19", "TypeScript", "Vite", "Tailwind CSS v4"],
+      },
+      {
+        group: "상태·데이터",
+        items: ["TanStack Query", "Zustand", "Supabase"],
+      },
       { group: "검증", items: ["Vitest", "Testing Library", "PGlite"] },
     ],
     shots: [],
@@ -312,12 +419,11 @@ export const projects: Project[] = [
   },
   {
     slug: "digital-yutnori-board",
-    kind: "실험",
+    kind: "1인 개발",
     title: "윷놀이 디지털 말판",
     tagline: "윷은 손으로 던지고, 말은 화면에서 옮기는 디지털 말판",
     period: "2026.02",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 구현 · 배포",
     summary: [
       "윷놀이에서 다툼이 나는 자리는 던지는 쪽이 아니라 말을 옮기는 쪽입니다. 지름길을 탔는지, 잡았는지 업었는지, 몇 칸 남았는지를 사람이 세다 보면 판마다 셈이 달라집니다.",
@@ -339,23 +445,28 @@ export const projects: Project[] = [
       },
     ],
     stack: [
-      { group: "화면", items: ["React", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui"] },
+      {
+        group: "화면",
+        items: ["React", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui"],
+      },
       { group: "배포", items: ["Vercel"] },
     ],
     shots: [],
     links: [
       { label: "바로가기", href: "https://digital-yutnori-board.vercel.app" },
-      { label: "코드 보기", href: "https://github.com/PangilProject/digital-yutnori-board" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/digital-yutnori-board",
+      },
     ],
   },
   {
     slug: "sdrum-guitar",
-    kind: "팀",
+    kind: "협업 개발",
     title: "에스드럼기타 학원 관리 시스템",
     tagline: "학생·수강·스케줄·청구를 한곳에서 관리하는 교습소 운영 도구",
     period: "2026.01 — 2026.03",
     status: "완료",
-    team: "팀",
     role: "프론트엔드",
     summary: [
       "실제로 운영 중인 음악 교습소의 업무를 디지털로 옮긴 관리 도구입니다. 학생 등록에서 수강, 스케줄, 출결, 청구, 문자 발송까지 한 흐름으로 묶었습니다.",
@@ -364,39 +475,70 @@ export const projects: Project[] = [
     features: [
       { name: "학생 관리", body: "등록·수정·조회와 수강생 상태 관리." },
       { name: "수강 관리", body: "과목 개설, 수강 등록과 취소, 이력 추적." },
-      { name: "회차·스케줄", body: "수업 스케줄 생성과 변경, 출결·보강·이월 처리." },
+      {
+        name: "회차·스케줄",
+        body: "수업 스케줄 생성과 변경, 출결·보강·이월 처리.",
+      },
       { name: "청구·결제", body: "학생별 청구서 조회와 납부 상태 변경." },
-      { name: "문자 관리", body: "템플릿 기반 발송과 발송 이력. 템플릿과 이력을 갈라 둡니다." },
+      {
+        name: "문자 관리",
+        body: "템플릿 기반 발송과 발송 이력. 템플릿과 이력을 갈라 둡니다.",
+      },
     ],
     stack: [
-      { group: "화면", items: ["React 19", "TypeScript", "Vite", "Tailwind CSS"] },
-      { group: "상태·데이터", items: ["TanStack Query", "Zustand", "Firebase"] },
+      {
+        group: "화면",
+        items: ["React 19", "TypeScript", "Vite", "Tailwind CSS"],
+      },
+      {
+        group: "상태·데이터",
+        items: ["TanStack Query", "Zustand", "Firebase"],
+      },
       { group: "배포", items: ["GitHub Actions", "Firebase Hosting"] },
     ],
     shots: [],
-    links: [{ label: "코드 보기", href: "https://github.com/sDrumGuitar/sDrumGuitar-FE" }],
+    links: [
+      {
+        label: "코드 보기",
+        href: "https://github.com/sDrumGuitar/sDrumGuitar-FE",
+      },
+    ],
   },
   {
     slug: "hgu-student-union",
-    kind: "팀",
+    kind: "협업 개발",
     title: "한동대학교 총학생회 웹사이트",
     tagline: "학교 구성원이 보는 공개 지면과 운영진이 쓰는 관리자 콘솔",
     period: "2023.05 —",
     status: "운영 중",
-    team: "팀 · 다년간 인수인계",
     role: "웹 프론트엔드 · 현대화 작업",
     summary: [
       "학교 구성원이 공지·자료실·일정을 보는 공개 지면과, 운영진이 그 내용을 채우는 관리자 콘솔 두 벌로 이뤄져 있습니다. 실제로 매 학기 학교 전체가 쓰는 서비스입니다.",
       "여러 해에 걸쳐 개발자가 바뀌며 이어져 온 저장소라, 새 기능을 더하는 일만큼 이미 있는 것을 읽히게 만드는 일이 중요했습니다. 공개 지면은 구 CRA와 styled-components를 걷어내고 Vite · TypeScript · Tailwind 기반으로 옮기면서, 따로 있던 PC용·모바일용 화면을 반응형 한 벌로 합쳤습니다.",
     ],
     features: [
-      { name: "공지·자료실", body: "글과 첨부를 올리고 분류합니다. 본문은 에디터로 작성합니다." },
-      { name: "팝업·배너 관리", body: "공개 지면 상단과 첫 화면에 나갈 것을 관리자가 정합니다." },
-      { name: "회원 관리", body: "권한과 접근을 나눕니다. 관리자 콘솔은 외부 접근을 막습니다." },
-      { name: "반응형 단일화", body: "PC용과 모바일용으로 갈려 있던 화면을 한 벌로 합쳤습니다." },
+      {
+        name: "공지·자료실",
+        body: "글과 첨부를 올리고 분류합니다. 본문은 에디터로 작성합니다.",
+      },
+      {
+        name: "팝업·배너 관리",
+        body: "공개 지면 상단과 첫 화면에 나갈 것을 관리자가 정합니다.",
+      },
+      {
+        name: "회원 관리",
+        body: "권한과 접근을 나눕니다. 관리자 콘솔은 외부 접근을 막습니다.",
+      },
+      {
+        name: "반응형 단일화",
+        body: "PC용과 모바일용으로 갈려 있던 화면을 한 벌로 합쳤습니다.",
+      },
     ],
     stack: [
-      { group: "공개 지면", items: ["React", "TypeScript", "Vite", "Tailwind CSS v4", "Recoil"] },
+      {
+        group: "공개 지면",
+        items: ["React", "TypeScript", "Vite", "Tailwind CSS v4", "Recoil"],
+      },
       {
         group: "관리자",
         items: ["React", "TanStack Query", "styled-components", "MUI", "CKEditor"],
@@ -411,12 +553,11 @@ export const projects: Project[] = [
   },
   {
     slug: "pangil-blog",
-    kind: "서비스",
+    kind: "1인 개발",
     title: "지금 보고 있는 이 지면",
     tagline: "하나의 앱이 호스트에 따라 소개·기술 블로그·묵상 블로그 세 지면으로 갈립니다",
     period: "2026.08 —",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 설계 · 구현 · 운영",
     summary: [
       "다른 플랫폼에서 2년 넘게 쓰던 글을 옮겨 오면서, 매일 같은 형식을 손으로 입력하던 일을 없애려고 만들었습니다. 소개 지면과 기술 블로그, 묵상 블로그가 같은 코드와 같은 디자인 토큰을 쓰고, 갈리는 축은 액센트 색 하나뿐입니다.",
@@ -442,7 +583,10 @@ export const projects: Project[] = [
       { name: "옛 글 이전", body: "749편을 표 298개까지 살려 옮겼습니다." },
     ],
     stack: [
-      { group: "화면", items: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS v4"] },
+      {
+        group: "화면",
+        items: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS v4"],
+      },
       { group: "데이터", items: ["Prisma", "Postgres", "Supabase", "Zod"] },
       { group: "자동화", items: ["GitHub Actions", "Vercel"] },
     ],
@@ -453,17 +597,19 @@ export const projects: Project[] = [
     shots: [],
     links: [
       { label: "바로가기", href: "https://kwangilkim.com" },
-      { label: "코드 보기", href: "https://github.com/PangilProject/pangil-blog" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/pangil-blog",
+      },
     ],
   },
   {
     slug: "public-of-essence",
-    kind: "팀",
+    kind: "1인 개발",
     title: "ESSENCE 공식 홈페이지",
     tagline: "집회 일정과 지난 예배 아카이브를 담은 선교단체 공식 지면",
     period: "2024.05 —",
     status: "운영 중",
-    team: "1인",
     role: "기획 · 프론트엔드 · 배포 · 운영",
     summary: [
       "경기도 시흥시 기반 청년·청소년 선교단체의 공식 홈페이지입니다. 집회와 수련회 일정, 지난 예배 아카이브, 단체 소개를 담았습니다.",
@@ -479,51 +625,75 @@ export const projects: Project[] = [
       { name: "문의·후원", body: "연락과 후원 안내를 한 화면에 둡니다." },
     ],
     stack: [
-      { group: "화면", items: ["Next.js 16", "React 19", "TypeScript", "styled-components"] },
-      { group: "미디어", items: ["embla-carousel", "react-youtube", "Cloudinary"] },
+      {
+        group: "화면",
+        items: ["Next.js 16", "React 19", "TypeScript", "styled-components"],
+      },
+      {
+        group: "미디어",
+        items: ["embla-carousel", "react-youtube", "Cloudinary"],
+      },
       { group: "배포", items: ["정적 export", "Netlify"] },
     ],
     shots: [],
     links: [
       { label: "바로가기", href: "https://essence2016.netlify.app" },
-      { label: "코드 보기", href: "https://github.com/PangilProject/PublicOfEssence" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/PublicOfEssence",
+      },
     ],
   },
   {
     slug: "my-christmas-card",
-    kind: "실험",
+    kind: "1인 개발",
     title: "나의 크리스마스 카드",
     tagline: "열두 문항으로 크리스마스 유형을 찾고 결과 카드를 저장하는 테스트",
     period: "2025.12",
     status: "완료",
-    team: "1인",
     role: "기획 · 구현 · 배포",
     summary: [
       "2025년 크리스마스에 맞춰 짧게 만든 테스트입니다. 열두 문항에 답하면 여덟 가지 유형 중 하나가 나오고, 어울리는 활동과 캐롤을 추천합니다.",
       "테스트 자체보다 결과를 남기고 넘기는 쪽에 무게를 뒀습니다. 결과 카드를 이미지나 움직이는 GIF로 저장할 수 있고, 링크로도 넘깁니다.",
     ],
     features: [
-      { name: "열두 문항 테스트", body: "질문이 넘어갈 때 애니메이션이 붙습니다." },
-      { name: "여덟 유형", body: "유형마다 어울리는 활동과 캐롤을 추천합니다." },
+      {
+        name: "열두 문항 테스트",
+        body: "질문이 넘어갈 때 애니메이션이 붙습니다.",
+      },
+      {
+        name: "여덟 유형",
+        body: "유형마다 어울리는 활동과 캐롤을 추천합니다.",
+      },
       { name: "결과 카드 저장", body: "이미지와 GIF 두 가지로 내려받습니다." },
-      { name: "링크 공유", body: "결과를 링크로 넘깁니다. 참여자 수를 함께 셉니다." },
+      {
+        name: "링크 공유",
+        body: "결과를 링크로 넘깁니다. 참여자 수를 함께 셉니다.",
+      },
     ],
     stack: [
-      { group: "화면", items: ["React", "TypeScript", "Vite", "styled-components"] },
+      {
+        group: "화면",
+        items: ["React", "TypeScript", "Vite", "styled-components"],
+      },
       { group: "데이터", items: ["Firebase Realtime Database"] },
       { group: "그 외", items: ["html2canvas", "react-youtube", "Netlify"] },
     ],
     shots: [],
-    links: [{ label: "코드 보기", href: "https://github.com/PangilProject/my-christmas-card" }],
+    links: [
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/my-christmas-card",
+      },
+    ],
   },
   {
     slug: "blridge",
-    kind: "팀",
+    kind: "협업 개발",
     title: "BL-ridge",
     tagline: "헌혈 가능 여부를 스스로 진단하고 챌린지로 이어 가는 앱",
     period: "2025.09 — 2025.12",
     status: "완료",
-    team: "팀",
     role: "모바일 프론트엔드",
     summary: [
       "헌혈을 하려다 막히는 자리는 헌혈 장소가 아니라 그 전입니다. 내가 지금 할 수 있는 상태인지 스스로 알기 어렵기 때문입니다.",
@@ -534,12 +704,18 @@ export const projects: Project[] = [
         name: "자가 진단",
         body: "가이드라인에 따라 문항에 답하면 그 자리에서 적격 여부가 나옵니다.",
       },
-      { name: "부적격 사유 안내", body: "안 되는 이유와 다음 가능 시점을 함께 알려 줍니다." },
+      {
+        name: "부적격 사유 안내",
+        body: "안 되는 이유와 다음 가능 시점을 함께 알려 줍니다.",
+      },
       {
         name: "헌혈 챌린지",
         body: "개인·그룹 목표를 세우고 진행 상황을 봅니다. 달성하면 배지가 붙습니다.",
       },
-      { name: "기록 관리", body: "헌혈 기록을 인증해 남기고, 횟수·종류·날짜를 시각화합니다." },
+      {
+        name: "기록 관리",
+        body: "헌혈 기록을 인증해 남기고, 횟수·종류·날짜를 시각화합니다.",
+      },
       { name: "커뮤니티", body: "경험담과 달성 소식을 나누고 댓글을 답니다." },
     ],
     stack: [{ group: "앱", items: ["Flutter", "Dart"] }],
@@ -548,12 +724,11 @@ export const projects: Project[] = [
   },
   {
     slug: "qrapo",
-    kind: "팀",
+    kind: "협업 개발",
     title: "QRapo",
     tagline: "처음 만난 사람들이 단계별 콘텐츠로 관계를 쌓게 돕는 서비스",
-    period: "2025.01 — 2025.05",
+    period: "2025.01 — 2025.05 · 캡스톤 디자인",
     status: "완료",
-    team: "팀 · 캡스톤 디자인",
     role: "PM · 디자인 · 프론트엔드 리드",
     summary: [
       "어색한 첫 만남에서 대화가 안 풀리는 이유는 말할 거리가 없어서가 아니라 무엇부터 꺼내야 할지 모르기 때문입니다. QRapo는 그 순서를 대신 정해 줍니다.",
@@ -564,43 +739,65 @@ export const projects: Project[] = [
         name: "단계별 콘텐츠",
         body: "프로필 · 경험 공유 · 취향 탐색 · 약속 생성 · 회고 다섯 단계.",
       },
-      { name: "그룹과 매칭", body: "그룹을 만들거나 참여해서 함께 진행합니다." },
-      { name: "약속 생성", body: "날짜와 장소를 정합니다. 장소는 지도에서 검색해 고릅니다." },
+      {
+        name: "그룹과 매칭",
+        body: "그룹을 만들거나 참여해서 함께 진행합니다.",
+      },
+      {
+        name: "약속 생성",
+        body: "날짜와 장소를 정합니다. 장소는 지도에서 검색해 고릅니다.",
+      },
       { name: "회고", body: "만남이 끝나면 남길 것을 적습니다." },
     ],
     stack: [
-      { group: "화면", items: ["Next.js", "TypeScript", "Tailwind CSS", "Zustand"] },
+      {
+        group: "화면",
+        items: ["Next.js", "TypeScript", "Tailwind CSS", "Zustand"],
+      },
       { group: "연동", items: ["Kakao Map SDK", "Google OAuth", "Axios"] },
-      { group: "서버·배포", items: ["Spring Boot", "JPA", "MySQL", "AWS EC2", "Vercel"] },
+      {
+        group: "서버·배포",
+        items: ["Spring Boot", "JPA", "MySQL", "AWS EC2", "Vercel"],
+      },
     ],
     notes: [
       "프론트엔드 구조를 세우기 전에 15개 테이블 ERD와 API 명세를 문서로 먼저 확정했습니다. 두 사람이 나눠 만드는 일에서 합의가 코드보다 늦으면 합치는 자리에서 전부 다시 하게 됩니다.",
       "장소를 자유 입력으로 받던 것을 검색·선택으로 바꿨습니다. 같은 장소가 매번 다른 값으로 저장되고 있었고, 고치는 것보다 못 틀리게 하는 쪽이 쌉니다.",
     ],
     shots: [],
-    links: [{ label: "코드 보기", href: "https://github.com/Official-QRapo/QRapo_FE" }],
+    links: [
+      {
+        label: "코드 보기",
+        href: "https://github.com/Official-QRapo/QRapo_FE",
+      },
+    ],
   },
   {
     slug: "team-cc",
-    kind: "팀",
+    kind: "협업 개발",
     title: "팀CC",
     tagline: "학교의 팀 교류 프로그램을 온라인에서 운영하는 서비스",
     period: "2025.04 — 2025.06",
     status: "완료",
-    team: "팀",
     role: "프론트엔드",
     summary: [
       "한동대학교에서 오래 이어져 온 팀 교류 프로그램을 온라인으로 옮긴 서비스입니다. 참여자는 로그인해서 이벤트에 들어가고, 짝을 만나 미션을 수행하고, 인증으로 점수를 쌓습니다.",
       "오프라인에서 종이와 말로 굴러가던 것을 그대로 옮기지 않고, 운영자가 손으로 세던 점수와 순위를 화면이 세도록 했습니다.",
     ],
     features: [
-      { name: "초대코드 참여", body: "구글 계정으로 로그인하고 초대코드로 이벤트에 들어갑니다." },
+      {
+        name: "초대코드 참여",
+        body: "구글 계정으로 로그인하고 초대코드로 이벤트에 들어갑니다.",
+      },
       { name: "짝 매칭", body: "참여자끼리 짝을 맺습니다." },
       { name: "미션 인증", body: "미션을 수행하고 인증을 올립니다." },
       { name: "점수와 순위표", body: "쌓인 점수를 확인하고 순위를 봅니다." },
     ],
     stack: [
-      { group: "화면", items: ["React 19", "React Router", "styled-components"] },
+      {
+        group: "화면",
+        items: ["React 19", "React Router", "styled-components"],
+      },
       { group: "인증·통신", items: ["Google OAuth2", "JWT", "Axios"] },
     ],
     shots: [],
@@ -608,12 +805,11 @@ export const projects: Project[] = [
   },
   {
     slug: "pard-app-admin",
-    kind: "팀",
+    kind: "협업 개발",
     title: "PARD 관리자 페이지",
     tagline: "동아리 운영진이 구성원·일정·출결·점수를 한곳에서 관리하는 내부 도구",
     period: "2024.01 — 2025.04",
     status: "운영 종료",
-    team: "팀 · 15개월",
     role: "웹 프론트엔드 · 서버 전환 대응",
     summary: [
       "IT 동아리 운영진이 쓰는 내부 관리 도구입니다. 구성원 명단, 세션 일정, 출결, 점수를 한곳에서 관리합니다. 실제로 매 기수 운영에 쓰였습니다.",
@@ -629,7 +825,10 @@ export const projects: Project[] = [
       },
     ],
     stack: [
-      { group: "화면", items: ["React", "JavaScript", "styled-components", "Recoil"] },
+      {
+        group: "화면",
+        items: ["React", "JavaScript", "styled-components", "Recoil"],
+      },
       { group: "통신", items: ["Axios", "JWT"] },
       { group: "서버", items: ["Firebase → Spring Boot"] },
     ],
@@ -641,27 +840,41 @@ export const projects: Project[] = [
     shots: [],
     links: [
       { label: "바로가기", href: "https://pard-app-project.web.app" },
-      { label: "코드 보기", href: "https://github.com/Club-PARD/PARD-APP-admin" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/Club-PARD/PARD-APP-admin",
+      },
     ],
   },
   {
     slug: "bwchef",
-    kind: "실험",
+    kind: "협업 개발",
     title: "흑백요리사 소개 사이트",
     tagline: "출연 셰프와 요리, 운영 식당을 모아 보는 정보 사이트",
     period: "2024.11 — 2024.12",
     status: "운영 중",
-    team: "팀",
     role: "프론트엔드",
     summary: [
       "방송에 나온 셰프들의 정보가 여기저기 흩어져 있어 한 사람을 따라가기 어려웠습니다. 셰프 한 명을 기준으로 요리와 이야기, 운영하는 식당을 한 화면에 모았습니다.",
       "프레임워크 없이 순수 JavaScript로 만들었습니다. 데이터는 JSON 파일에 두고 화면이 읽어 카드를 만듭니다.",
     ],
     features: [
-      { name: "셰프 카드", body: "닉네임·사진·명대사·요리 장르를 카드로 봅니다." },
-      { name: "셰프 상세", body: "대표 요리와 방송에서의 이야기를 따라갑니다." },
-      { name: "운영 식당", body: "식당 정보와 예약 링크를 두고, 위치는 지도로 봅니다." },
-      { name: "퀴즈", body: "읽기만 하지 않게 상호작용 요소를 하나 넣었습니다." },
+      {
+        name: "셰프 카드",
+        body: "닉네임·사진·명대사·요리 장르를 카드로 봅니다.",
+      },
+      {
+        name: "셰프 상세",
+        body: "대표 요리와 방송에서의 이야기를 따라갑니다.",
+      },
+      {
+        name: "운영 식당",
+        body: "식당 정보와 예약 링크를 두고, 위치는 지도로 봅니다.",
+      },
+      {
+        name: "퀴즈",
+        body: "읽기만 하지 않게 상호작용 요소를 하나 넣었습니다.",
+      },
     ],
     stack: [
       { group: "화면", items: ["HTML", "CSS", "JavaScript"] },
@@ -670,17 +883,19 @@ export const projects: Project[] = [
     shots: [],
     links: [
       { label: "바로가기", href: "https://bw-chef.netlify.app" },
-      { label: "코드 보기", href: "https://github.com/Handong-TeamProject/BWChef" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/Handong-TeamProject/BWChef",
+      },
     ],
   },
   {
     slug: "hancamsa",
-    kind: "실험",
+    kind: "협업 개발",
     title: "한캠사",
     tagline: "한동대학교 캠퍼스를 건물 단위로 소개하는 정적 사이트",
     period: "2023.04 —",
     status: "운영 중",
-    team: "팀",
     role: "프론트엔드 · 빌드 도구",
     summary: [
       "학교 캠퍼스를 처음 온 사람에게 소개하는 사이트입니다. 건물별 설명과 캠퍼스 안의 자리들을 64개 페이지로 담았습니다.",
@@ -702,7 +917,12 @@ export const projects: Project[] = [
       "빌드 스크립트에 외부 의존성을 두지 않았습니다. 몇 년 뒤에 다시 열었을 때 설치부터 막히면 고칠 수 없는 사이트가 됩니다. 파이썬만 있으면 돌아갑니다.",
     ],
     shots: [],
-    links: [{ label: "코드 보기", href: "https://github.com/PangilProject/hancamsa2024" }],
+    links: [
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/hancamsa2024",
+      },
+    ],
   },
 ];
 

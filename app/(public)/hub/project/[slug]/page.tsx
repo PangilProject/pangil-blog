@@ -64,14 +64,18 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <h1 className="font-serif font-bold text-[30px] leading-tight">{project.title}</h1>
         <p className="max-w-measure text-[15px] leading-body text-ink-soft">{project.tagline}</p>
 
-        {/* 읽는 사람이 가장 먼저 필요한 사실 넷. 표가 아니라 줄로 둔다 */}
+        {/*
+          읽는 사람이 가장 먼저 필요한 사실 셋. 표가 아니라 줄로 둔다.
+
+          **`구성`을 뺐다.** 눈썹줄이 이미 `1인 개발`·`협업 개발`이라고 말하는데 바로 아래
+          줄이 같은 말을 한 번 더 하고 있었다 — 한 화면에서 같은 사실이 두 번 나오면
+          그중 하나는 반드시 낡는다.
+        */}
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1.5 font-typewriter text-[11px] sm:grid-cols-[auto_1fr_auto_1fr]">
           <dt className="text-faint">기간</dt>
           <dd className="text-ink-soft">{project.period}</dd>
           <dt className="text-faint">상태</dt>
           <dd className="text-ink-soft">{project.status}</dd>
-          <dt className="text-faint">구성</dt>
-          <dd className="text-ink-soft">{project.team}</dd>
           <dt className="text-faint">역할</dt>
           <dd className="text-ink-soft">{project.role}</dd>
         </dl>

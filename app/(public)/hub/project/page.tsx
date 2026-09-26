@@ -31,12 +31,11 @@ export default function ProjectListPage() {
 
       <header className="mt-8 flex flex-col gap-3">
         <p className="font-typewriter text-[11px] tracking-[0.14em] text-faint">
-          WORKS · 작업물 {projects.length}건
+          WORKS · 서비스 {projects.length}개
         </p>
-        <h1 className="font-serif font-bold text-[28px] leading-tight">만든 것들</h1>
+        <h1 className="font-serif font-bold text-[28px] leading-tight">프로젝트 모음</h1>
         <p className="max-w-measure text-[14px] leading-body text-ink-soft">
-          어떤 서비스이고, 어떤 기능이 있고, 무엇으로 만들었는지 적었습니다. 최근에 손댄 것이 위에
-          옵니다.
+          어떤 서비스이고, 어떤 기능이 있고, 무엇으로 만들었는지 공유합니다.
         </p>
       </header>
 
@@ -63,7 +62,9 @@ export default function ProjectListPage() {
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h2 className="font-serif font-bold text-[19px]">
                     <Link
-                      href={siteHref("hub", `/hub/project/${project.slug}`, { from: "hub" })}
+                      href={siteHref("hub", `/hub/project/${project.slug}`, {
+                        from: "hub",
+                      })}
                       className="text-ink hover:underline hover:decoration-1 hover:underline-offset-4"
                     >
                       {project.title}
@@ -89,10 +90,6 @@ export default function ProjectListPage() {
           </li>
         ))}
       </ol>
-
-      <p className="border-line border-t pt-7 font-typewriter text-[11px] text-faint">
-        모두 {projects.length}건.
-      </p>
     </main>
   );
 }
