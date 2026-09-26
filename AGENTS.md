@@ -59,6 +59,7 @@
 /
 ├── app/
 │   ├── (public)/{hub,faith,dev}/   # 공개 3면 (H·F·D 화면). 서버 컴포넌트 기본
+│   │   └── hub/project/            # H-03·H-04 작업물 목록·상세 (ADR-005). 아일랜드 0개
 │   ├── admin/                      # A-00~08. 인증 필요. middleware + withAdmin 이중 가드
 │   ├── api/
 │   │   ├── crawler/ingest/         # 크롤러 수신 (스코프 토큰)
