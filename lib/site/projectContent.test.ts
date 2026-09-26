@@ -134,13 +134,34 @@ describe("화면 캐러셀 CSS (ADR-005)", () => {
     expect(new Set(rules).size).toBe(MAX_SHOTS_PER_PROJECT);
   });
 
-  it("썸네일과 장 번호도 같은 수만큼 받는다", () => {
+  it("썸네일도 같은 수만큼 받는다", () => {
     expect((squashed.match(/\[data-shot-thumbs\]li:nth-child\(\d+\)/g) ?? []).length).toBe(
       MAX_SHOTS_PER_PROJECT,
     );
-    expect((squashed.match(/\[data-shot-count\]>span:nth-child\(\d+\)/g) ?? []).length).toBe(
-      MAX_SHOTS_PER_PROJECT,
+  });
+
+  it("자동 전환 규칙도 장수를 따라간다", () => {
+    // `steps()`는 실제 숫자를 요구하므로 규칙이 장수만큼 있어야 한다.
+    // 한 장짜리는 넘길 것이 없으니 2장부터다
+    const steps = squashed.match(/steps\((\d+),jump-none\)/g) ?? [];
+    expect(steps.length).toBe(MAX_SHOTS_PER_PROJECT - 1);
+
+    const counts = [...squashed.matchAll(/\[data-shot-n="(\d+)"\]/g)].map((m) => Number(m[1]));
+    expect(counts.sort((a, b) => a - b)).toEqual(
+      Array.from({ length: MAX_SHOTS_PER_PROJECT - 1 }, (_, i) => i + 2),
     );
+  });
+
+  it("손이 닿으면 자동 전환이 멈춘다", () => {
+    // 읽는 사람이 한 장을 붙들고 있는데 지면이 저 혼자 넘어가면 그건 방해다.
+    // 자동 전환 규칙은 전부 `:has(input:checked)`가 아닐 때만 맞아야 한다
+    const auto =
+      squashed.match(/\[data-shots\]\[data-shot-n="\d+"\][^{]*\{animation:shot-auto/g) ?? [];
+    expect(auto.length).toBe(MAX_SHOTS_PER_PROJECT - 1);
+
+    for (const rule of auto) {
+      expect(rule).toContain(":not(:has(input:checked))");
+    }
   });
 
   it("캐러셀 규칙에 color-mix를 쓰지 않는다", () => {
@@ -148,9 +169,11 @@ describe("화면 캐러셀 CSS (ADR-005)", () => {
     expect(block).not.toContain("color-mix");
   });
 
-  it("움직임을 줄여 달라고 하면 미끄러지지 않는다", () => {
-    expect(squashed).toContain(
-      "@media(prefers-reduced-motion:reduce){[data-shot-track]{transition:none;}",
+  it("움직임을 줄여 달라고 하면 미끄러지지도, 저 혼자 넘어가지도 않는다", () => {
+    const reduced = squashed.slice(
+      squashed.indexOf("@media(prefers-reduced-motion:reduce){[data-shot-track]"),
     );
+    expect(reduced).toContain("[data-shot-track]{transition:none;}");
+    expect(reduced).toContain("[data-shots][data-shot-track]{animation:none;}");
   });
 });
