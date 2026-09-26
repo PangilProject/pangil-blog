@@ -18,6 +18,9 @@
  * `public/projects/{slug}/`에 둔다. Supabase Storage를 쓰지 않는다 — 올리는 화면이 없으므로
  * 저장소를 쓸 이유가 없고, git에 두면 문구와 그림이 한 커밋으로 움직인다.
  *
+ * 굽기 전 원본은 `public/projects/{slug}/origin/`에 둔다 — **`.gitignore`가 막으므로
+ * 레포에 안 올라가고 서빙되지도 않는다.** 굽는 스크립트도 테스트도 그 폴더를 세지 않는다.
+ *
  * 굽는 것은 `npm run shots -- <slug> <원본...>`이 한다 — 긴 변을 보고 줄이고, 상한을 넘으면
  * 품질을 내려 다시 굽고, **붙여 넣을 `shots` 배열을 치수까지 찍어 준다.** 치수를 손으로
  * 옮기면 틀리고, 틀리면 그림이 도착할 때 지면이 튄다.
@@ -130,58 +133,92 @@ export const projects: Project[] = [
       "화면을 옮길 때마다 같은 요청이 반복되고 있었습니다. 캐시 기준을 데이터 성격별로 나눠 세우고 나서 사라졌습니다.",
     ],
     shots: [
-      {
-        src: "/projects/checky/01.webp",
-        alt: "주별 달성 현황",
-        width: 1400,
-        height: 768,
-      },
-      {
-        src: "/projects/checky/02.webp",
-        alt: "월별 달성 현황",
-        width: 1400,
-        height: 765,
-      },
-      {
-        src: "/projects/checky/03.webp",
-        alt: "캘린더와 루틴",
-        width: 1400,
-        height: 766,
-      },
-      {
-        src: "/projects/checky/04.webp",
-        alt: "할 일 목록",
-        width: 1400,
-        height: 766,
-      },
-      {
-        src: "/projects/checky/05.webp",
-        alt: "카테고리 관리",
-        width: 1400,
-        height: 763,
-      },
-      {
-        src: "/projects/checky/06.webp",
-        alt: "루틴 등록",
-        width: 1400,
-        height: 769,
-      },
-      {
-        src: "/projects/checky/07.webp",
-        alt: "마이 정보",
-        width: 1400,
-        height: 765,
-      },
-      {
-        src: "/projects/checky/08.webp",
-        alt: "공지",
-        width: 1400,
-        height: 768,
-      },
+      { src: "/projects/checky/01.webp", alt: "주별 달성 현황", width: 1400, height: 768 },
+      { src: "/projects/checky/02.webp", alt: "월별 달성 현황", width: 1400, height: 765 },
+      { src: "/projects/checky/03.webp", alt: "캘린더와 루틴", width: 1400, height: 766 },
+      { src: "/projects/checky/04.webp", alt: "할 일 목록", width: 1400, height: 766 },
+      { src: "/projects/checky/05.webp", alt: "카테고리 관리", width: 1400, height: 763 },
+      { src: "/projects/checky/06.webp", alt: "루틴 등록", width: 1400, height: 769 },
+      { src: "/projects/checky/07.webp", alt: "마이 정보", width: 1400, height: 765 },
+      { src: "/projects/checky/08.webp", alt: "공지", width: 1400, height: 768 },
     ],
     links: [
       { label: "바로가기", href: "https://checky.today" },
       { label: "코드 보기", href: "https://github.com/PangilProject/checky" },
+    ],
+  },
+  {
+    slug: "pangil-blog",
+    kind: "1인 개발",
+    title: "개인 기술 블로그",
+    tagline: "하나의 앱이 호스트에 따라 소개·기술 블로그·묵상 블로그 세 지면으로 갈립니다",
+    period: "2026.08 —",
+    status: "운영 중",
+    role: "기획 · 설계 · 구현 · 운영",
+    summary: [
+      "다른 플랫폼에서 2년 넘게 쓰던 글을 옮겨 오면서, 매일 같은 형식을 손으로 입력하던 일을 없애려고 만들었습니다. 소개 지면과 기술 블로그, 묵상 블로그가 같은 코드와 같은 디자인 토큰을 쓰고, 갈리는 축은 액센트 색 하나뿐입니다.",
+      "글의 종류마다 저장 형식과 에디터가 다릅니다. 큐티·설교·찬양·기술 넷이 각자의 구조를 갖고, 발행할 때 청구기호가 붙습니다. 매일 새벽 크롤러가 그날 몫의 초안을 만들어 둡니다.",
+    ],
+    features: [
+      {
+        name: "세 지면 한 앱",
+        body: "호스트로 갈립니다. 디자인 토큰은 한 벌이고 액센트 색만 다릅니다.",
+      },
+      {
+        name: "타입별 에디터",
+        body: "글 종류마다 저장 구조와 작성 화면이 다릅니다. 설교 에디터는 네트워크가 끊겨도 기록이 남습니다.",
+      },
+      {
+        name: "자동 초안",
+        body: "매일 새벽 크롤러가 그날의 본문과 질문을 가져와 초안을 만듭니다. 실패하면 조용히 넘어가지 않고 알림이 옵니다.",
+      },
+      {
+        name: "직접 만든 통계",
+        body: "조회·유입·기기·체류 시간을 직접 모아 봅니다. 차트 라이브러리를 넣지 않았습니다.",
+      },
+      { name: "옛 글 이전", body: "749편을 표 298개까지 살려 옮겼습니다." },
+    ],
+    stack: [
+      {
+        group: "화면",
+        items: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS v4"],
+      },
+      { group: "데이터", items: ["Prisma", "Postgres", "Supabase", "Zod"] },
+      { group: "자동화", items: ["GitHub Actions", "Vercel"] },
+    ],
+    notes: [
+      "세 지면에 각자 변수를 주자는 안을 버렸습니다. 어긋나기 시작하면 하나를 고치려고 셋을 고치게 됩니다.",
+      "공개 지면에 내려보내는 클라이언트 코드에 상한을 두고, 테스트가 그 숫자를 잠급니다. 늘리려면 먼저 문서에 한 번 물어야 합니다.",
+    ],
+
+    shots: [
+      { src: "/projects/pangil-blog/01.webp", alt: "소개 지면 첫 화면", width: 1400, height: 776 },
+      { src: "/projects/pangil-blog/02.webp", alt: "기술 블로그 목록", width: 1400, height: 774 },
+      { src: "/projects/pangil-blog/03.webp", alt: "묵상 블로그 목록", width: 1400, height: 776 },
+      { src: "/projects/pangil-blog/04.webp", alt: "글 상세와 목차", width: 1400, height: 778 },
+      {
+        src: "/projects/pangil-blog/05.webp",
+        alt: "관리 대시보드 — 오늘의 기록",
+        width: 1400,
+        height: 779,
+      },
+      { src: "/projects/pangil-blog/06.webp", alt: "글 관리", width: 1400, height: 779 },
+      { src: "/projects/pangil-blog/07.webp", alt: "통계 요약", width: 1400, height: 780 },
+      {
+        src: "/projects/pangil-blog/08.webp",
+        alt: "통계 — 많이 읽힌 글과 유입 경로",
+        width: 1400,
+        height: 780,
+      },
+      { src: "/projects/pangil-blog/09.webp", alt: "설교 에디터", width: 1400, height: 777 },
+      { src: "/projects/pangil-blog/10.webp", alt: "기술 에디터", width: 1400, height: 780 },
+    ],
+    links: [
+      { label: "바로가기", href: "https://kwangilkim.com" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/pangil-blog",
+      },
     ],
   },
   {
@@ -232,54 +269,19 @@ export const projects: Project[] = [
       "MVP 이후 15명을 모아 QA를 돌렸습니다. 고친 것의 대부분은 기능이 아니라 “여기서 뭘 해야 하는지 모르겠다”였습니다.",
     ],
     shots: [
-      {
-        src: "/projects/re-log/01.webp",
-        alt: "랜딩 화면",
-        width: 1400,
-        height: 773,
-      },
-      {
-        src: "/projects/re-log/02.webp",
-        alt: "회고 목록",
-        width: 1400,
-        height: 766,
-      },
-      {
-        src: "/projects/re-log/03.webp",
-        alt: "회고 상세",
-        width: 1400,
-        height: 764,
-      },
-      {
-        src: "/projects/re-log/04.webp",
-        alt: "공유 링크로 연 회고",
-        width: 1400,
-        height: 766,
-      },
-      {
-        src: "/projects/re-log/05.webp",
-        alt: "회고 종류 고르기",
-        width: 1400,
-        height: 765,
-      },
-      {
-        src: "/projects/re-log/06.webp",
-        alt: "임시 저장 불러오기",
-        width: 1400,
-        height: 764,
-      },
+      { src: "/projects/re-log/01.webp", alt: "랜딩 화면", width: 1400, height: 773 },
+      { src: "/projects/re-log/02.webp", alt: "회고 목록", width: 1400, height: 766 },
+      { src: "/projects/re-log/03.webp", alt: "회고 상세", width: 1400, height: 764 },
+      { src: "/projects/re-log/04.webp", alt: "공유 링크로 연 회고", width: 1400, height: 766 },
+      { src: "/projects/re-log/05.webp", alt: "회고 종류 고르기", width: 1400, height: 765 },
+      { src: "/projects/re-log/06.webp", alt: "임시 저장 불러오기", width: 1400, height: 764 },
       {
         src: "/projects/re-log/07.webp",
         alt: "회고 작성 — 마크다운 에디터",
         width: 1400,
         height: 767,
       },
-      {
-        src: "/projects/re-log/08.webp",
-        alt: "관리자 대시보드",
-        width: 1400,
-        height: 779,
-      },
+      { src: "/projects/re-log/08.webp", alt: "관리자 대시보드", width: 1400, height: 779 },
     ],
     links: [
       { label: "바로가기", href: "https://relog.shop" },
@@ -328,7 +330,18 @@ export const projects: Project[] = [
       { group: "데이터", items: ["Supabase", "Postgres", "Prisma", "Zod"] },
       { group: "배포", items: ["Vercel"] },
     ],
-    shots: [],
+    shots: [
+      { src: "/projects/jogak/01.webp", alt: "랜딩", width: 1400, height: 774 },
+      { src: "/projects/jogak/02.webp", alt: "내 조직 목록", width: 1400, height: 776 },
+      { src: "/projects/jogak/03.webp", alt: "조직 홈 — 그룹 진행 순위", width: 1400, height: 775 },
+      { src: "/projects/jogak/04.webp", alt: "조각 판 — 그룹 진행 현황", width: 1400, height: 774 },
+      { src: "/projects/jogak/05.webp", alt: "미션 관리", width: 1400, height: 777 },
+      { src: "/projects/jogak/06.webp", alt: "그룹 목록", width: 1400, height: 776 },
+      { src: "/projects/jogak/07.webp", alt: "구성원 목록", width: 1400, height: 778 },
+      { src: "/projects/jogak/08.webp", alt: "인증 검토", width: 1400, height: 779 },
+      { src: "/projects/jogak/09.webp", alt: "대시보드 — 미션별 완료율", width: 1400, height: 781 },
+      { src: "/projects/jogak/10.webp", alt: "조직 설정", width: 1400, height: 776 },
+    ],
     links: [{ label: "바로가기", href: "https://jogaks.vercel.app" }],
   },
   {
@@ -362,7 +375,19 @@ export const projects: Project[] = [
       "게임 로직은 UI에 의존하지 않는 순수 TypeScript 패키지로 뺐습니다. 코인 환산 규칙이 클라이언트와 서버 두 곳에 있어야 했고, 두 벌이면 반드시 한쪽이 낡기 때문입니다.",
       "폰트는 npm으로 받아 직접 호스팅합니다. 브라우저마다 다른 기본 글꼴로 숫자 폭이 흔들리면 게임 화면이 어긋납니다.",
     ],
-    shots: [],
+
+    shots: [
+      { src: "/projects/repeak/01.webp", alt: "시작 화면", width: 1400, height: 774 },
+      { src: "/projects/repeak/02.webp", alt: "홈 — 피기와 방", width: 1400, height: 773 },
+      { src: "/projects/repeak/03.webp", alt: "운동 기록", width: 1400, height: 775 },
+      { src: "/projects/repeak/04.webp", alt: "종목 관리", width: 1400, height: 776 },
+      { src: "/projects/repeak/05.webp", alt: "상점", width: 1400, height: 777 },
+      { src: "/projects/repeak/06.webp", alt: "방 꾸미기", width: 1400, height: 779 },
+      { src: "/projects/repeak/07.webp", alt: "내 기록 — 달력", width: 1400, height: 775 },
+      { src: "/projects/repeak/08.webp", alt: "내 기록 — 전체", width: 1400, height: 779 },
+      { src: "/projects/repeak/09.webp", alt: "마이 페이지", width: 1400, height: 777 },
+    ],
+
     links: [],
   },
   {
@@ -414,7 +439,38 @@ export const projects: Project[] = [
       },
       { group: "검증", items: ["Vitest", "Testing Library", "PGlite"] },
     ],
-    shots: [],
+    shots: [
+      {
+        src: "/projects/if-kbo/01.webp",
+        alt: "실시간 순위표와 내 팀 고르기",
+        width: 1400,
+        height: 774,
+      },
+      {
+        src: "/projects/if-kbo/02.webp",
+        alt: "내 팀 요약 카드가 붙은 순위표",
+        width: 1400,
+        height: 777,
+      },
+      { src: "/projects/if-kbo/03.webp", alt: "팀 상세 — 상대 전적", width: 1400, height: 773 },
+      { src: "/projects/if-kbo/04.webp", alt: "팀 상세 — 경기 기록", width: 1400, height: 772 },
+      { src: "/projects/if-kbo/05.webp", alt: "가을야구 확률", width: 1400, height: 776 },
+      { src: "/projects/if-kbo/06.webp", alt: "남은 경기 고르기", width: 1400, height: 777 },
+      {
+        src: "/projects/if-kbo/07.webp",
+        alt: "골라 본 결과의 예상 순위",
+        width: 1400,
+        height: 783,
+      },
+      { src: "/projects/if-kbo/08.webp", alt: "경기 일정과 결과 달력", width: 1400, height: 779 },
+      {
+        src: "/projects/if-kbo/09.webp",
+        alt: "경기 상세 — 이닝별 기록과 타자 성적",
+        width: 1400,
+        height: 774,
+      },
+      { src: "/projects/if-kbo/10.webp", alt: "운영자 일정 관리", width: 1400, height: 779 },
+    ],
     links: [{ label: "바로가기", href: "https://if-kbo.vercel.app" }],
   },
   {
@@ -451,7 +507,51 @@ export const projects: Project[] = [
       },
       { group: "배포", items: ["Vercel"] },
     ],
-    shots: [],
+    shots: [
+      { src: "/projects/digital-yutnori-board/01.webp", alt: "랜딩", width: 1400, height: 772 },
+      {
+        src: "/projects/digital-yutnori-board/02.webp",
+        alt: "게임 설정 — 팀 수와 말 수",
+        width: 1400,
+        height: 772,
+      },
+      {
+        src: "/projects/digital-yutnori-board/03.webp",
+        alt: "순서 정하기",
+        width: 1400,
+        height: 773,
+      },
+      {
+        src: "/projects/digital-yutnori-board/04.webp",
+        alt: "말판과 팀 현황",
+        width: 1400,
+        height: 772,
+      },
+      {
+        src: "/projects/digital-yutnori-board/05.webp",
+        alt: "말 이동 — 갈 수 있는 자리",
+        width: 1400,
+        height: 776,
+      },
+      {
+        src: "/projects/digital-yutnori-board/06.webp",
+        alt: "잡기 알림",
+        width: 1400,
+        height: 776,
+      },
+      {
+        src: "/projects/digital-yutnori-board/07.webp",
+        alt: "골인 알림",
+        width: 1400,
+        height: 773,
+      },
+      {
+        src: "/projects/digital-yutnori-board/08.webp",
+        alt: "승리 화면과 경기 기록",
+        width: 1400,
+        height: 770,
+      },
+    ],
     links: [
       { label: "바로가기", href: "https://digital-yutnori-board.vercel.app" },
       {
@@ -496,13 +596,347 @@ export const projects: Project[] = [
       },
       { group: "배포", items: ["GitHub Actions", "Firebase Hosting"] },
     ],
-    shots: [],
+    shots: [
+      { src: "/projects/sdrum-guitar/01.webp", alt: "홈 대시보드", width: 1400, height: 767 },
+      { src: "/projects/sdrum-guitar/02.webp", alt: "학생 관리", width: 1400, height: 767 },
+      {
+        src: "/projects/sdrum-guitar/03.webp",
+        alt: "학생의 청구서 목록",
+        width: 1400,
+        height: 761,
+      },
+      { src: "/projects/sdrum-guitar/04.webp", alt: "수강 관리", width: 1400, height: 768 },
+      { src: "/projects/sdrum-guitar/05.webp", alt: "수강 생성", width: 1400, height: 762 },
+      {
+        src: "/projects/sdrum-guitar/06.webp",
+        alt: "일정 관리 — 월 달력",
+        width: 1400,
+        height: 764,
+      },
+      { src: "/projects/sdrum-guitar/07.webp", alt: "회차 정보와 출결", width: 1400, height: 762 },
+      { src: "/projects/sdrum-guitar/08.webp", alt: "이월 목록", width: 1400, height: 765 },
+      { src: "/projects/sdrum-guitar/09.webp", alt: "문자 보내기", width: 1400, height: 765 },
+      { src: "/projects/sdrum-guitar/10.webp", alt: "발송 내역", width: 1400, height: 763 },
+    ],
     links: [
       {
         label: "코드 보기",
         href: "https://github.com/sDrumGuitar/sDrumGuitar-FE",
       },
     ],
+  },
+  {
+    slug: "public-of-essence",
+    kind: "1인 개발",
+    title: "ESSENCE 공식 홈페이지",
+    tagline: "집회 일정과 지난 예배 아카이브를 담은 선교단체 공식 지면",
+    period: "2024.05 —",
+    status: "운영 중",
+    role: "기획 · 프론트엔드 · 배포 · 운영",
+    summary: [
+      "경기도 시흥시 기반 청년·청소년 선교단체의 공식 홈페이지입니다. 집회와 수련회 일정, 지난 예배 아카이브, 단체 소개를 담았습니다.",
+      "글을 자주 쓰는 지면이 아니라 일정이 바뀌는 지면이라, 관리 화면을 만들지 않고 정적 사이트로 내보냅니다. 고칠 것이 생기면 파일을 고치고 다시 배포합니다.",
+    ],
+    features: [
+      { name: "단체 소개", body: "무엇을 하는 곳인지 먼저 읽히게 놓았습니다." },
+      { name: "일정", body: "다가오는 집회와 수련회를 봅니다." },
+      {
+        name: "지난 집회 아카이브",
+        body: "예배 영상과 자료를 모아 두고, 집회별 상세로 들어갑니다.",
+      },
+      { name: "문의·후원", body: "연락과 후원 안내를 한 화면에 둡니다." },
+    ],
+    stack: [
+      {
+        group: "화면",
+        items: ["Next.js 16", "React 19", "TypeScript", "styled-components"],
+      },
+      {
+        group: "미디어",
+        items: ["embla-carousel", "react-youtube", "Cloudinary"],
+      },
+      { group: "배포", items: ["정적 export", "Netlify"] },
+    ],
+    shots: [
+      { src: "/projects/public-of-essence/01.webp", alt: "홈", width: 1400, height: 776 },
+      { src: "/projects/public-of-essence/02.webp", alt: "단체 소개", width: 1400, height: 776 },
+      {
+        src: "/projects/public-of-essence/03.webp",
+        alt: "지난 집회 아카이브",
+        width: 1400,
+        height: 779,
+      },
+      { src: "/projects/public-of-essence/04.webp", alt: "집회 상세", width: 1400, height: 780 },
+      {
+        src: "/projects/public-of-essence/05.webp",
+        alt: "예배와 수련회 일정",
+        width: 1400,
+        height: 776,
+      },
+      { src: "/projects/public-of-essence/06.webp", alt: "자료실", width: 1400, height: 779 },
+      {
+        src: "/projects/public-of-essence/07.webp",
+        alt: "문의와 후원 안내",
+        width: 1400,
+        height: 775,
+      },
+    ],
+    links: [
+      { label: "바로가기", href: "https://essence2016.netlify.app" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/PublicOfEssence",
+      },
+    ],
+  },
+  {
+    slug: "my-christmas-card",
+    kind: "1인 개발",
+    title: "나의 크리스마스 카드",
+    tagline: "열두 문항으로 크리스마스 유형을 찾고 결과 카드를 저장하는 테스트",
+    period: "2025.12",
+    status: "완료",
+    role: "기획 · 구현 · 배포",
+    summary: [
+      "2025년 크리스마스에 맞춰 짧게 만든 테스트입니다. 열두 문항에 답하면 여덟 가지 유형 중 하나가 나오고, 어울리는 활동과 캐롤을 추천합니다.",
+      "테스트 자체보다 결과를 남기고 넘기는 쪽에 무게를 뒀습니다. 결과 카드를 이미지나 움직이는 GIF로 저장할 수 있고, 링크로도 넘깁니다.",
+    ],
+    features: [
+      {
+        name: "열두 문항 테스트",
+        body: "질문이 넘어갈 때 애니메이션이 붙습니다.",
+      },
+      {
+        name: "여덟 유형",
+        body: "유형마다 어울리는 활동과 캐롤을 추천합니다.",
+      },
+      { name: "결과 카드 저장", body: "이미지와 GIF 두 가지로 내려받습니다." },
+      {
+        name: "링크 공유",
+        body: "결과를 링크로 넘깁니다. 참여자 수를 함께 셉니다.",
+      },
+    ],
+    stack: [
+      {
+        group: "화면",
+        items: ["React", "TypeScript", "Vite", "styled-components"],
+      },
+      { group: "데이터", items: ["Firebase Realtime Database"] },
+      { group: "그 외", items: ["html2canvas", "react-youtube", "Netlify"] },
+    ],
+    shots: [
+      { src: "/projects/my-christmas-card/01.webp", alt: "시작 화면", width: 1400, height: 769 },
+      { src: "/projects/my-christmas-card/02.webp", alt: "문항", width: 1400, height: 769 },
+      { src: "/projects/my-christmas-card/03.webp", alt: "결과 카드", width: 1400, height: 771 },
+      {
+        src: "/projects/my-christmas-card/04.webp",
+        alt: "결과 저장과 공유",
+        width: 1400,
+        height: 774,
+      },
+    ],
+    links: [
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/my-christmas-card",
+      },
+    ],
+  },
+  {
+    slug: "pard-app-admin",
+    kind: "협업 개발",
+    title: "PARD 관리자 페이지",
+    tagline: "동아리 운영진이 구성원·일정·출결·점수를 한곳에서 관리하는 내부 도구",
+    period: "2024.01 — 2025.04",
+    status: "운영 종료",
+    role: "웹 프론트엔드 · 서버 전환 대응",
+    summary: [
+      "IT 동아리 운영진이 쓰는 내부 관리 도구입니다. 구성원 명단, 세션 일정, 출결, 점수를 한곳에서 관리합니다. 실제로 매 기수 운영에 쓰였습니다.",
+      "쓰는 사람이 정해져 있는 도구라 예쁜 화면보다 틀리지 않는 입력이 중요했습니다. 운영진을 인터뷰해 실제 작업 동선을 분해하고, 그 순서대로 화면을 다시 놓았습니다.",
+    ],
+    features: [
+      { name: "구성원 관리", body: "기수별 명단과 파트를 관리합니다." },
+      { name: "일정·출결", body: "세션 일정을 만들고 출결을 기록합니다." },
+      { name: "점수 관리", body: "활동 점수를 입력하고 집계합니다." },
+      {
+        name: "권한",
+        body: "운영진만 들어옵니다. 세션이 끊기면 로그인으로 보내고 원래 자리로 돌려보냅니다.",
+      },
+    ],
+    stack: [
+      {
+        group: "화면",
+        items: ["React", "JavaScript", "styled-components", "Recoil"],
+      },
+      { group: "통신", items: ["Axios", "JWT"] },
+      { group: "서버", items: ["Firebase → Spring Boot"] },
+    ],
+    notes: [
+      "입력 오류율을 20% 아래로 내렸습니다. 고친 것은 검증이 아니라 순서였습니다 — 사람이 실제로 움직이는 순서와 화면의 순서가 달랐습니다.",
+      "Firebase에서 Spring Boot로 넘어가며 CRUD 호출을 전면 재작성했고, 요청 처리 시간이 약 70% 줄었습니다.",
+      "화면마다 제각각이던 세션 만료·권한 오류 처리를 Axios 인터셉터 한 곳으로 모았습니다. 같은 처리가 여러 벌이면 반드시 한쪽이 낡습니다.",
+    ],
+    shots: [
+      { src: "/projects/pard-app-admin/01.webp", alt: "로그인", width: 1400, height: 909 },
+      {
+        src: "/projects/pard-app-admin/02.webp",
+        alt: "대시보드 — 일정과 점수",
+        width: 1400,
+        height: 909,
+      },
+      { src: "/projects/pard-app-admin/03.webp", alt: "출결 관리", width: 1400, height: 909 },
+      { src: "/projects/pard-app-admin/04.webp", alt: "일정 관리", width: 1400, height: 909 },
+      { src: "/projects/pard-app-admin/05.webp", alt: "점수 관리", width: 1400, height: 909 },
+      { src: "/projects/pard-app-admin/06.webp", alt: "점수 기록 입력", width: 1400, height: 909 },
+      { src: "/projects/pard-app-admin/07.webp", alt: "사용자 관리", width: 1400, height: 909 },
+    ],
+    links: [
+      { label: "바로가기", href: "https://pard-app-project.web.app" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/Club-PARD/PARD-APP-admin",
+      },
+    ],
+  },
+  {
+    slug: "bwchef",
+    kind: "협업 개발",
+    title: "흑백요리사 소개 사이트",
+    tagline: "출연 셰프와 요리, 운영 식당을 모아 보는 정보 사이트",
+    period: "2024.11 — 2024.12",
+    status: "운영 중",
+    role: "프론트엔드",
+    summary: [
+      "방송에 나온 셰프들의 정보가 여기저기 흩어져 있어 한 사람을 따라가기 어려웠습니다. 셰프 한 명을 기준으로 요리와 이야기, 운영하는 식당을 한 화면에 모았습니다.",
+      "프레임워크 없이 순수 JavaScript로 만들었습니다. 데이터는 JSON 파일에 두고 화면이 읽어 카드를 만듭니다.",
+    ],
+    features: [
+      {
+        name: "셰프 카드",
+        body: "닉네임·사진·명대사·요리 장르를 카드로 봅니다.",
+      },
+      {
+        name: "셰프 상세",
+        body: "대표 요리와 방송에서의 이야기를 따라갑니다.",
+      },
+      {
+        name: "운영 식당",
+        body: "식당 정보와 예약 링크를 두고, 위치는 지도로 봅니다.",
+      },
+      {
+        name: "퀴즈",
+        body: "읽기만 하지 않게 상호작용 요소를 하나 넣었습니다.",
+      },
+    ],
+    stack: [
+      { group: "화면", items: ["HTML", "CSS", "JavaScript"] },
+      { group: "연동·배포", items: ["Kakao Map", "Netlify"] },
+    ],
+    shots: [
+      { src: "/projects/bwchef/01.webp", alt: "랜딩 — 요리 계급 전쟁", width: 1400, height: 774 },
+      { src: "/projects/bwchef/02.webp", alt: "심사위원 소개", width: 1400, height: 771 },
+      { src: "/projects/bwchef/03.webp", alt: "시즌1 우승자 맞히기", width: 1400, height: 769 },
+      { src: "/projects/bwchef/04.webp", alt: "흑 셰프 목록", width: 1400, height: 780 },
+      { src: "/projects/bwchef/05.webp", alt: "셰프 상세 — 명대사", width: 1400, height: 779 },
+      { src: "/projects/bwchef/06.webp", alt: "셰프의 요리 목록", width: 1400, height: 773 },
+      { src: "/projects/bwchef/07.webp", alt: "셰프의 이야기", width: 1400, height: 780 },
+      { src: "/projects/bwchef/08.webp", alt: "운영 식당 정보와 지도", width: 1400, height: 770 },
+    ],
+    links: [
+      { label: "바로가기", href: "https://bw-chef.netlify.app" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/Handong-TeamProject/BWChef",
+      },
+    ],
+  },
+  {
+    slug: "hancamsa",
+    kind: "협업 개발",
+    title: "한캠사",
+    tagline: "한동대학교 캠퍼스를 건물 단위로 소개하는 정적 사이트",
+    period: "2023.04 —",
+    status: "운영 중",
+    role: "프론트엔드 · 빌드 도구",
+    summary: [
+      "학교 캠퍼스를 처음 온 사람에게 소개하는 사이트입니다. 건물별 설명과 캠퍼스 안의 자리들을 64개 페이지로 담았습니다.",
+      "페이지가 예순 개를 넘어가자 HTML을 손으로 고치는 일이 한계에 왔습니다. 그래서 외부 패키지 없이 파이썬으로 작은 템플릿 엔진과 빌드 스크립트를 만들고, 내용은 JSON으로 뺐습니다. 고칠 것이 생기면 데이터 파일 한 줄을 고치고 다시 빌드합니다.",
+    ],
+    features: [
+      { name: "건물 소개", body: "건물마다 설명과 사진을 둡니다." },
+      { name: "캠퍼스맵", body: "아이소메트릭 투영을 계산해 지도를 그립니다." },
+      {
+        name: "데이터와 화면 분리",
+        body: "내용은 JSON, 뼈대는 템플릿. 둘을 합쳐 정적 사이트 64쪽을 만듭니다.",
+      },
+    ],
+    stack: [
+      { group: "화면", items: ["HTML", "CSS", "JavaScript"] },
+      { group: "빌드", items: ["Python 3", "자체 템플릿 엔진"] },
+    ],
+    notes: [
+      "빌드 스크립트에 외부 의존성을 두지 않았습니다. 몇 년 뒤에 다시 열었을 때 설치부터 막히면 고칠 수 없는 사이트가 됩니다. 파이썬만 있으면 돌아갑니다.",
+    ],
+    shots: [
+      { src: "/projects/hancamsa/01.webp", alt: "랜딩 — 캠퍼스 전경", width: 1400, height: 774 },
+      {
+        src: "/projects/hancamsa/02.webp",
+        alt: "사이트 소개와 제작 동기",
+        width: 1400,
+        height: 775,
+      },
+      {
+        src: "/projects/hancamsa/03.webp",
+        alt: "캠퍼스맵 — 건물 고르기",
+        width: 1400,
+        height: 774,
+      },
+      { src: "/projects/hancamsa/04.webp", alt: "건물 상세 — 현동홀", width: 1400, height: 773 },
+      { src: "/projects/hancamsa/05.webp", alt: "건물 안 핫플레이스", width: 1400, height: 777 },
+      { src: "/projects/hancamsa/06.webp", alt: "학생지원팀 안내", width: 1400, height: 779 },
+    ],
+    links: [
+      { label: "바로가기", href: "https://hancamsa.netlify.app" },
+      {
+        label: "코드 보기",
+        href: "https://github.com/PangilProject/hancamsa2024",
+      },
+    ],
+  },
+  {
+    slug: "blridge",
+    kind: "협업 개발",
+    title: "BL-ridge",
+    tagline: "헌혈 가능 여부를 스스로 진단하고 챌린지로 이어 가는 앱",
+    period: "2025.09 — 2025.12",
+    status: "완료",
+    role: "모바일 프론트엔드",
+    summary: [
+      "헌혈을 하려다 막히는 자리는 헌혈 장소가 아니라 그 전입니다. 내가 지금 할 수 있는 상태인지 스스로 알기 어렵기 때문입니다.",
+      "BL-ridge는 질병 이력·해외 방문·약물 복용 같은 항목을 물어 그 자리에서 적격 여부를 알려 주고, 안 되면 언제부터 가능한지까지 말해 줍니다. 그 뒤를 챌린지와 커뮤니티로 이어 붙였습니다.",
+    ],
+    features: [
+      {
+        name: "자가 진단",
+        body: "가이드라인에 따라 문항에 답하면 그 자리에서 적격 여부가 나옵니다.",
+      },
+      {
+        name: "부적격 사유 안내",
+        body: "안 되는 이유와 다음 가능 시점을 함께 알려 줍니다.",
+      },
+      {
+        name: "헌혈 챌린지",
+        body: "개인·그룹 목표를 세우고 진행 상황을 봅니다. 달성하면 배지가 붙습니다.",
+      },
+      {
+        name: "기록 관리",
+        body: "헌혈 기록을 인증해 남기고, 횟수·종류·날짜를 시각화합니다.",
+      },
+      { name: "커뮤니티", body: "경험담과 달성 소식을 나누고 댓글을 답니다." },
+    ],
+    stack: [{ group: "앱", items: ["Flutter", "Dart"] }],
+    shots: [],
+    links: [],
   },
   {
     slug: "hgu-student-union",
@@ -550,177 +984,6 @@ export const projects: Project[] = [
     ],
     shots: [],
     links: [{ label: "바로가기", href: "https://stu.handong.edu" }],
-  },
-  {
-    slug: "pangil-blog",
-    kind: "1인 개발",
-    title: "지금 보고 있는 이 지면",
-    tagline: "하나의 앱이 호스트에 따라 소개·기술 블로그·묵상 블로그 세 지면으로 갈립니다",
-    period: "2026.08 —",
-    status: "운영 중",
-    role: "기획 · 설계 · 구현 · 운영",
-    summary: [
-      "다른 플랫폼에서 2년 넘게 쓰던 글을 옮겨 오면서, 매일 같은 형식을 손으로 입력하던 일을 없애려고 만들었습니다. 소개 지면과 기술 블로그, 묵상 블로그가 같은 코드와 같은 디자인 토큰을 쓰고, 갈리는 축은 액센트 색 하나뿐입니다.",
-      "글의 종류마다 저장 형식과 에디터가 다릅니다. 큐티·설교·찬양·기술 넷이 각자의 구조를 갖고, 발행할 때 청구기호가 붙습니다. 매일 새벽 크롤러가 그날 몫의 초안을 만들어 둡니다.",
-    ],
-    features: [
-      {
-        name: "세 지면 한 앱",
-        body: "호스트로 갈립니다. 디자인 토큰은 한 벌이고 액센트 색만 다릅니다.",
-      },
-      {
-        name: "타입별 에디터",
-        body: "글 종류마다 저장 구조와 작성 화면이 다릅니다. 설교 에디터는 네트워크가 끊겨도 기록이 남습니다.",
-      },
-      {
-        name: "자동 초안",
-        body: "매일 새벽 크롤러가 그날의 본문과 질문을 가져와 초안을 만듭니다. 실패하면 조용히 넘어가지 않고 알림이 옵니다.",
-      },
-      {
-        name: "직접 만든 통계",
-        body: "조회·유입·기기·체류 시간을 직접 모아 봅니다. 차트 라이브러리를 넣지 않았습니다.",
-      },
-      { name: "옛 글 이전", body: "749편을 표 298개까지 살려 옮겼습니다." },
-    ],
-    stack: [
-      {
-        group: "화면",
-        items: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS v4"],
-      },
-      { group: "데이터", items: ["Prisma", "Postgres", "Supabase", "Zod"] },
-      { group: "자동화", items: ["GitHub Actions", "Vercel"] },
-    ],
-    notes: [
-      "세 지면에 각자 변수를 주자는 안을 버렸습니다. 어긋나기 시작하면 하나를 고치려고 셋을 고치게 됩니다.",
-      "공개 지면에 내려보내는 클라이언트 코드에 상한을 두고, 테스트가 그 숫자를 잠급니다. 늘리려면 먼저 문서에 한 번 물어야 합니다.",
-    ],
-    shots: [],
-    links: [
-      { label: "바로가기", href: "https://kwangilkim.com" },
-      {
-        label: "코드 보기",
-        href: "https://github.com/PangilProject/pangil-blog",
-      },
-    ],
-  },
-  {
-    slug: "public-of-essence",
-    kind: "1인 개발",
-    title: "ESSENCE 공식 홈페이지",
-    tagline: "집회 일정과 지난 예배 아카이브를 담은 선교단체 공식 지면",
-    period: "2024.05 —",
-    status: "운영 중",
-    role: "기획 · 프론트엔드 · 배포 · 운영",
-    summary: [
-      "경기도 시흥시 기반 청년·청소년 선교단체의 공식 홈페이지입니다. 집회와 수련회 일정, 지난 예배 아카이브, 단체 소개를 담았습니다.",
-      "글을 자주 쓰는 지면이 아니라 일정이 바뀌는 지면이라, 관리 화면을 만들지 않고 정적 사이트로 내보냅니다. 고칠 것이 생기면 파일을 고치고 다시 배포합니다.",
-    ],
-    features: [
-      { name: "단체 소개", body: "무엇을 하는 곳인지 먼저 읽히게 놓았습니다." },
-      { name: "일정", body: "다가오는 집회와 수련회를 봅니다." },
-      {
-        name: "지난 집회 아카이브",
-        body: "예배 영상과 자료를 모아 두고, 집회별 상세로 들어갑니다.",
-      },
-      { name: "문의·후원", body: "연락과 후원 안내를 한 화면에 둡니다." },
-    ],
-    stack: [
-      {
-        group: "화면",
-        items: ["Next.js 16", "React 19", "TypeScript", "styled-components"],
-      },
-      {
-        group: "미디어",
-        items: ["embla-carousel", "react-youtube", "Cloudinary"],
-      },
-      { group: "배포", items: ["정적 export", "Netlify"] },
-    ],
-    shots: [],
-    links: [
-      { label: "바로가기", href: "https://essence2016.netlify.app" },
-      {
-        label: "코드 보기",
-        href: "https://github.com/PangilProject/PublicOfEssence",
-      },
-    ],
-  },
-  {
-    slug: "my-christmas-card",
-    kind: "1인 개발",
-    title: "나의 크리스마스 카드",
-    tagline: "열두 문항으로 크리스마스 유형을 찾고 결과 카드를 저장하는 테스트",
-    period: "2025.12",
-    status: "완료",
-    role: "기획 · 구현 · 배포",
-    summary: [
-      "2025년 크리스마스에 맞춰 짧게 만든 테스트입니다. 열두 문항에 답하면 여덟 가지 유형 중 하나가 나오고, 어울리는 활동과 캐롤을 추천합니다.",
-      "테스트 자체보다 결과를 남기고 넘기는 쪽에 무게를 뒀습니다. 결과 카드를 이미지나 움직이는 GIF로 저장할 수 있고, 링크로도 넘깁니다.",
-    ],
-    features: [
-      {
-        name: "열두 문항 테스트",
-        body: "질문이 넘어갈 때 애니메이션이 붙습니다.",
-      },
-      {
-        name: "여덟 유형",
-        body: "유형마다 어울리는 활동과 캐롤을 추천합니다.",
-      },
-      { name: "결과 카드 저장", body: "이미지와 GIF 두 가지로 내려받습니다." },
-      {
-        name: "링크 공유",
-        body: "결과를 링크로 넘깁니다. 참여자 수를 함께 셉니다.",
-      },
-    ],
-    stack: [
-      {
-        group: "화면",
-        items: ["React", "TypeScript", "Vite", "styled-components"],
-      },
-      { group: "데이터", items: ["Firebase Realtime Database"] },
-      { group: "그 외", items: ["html2canvas", "react-youtube", "Netlify"] },
-    ],
-    shots: [],
-    links: [
-      {
-        label: "코드 보기",
-        href: "https://github.com/PangilProject/my-christmas-card",
-      },
-    ],
-  },
-  {
-    slug: "blridge",
-    kind: "협업 개발",
-    title: "BL-ridge",
-    tagline: "헌혈 가능 여부를 스스로 진단하고 챌린지로 이어 가는 앱",
-    period: "2025.09 — 2025.12",
-    status: "완료",
-    role: "모바일 프론트엔드",
-    summary: [
-      "헌혈을 하려다 막히는 자리는 헌혈 장소가 아니라 그 전입니다. 내가 지금 할 수 있는 상태인지 스스로 알기 어렵기 때문입니다.",
-      "BL-ridge는 질병 이력·해외 방문·약물 복용 같은 항목을 물어 그 자리에서 적격 여부를 알려 주고, 안 되면 언제부터 가능한지까지 말해 줍니다. 그 뒤를 챌린지와 커뮤니티로 이어 붙였습니다.",
-    ],
-    features: [
-      {
-        name: "자가 진단",
-        body: "가이드라인에 따라 문항에 답하면 그 자리에서 적격 여부가 나옵니다.",
-      },
-      {
-        name: "부적격 사유 안내",
-        body: "안 되는 이유와 다음 가능 시점을 함께 알려 줍니다.",
-      },
-      {
-        name: "헌혈 챌린지",
-        body: "개인·그룹 목표를 세우고 진행 상황을 봅니다. 달성하면 배지가 붙습니다.",
-      },
-      {
-        name: "기록 관리",
-        body: "헌혈 기록을 인증해 남기고, 횟수·종류·날짜를 시각화합니다.",
-      },
-      { name: "커뮤니티", body: "경험담과 달성 소식을 나누고 댓글을 답니다." },
-    ],
-    stack: [{ group: "앱", items: ["Flutter", "Dart"] }],
-    shots: [],
-    links: [],
   },
   {
     slug: "qrapo",
@@ -802,127 +1065,6 @@ export const projects: Project[] = [
     ],
     shots: [],
     links: [{ label: "코드 보기", href: "https://github.com/2025-TeamCC/Team_CC_FE" }],
-  },
-  {
-    slug: "pard-app-admin",
-    kind: "협업 개발",
-    title: "PARD 관리자 페이지",
-    tagline: "동아리 운영진이 구성원·일정·출결·점수를 한곳에서 관리하는 내부 도구",
-    period: "2024.01 — 2025.04",
-    status: "운영 종료",
-    role: "웹 프론트엔드 · 서버 전환 대응",
-    summary: [
-      "IT 동아리 운영진이 쓰는 내부 관리 도구입니다. 구성원 명단, 세션 일정, 출결, 점수를 한곳에서 관리합니다. 실제로 매 기수 운영에 쓰였습니다.",
-      "쓰는 사람이 정해져 있는 도구라 예쁜 화면보다 틀리지 않는 입력이 중요했습니다. 운영진을 인터뷰해 실제 작업 동선을 분해하고, 그 순서대로 화면을 다시 놓았습니다.",
-    ],
-    features: [
-      { name: "구성원 관리", body: "기수별 명단과 파트를 관리합니다." },
-      { name: "일정·출결", body: "세션 일정을 만들고 출결을 기록합니다." },
-      { name: "점수 관리", body: "활동 점수를 입력하고 집계합니다." },
-      {
-        name: "권한",
-        body: "운영진만 들어옵니다. 세션이 끊기면 로그인으로 보내고 원래 자리로 돌려보냅니다.",
-      },
-    ],
-    stack: [
-      {
-        group: "화면",
-        items: ["React", "JavaScript", "styled-components", "Recoil"],
-      },
-      { group: "통신", items: ["Axios", "JWT"] },
-      { group: "서버", items: ["Firebase → Spring Boot"] },
-    ],
-    notes: [
-      "입력 오류율을 20% 아래로 내렸습니다. 고친 것은 검증이 아니라 순서였습니다 — 사람이 실제로 움직이는 순서와 화면의 순서가 달랐습니다.",
-      "Firebase에서 Spring Boot로 넘어가며 CRUD 호출을 전면 재작성했고, 요청 처리 시간이 약 70% 줄었습니다.",
-      "화면마다 제각각이던 세션 만료·권한 오류 처리를 Axios 인터셉터 한 곳으로 모았습니다. 같은 처리가 여러 벌이면 반드시 한쪽이 낡습니다.",
-    ],
-    shots: [],
-    links: [
-      { label: "바로가기", href: "https://pard-app-project.web.app" },
-      {
-        label: "코드 보기",
-        href: "https://github.com/Club-PARD/PARD-APP-admin",
-      },
-    ],
-  },
-  {
-    slug: "bwchef",
-    kind: "협업 개발",
-    title: "흑백요리사 소개 사이트",
-    tagline: "출연 셰프와 요리, 운영 식당을 모아 보는 정보 사이트",
-    period: "2024.11 — 2024.12",
-    status: "운영 중",
-    role: "프론트엔드",
-    summary: [
-      "방송에 나온 셰프들의 정보가 여기저기 흩어져 있어 한 사람을 따라가기 어려웠습니다. 셰프 한 명을 기준으로 요리와 이야기, 운영하는 식당을 한 화면에 모았습니다.",
-      "프레임워크 없이 순수 JavaScript로 만들었습니다. 데이터는 JSON 파일에 두고 화면이 읽어 카드를 만듭니다.",
-    ],
-    features: [
-      {
-        name: "셰프 카드",
-        body: "닉네임·사진·명대사·요리 장르를 카드로 봅니다.",
-      },
-      {
-        name: "셰프 상세",
-        body: "대표 요리와 방송에서의 이야기를 따라갑니다.",
-      },
-      {
-        name: "운영 식당",
-        body: "식당 정보와 예약 링크를 두고, 위치는 지도로 봅니다.",
-      },
-      {
-        name: "퀴즈",
-        body: "읽기만 하지 않게 상호작용 요소를 하나 넣었습니다.",
-      },
-    ],
-    stack: [
-      { group: "화면", items: ["HTML", "CSS", "JavaScript"] },
-      { group: "연동·배포", items: ["Kakao Map", "Netlify"] },
-    ],
-    shots: [],
-    links: [
-      { label: "바로가기", href: "https://bw-chef.netlify.app" },
-      {
-        label: "코드 보기",
-        href: "https://github.com/Handong-TeamProject/BWChef",
-      },
-    ],
-  },
-  {
-    slug: "hancamsa",
-    kind: "협업 개발",
-    title: "한캠사",
-    tagline: "한동대학교 캠퍼스를 건물 단위로 소개하는 정적 사이트",
-    period: "2023.04 —",
-    status: "운영 중",
-    role: "프론트엔드 · 빌드 도구",
-    summary: [
-      "학교 캠퍼스를 처음 온 사람에게 소개하는 사이트입니다. 건물별 설명과 캠퍼스 안의 자리들을 64개 페이지로 담았습니다.",
-      "페이지가 예순 개를 넘어가자 HTML을 손으로 고치는 일이 한계에 왔습니다. 그래서 외부 패키지 없이 파이썬으로 작은 템플릿 엔진과 빌드 스크립트를 만들고, 내용은 JSON으로 뺐습니다. 고칠 것이 생기면 데이터 파일 한 줄을 고치고 다시 빌드합니다.",
-    ],
-    features: [
-      { name: "건물 소개", body: "건물마다 설명과 사진을 둡니다." },
-      { name: "캠퍼스맵", body: "아이소메트릭 투영을 계산해 지도를 그립니다." },
-      {
-        name: "데이터와 화면 분리",
-        body: "내용은 JSON, 뼈대는 템플릿. 둘을 합쳐 정적 사이트 64쪽을 만듭니다.",
-      },
-    ],
-    stack: [
-      { group: "화면", items: ["HTML", "CSS", "JavaScript"] },
-      { group: "빌드", items: ["Python 3", "자체 템플릿 엔진"] },
-    ],
-    notes: [
-      "빌드 스크립트에 외부 의존성을 두지 않았습니다. 몇 년 뒤에 다시 열었을 때 설치부터 막히면 고칠 수 없는 사이트가 됩니다. 파이썬만 있으면 돌아갑니다.",
-    ],
-    shots: [],
-    links: [
-      {
-        label: "코드 보기",
-        href: "https://github.com/PangilProject/hancamsa2024",
-      },
-    ],
   },
 ];
 
