@@ -19,7 +19,7 @@ import { findProject, projects } from "@/lib/site/projectContent";
  */
 
 /** ADR-005가 정한 스크린샷 상한 */
-const MAX_SHOTS_PER_PROJECT = 6;
+const MAX_SHOTS_PER_PROJECT = 10;
 const MAX_SHOT_BYTES = 200 * 1024;
 const SHOT_ROOT = "public/projects";
 
@@ -85,6 +85,10 @@ describe("스크린샷 파일 (ADR-005 상한)", () => {
     const found: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        // `.DS_Store` 같은 운영체제 부스러기는 화면이 아니다. 이것까지 세면
+        // 파인더로 폴더를 한 번 연 것만으로 테스트가 빨개진다
+        if (entry.name.startsWith(".")) continue;
+
         const path = join(dir, entry.name);
         if (entry.isDirectory()) walk(path);
         else found.push(path);

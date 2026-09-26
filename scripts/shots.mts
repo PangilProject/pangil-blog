@@ -7,7 +7,7 @@ import sharp, { type OutputInfo } from "sharp";
  * 작업물 스크린샷 굽기 — `npm run shots -- <slug> <원본...>`.
  *
  * ADR-005가 정한 상한을 **사람이 기억하지 않아도 되게** 한 곳에 박아 둔다:
- * webp · 긴 변 1400px · 건당 6장 · 장당 200KB. 규칙을 문서에만 두면 반드시 한 번 샌다 —
+ * webp · 긴 변 1400px · 건당 10장 · 장당 200KB. 규칙을 문서에만 두면 반드시 한 번 샌다 —
  * `lib/site/projectContent.test.ts`가 뒤에서 막고 있지만, 막히는 것보다 애초에 맞게
  * 나오는 쪽이 싸다.
  *
@@ -28,7 +28,7 @@ import sharp, { type OutputInfo } from "sharp";
 
 /** ADR-005 상한. `lib/site/projectContent.test.ts`의 숫자와 같아야 한다 */
 const MAX_EDGE = 1400;
-const MAX_SHOTS = 6;
+const MAX_SHOTS = 10;
 const MAX_BYTES = 200 * 1024;
 
 /** 넘칠 때 한 번 더 줄여 보는 품질. 여기서도 안 되면 사람이 자를 문제다 */
