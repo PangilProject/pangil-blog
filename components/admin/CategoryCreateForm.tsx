@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { createCategory } from "@/lib/actions/categories";
 import { suggestCategorySlug } from "@/lib/record/category";
+import { cn } from "@/lib/utils";
 
 /**
  * 새 카테고리 (A-08).
@@ -14,6 +15,10 @@ import { suggestCategorySlug } from "@/lib/record/category";
  *
  * 제안은 **주소 칸을 아직 손대지 않았을 때만** 채운다. 직접 적은 값을 이름 타이핑이
  * 덮어쓰면, 고쳐 적을 때마다 되돌아가는 칸이 된다.
+ *
+ * **두 칸이 다 차야 버튼이 켜진다.** 전에는 늘 같은 흐린 테두리라 누를 수 있는 때와 없는 때가
+ * 구별되지 않았다. 켜지면 액센트로 채워 "이제 누를 수 있다"가 보이게 한다. 형식 검사는 여기서
+ * 하지 않는다 — 꺼진 버튼은 이유를 말하지 못하므로, 형식이 틀리면 눌렀을 때 사유를 돌려준다.
  */
 export function CategoryCreateForm() {
   const router = useRouter();
@@ -22,6 +27,7 @@ export function CategoryCreateForm() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isReady = name.trim() !== "" && slug.trim() !== "";
 
   return (
     <form
@@ -74,8 +80,13 @@ export function CategoryCreateForm() {
 
       <button
         type="submit"
-        disabled={isPending}
-        className="border border-edge px-2.5 py-1 font-typewriter text-[11px] text-faint hover:text-ink disabled:opacity-50"
+        disabled={!isReady || isPending}
+        className={cn(
+          "border px-3 py-1 font-typewriter text-[11px] transition-colors duration-150",
+          isReady
+            ? "border-(--accent) bg-(--accent) font-bold text-paper hover:brightness-90 disabled:opacity-60"
+            : "cursor-not-allowed border-edge text-faint",
+        )}
       >
         {isPending ? "만드는 중…" : "분류 추가"}
       </button>
