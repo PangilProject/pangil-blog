@@ -42,6 +42,9 @@ export function useSelection(ids: string[]) {
  *
  * 고른 수는 버튼 밖에 따로 적는다. 버튼 안에 `선택 삭제 2`로 넣었더니 이름과 숫자가 붙어
  * 읽혔다 — 수는 상태이고 버튼은 동작이다.
+ *
+ * **좁은 화면에서는 버튼 묶음이 다음 줄로 내려간다.** 한 줄에 우겨 넣었더니 버튼 글자가 한 자씩
+ * 꺾였다("비공개 전 / 환"). 글자는 꺾지 않고(nowrap), 줄이 모자라면 묶음째 내린다.
  */
 export function SelectionBar({
   count,
@@ -56,8 +59,8 @@ export function SelectionBar({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 border-transparent border-l pl-4">
-      <label className="flex items-center gap-3 font-typewriter text-[10.5px] text-faint">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-transparent border-l pl-4">
+      <label className="flex items-center gap-3 whitespace-nowrap font-typewriter text-[10.5px] text-faint">
         <input
           type="checkbox"
           checked={allChosen}
@@ -68,7 +71,10 @@ export function SelectionBar({
       </label>
 
       {count > 0 && (
-        <span aria-live="polite" className="font-typewriter text-[10.5px] text-ink-soft">
+        <span
+          aria-live="polite"
+          className="whitespace-nowrap font-typewriter text-[10.5px] text-ink-soft"
+        >
           {count}편 선택됨
         </span>
       )}
@@ -100,7 +106,7 @@ export function BulkButton({
       disabled={!enabled}
       onClick={onClick}
       className={cn(
-        "border px-3 py-1 font-typewriter text-[11px] transition-colors duration-150",
+        "whitespace-nowrap border px-3 py-1 font-typewriter text-[11px] transition-colors duration-150",
         !enabled && "cursor-not-allowed border-edge text-faint",
         enabled &&
           (quiet

@@ -141,11 +141,15 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
                 aria-label={`${title} 선택`}
                 className="translate-y-[1px] accent-(--accent)"
               />
-              {/* TECH는 카테고리를 청구기호에 병기한다 — 공개 목록과 같은 표기다(03 §5.2) */}
-              <span className="w-[120px] font-typewriter text-[10.5px] text-(--accent)">
+              {/*
+                TECH는 카테고리를 청구기호에 병기한다 — 공개 목록과 같은 표기다(03 §5.2).
+                넓은 화면에서만 폭을 고정해 제목의 세로줄을 맞춘다. 120px은 `T-0514 · 개발`에
+                맞춘 폭이라, 좁은 화면에서는 `QT-0201` 뒤에 그만큼이 빈칸으로 남았다
+              */}
+              <span className="shrink-0 whitespace-nowrap font-typewriter text-[10.5px] text-(--accent) sm:w-[120px]">
                 {post.callLabel}
               </span>
-              <Link href={post.editorHref} className="flex-1 text-[14px] hover:underline">
+              <Link href={post.editorHref} className="min-w-0 flex-1 text-[14px] hover:underline">
                 {title}
               </Link>
               {/* 발행된 글이 대다수라 상태를 매 줄에 적으면 그게 배경이 된다.
