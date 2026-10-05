@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminPostList, type AdminPostRow } from "@/components/admin/AdminPostList";
 
 const unpublishPosts = vi.fn();
+const republishPosts = vi.fn();
 const deletePosts = vi.fn();
 const refresh = vi.fn();
 
 vi.mock("@/lib/actions/posts", () => ({
   unpublishPosts: (ids: string[]) => unpublishPosts(ids),
+  republishPosts: (ids: string[]) => republishPosts(ids),
   deletePosts: (ids: string[]) => deletePosts(ids),
   deletePost: vi.fn(),
   publishPost: vi.fn(),
@@ -43,6 +45,7 @@ const posts: AdminPostRow[] = [
 
 beforeEach(() => {
   unpublishPosts.mockReset().mockResolvedValue({ ok: true, done: 1, skipped: 0 });
+  republishPosts.mockReset().mockResolvedValue({ ok: true, done: 1, skipped: 0, failed: 0 });
   deletePosts.mockReset().mockResolvedValue({ ok: true, done: 2, skipped: 0 });
   refresh.mockReset();
 });
@@ -57,37 +60,70 @@ async function press(name: string) {
 }
 
 describe("AdminPostList", () => {
-  it("하나도 안 고르면 두 일괄 버튼이 다 꺼져 있다", () => {
+  it("하나도 안 고르면 일괄 버튼이 다 꺼져 있다", () => {
     render(<AdminPostList posts={posts} />);
 
-    expect(screen.getByRole("button", { name: "비공개로" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "비공개 전환" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "공개 전환" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "선택 삭제" })).toBeDisabled();
   });
 
-  it("이미 내린 글만 고르면 비공개로는 꺼져 있고 삭제만 켜진다", () => {
+  it("할 일이 있는 전환만 켜진다 — 내린 글만 고르면 공개 전환만", () => {
     render(<AdminPostList posts={posts} />);
     check("내린 글");
 
-    expect(screen.getByRole("button", { name: "비공개로" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "비공개 전환" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "공개 전환" })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "선택 삭제" })).not.toBeDisabled();
   });
 
-  it("비공개로는 확인을 거쳐 공개 중인 글만 보낸다", async () => {
+  it("비공개 전환은 확인을 거쳐 공개 중인 글만 보낸다", async () => {
     render(<AdminPostList posts={posts} />);
     check("XSS 정리");
     check("내린 글");
 
-    await press("비공개로");
+    await press("비공개 전환");
     expect(unpublishPosts).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog")).toHaveTextContent("고른 2편 중 공개 중인 1편");
+    expect(screen.getByRole("dialog")).toHaveTextContent("고른 2편 중 1편을 비공개로 전환할까요?");
 
-    // 확인창의 확정 버튼도 이름이 `비공개로`다 — 대화상자 안의 것을 누른다
+    // 확인창의 확정 버튼도 이름이 같다 — 대화상자 안의 것(나중에 그려진 것)을 누른다
     await act(async () => {
-      screen.getAllByRole("button", { name: "비공개로" }).at(-1)?.click();
+      screen.getAllByRole("button", { name: "비공개 전환" }).at(-1)?.click();
     });
 
     expect(unpublishPosts).toHaveBeenCalledWith(["p-1"]);
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it("공개 전환은 내려둔 글만 보낸다", async () => {
+    render(<AdminPostList posts={posts} />);
+    check("XSS 정리");
+    check("내린 글");
+
+    await press("공개 전환");
+    expect(screen.getByRole("dialog")).toHaveTextContent("고른 2편 중 1편을 공개로 전환할까요?");
+
+    await act(async () => {
+      screen.getAllByRole("button", { name: "공개 전환" }).at(-1)?.click();
+    });
+
+    expect(republishPosts).toHaveBeenCalledWith(["p-2"]);
+  });
+
+  it("일부가 공개되지 못하면 그 수를 목록 위에 남긴다", async () => {
+    republishPosts.mockResolvedValue({ ok: true, done: 0, skipped: 0, failed: 1 });
+    render(<AdminPostList posts={posts} />);
+    check("내린 글");
+
+    await press("공개 전환");
+    await act(async () => {
+      screen.getAllByRole("button", { name: "공개 전환" }).at(-1)?.click();
+    });
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "1편은 내용이 덜 채워져 공개하지 못했어요",
+    );
   });
 
   it("선택 삭제는 확인을 거쳐 고른 것을 모두 보낸다", async () => {
@@ -113,5 +149,12 @@ describe("AdminPostList", () => {
 
     expect(screen.getByRole("dialog")).toHaveTextContent("바꾸지 못했어요");
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("줄마다 점 세 개 메뉴가 있고, 줄에 늘어놓던 버튼은 없다", () => {
+    render(<AdminPostList posts={posts} />);
+
+    expect(screen.getByRole("button", { name: "XSS 정리 메뉴" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /비공개로 전환|XSS 정리 삭제/ })).toBeNull();
   });
 });
