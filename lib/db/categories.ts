@@ -65,33 +65,28 @@ export async function renameCategoryRecord(id: string, name: string): Promise<vo
 }
 
 /**
- * 위·아래로 한 칸. 이웃과 sortOrder를 맞바꾼다.
+ * 순서를 통째로 다시 매긴다. `ids`는 화면에 놓인 순서 그대로다.
  *
- * 한 트랜잭션에 묶는 이유는 중간에 끊기면 두 분류가 같은 자리를 갖기 때문이다 —
- * 그러면 목록 순서가 이름순으로 떨어져 사람이 정한 순서가 사라진다.
+ * 전에는 이웃과 sortOrder를 맞바꾸는 한 칸 이동이었는데, 끌어서 놓으면 여러 칸을 한 번에
+ * 건너뛴다 — 그 사이의 분류가 전부 한 칸씩 밀린다. 그래서 전체를 10 간격으로 다시 적는다.
+ *
+ * 한 트랜잭션이다. 중간에 끊기면 두 분류가 같은 자리를 갖고, 그러면 목록 순서가 이름순으로
+ * 떨어져 사람이 정한 순서가 사라진다.
+ *
+ * `ids`가 지금 분류 전부와 정확히 같지 않으면 아무것도 바꾸지 않고 false다 — 다른 탭에서
+ * 분류를 만들거나 지운 뒤의 낡은 목록으로 순서를 매기면 빠진 분류가 엉뚱한 자리에 남는다.
  */
-export async function moveCategoryRecord(id: string, direction: "up" | "down"): Promise<boolean> {
-  const target = await prisma.category.findUnique({
-    where: { id },
-    select: { id: true, sortOrder: true },
-  });
-  if (!target) return false;
+export async function reorderCategoryRecords(ids: string[]): Promise<boolean> {
+  const current = await prisma.category.findMany({ select: { id: true } });
+  const known = new Set(current.map((row) => row.id));
+  if (ids.length !== known.size || new Set(ids).size !== ids.length) return false;
+  if (!ids.every((id) => known.has(id))) return false;
 
-  const neighbor = await prisma.category.findFirst({
-    where:
-      direction === "up"
-        ? { sortOrder: { lt: target.sortOrder } }
-        : { sortOrder: { gt: target.sortOrder } },
-    orderBy: { sortOrder: direction === "up" ? "desc" : "asc" },
-    select: { id: true, sortOrder: true },
-  });
-  // 끝에서 더 갈 곳이 없다. 실패가 아니라 아무 일도 없는 것이다
-  if (!neighbor) return false;
-
-  await prisma.$transaction([
-    prisma.category.update({ where: { id: target.id }, data: { sortOrder: neighbor.sortOrder } }),
-    prisma.category.update({ where: { id: neighbor.id }, data: { sortOrder: target.sortOrder } }),
-  ]);
+  await prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.category.update({ where: { id }, data: { sortOrder: (index + 1) * 10 } }),
+    ),
+  );
 
   return true;
 }

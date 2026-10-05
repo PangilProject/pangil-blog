@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/record/ConfirmDialog";
-import { deleteCategory, moveCategory, renameCategory } from "@/lib/actions/categories";
+import { deleteCategory, renameCategory } from "@/lib/actions/categories";
 import type { AdminCategory, CategoryOption } from "@/lib/db/categories";
 import { UNCATEGORIZED_LABEL } from "@/lib/record/category";
 
@@ -25,15 +25,14 @@ import { UNCATEGORIZED_LABEL } from "@/lib/record/category";
  */
 export function CategoryRow({
   category,
-  isFirst,
-  isLast,
   others,
+  dragHandle,
 }: {
   category: AdminCategory;
   /** 옮길 곳 후보 — 자기 자신을 뺀 나머지 분류 */
   others: CategoryOption[];
-  isFirst: boolean;
-  isLast: boolean;
+  /** 순서를 바꾸는 손잡이. 정렬은 목록(CategoryList)이 맡고 한 줄은 자리만 내준다 */
+  dragHandle?: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -64,23 +63,8 @@ export function CategoryRow({
   };
 
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <span className="flex gap-1">
-        <MoveButton
-          label={`${category.name} 위로`}
-          disabled={isFirst || isPending}
-          onClick={() => run(() => moveCategory(category.id, "up"))}
-        >
-          ↑
-        </MoveButton>
-        <MoveButton
-          label={`${category.name} 아래로`}
-          disabled={isLast || isPending}
-          onClick={() => run(() => moveCategory(category.id, "down"))}
-        >
-          ↓
-        </MoveButton>
-      </span>
+    <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+      {dragHandle}
 
       <input
         value={name}
@@ -165,30 +149,6 @@ export function CategoryRow({
           )}
         </ConfirmDialog>
       )}
-    </li>
-  );
-}
-
-function MoveButton({
-  label,
-  disabled,
-  onClick,
-  children,
-}: {
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="border border-transparent px-1.5 font-typewriter text-[11px] text-faint hover:border-edge hover:text-ink disabled:opacity-30"
-    >
-      {children}
-    </button>
+    </div>
   );
 }

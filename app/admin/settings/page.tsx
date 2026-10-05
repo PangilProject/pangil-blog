@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
 import { CategoryCreateForm } from "@/components/admin/CategoryCreateForm";
-import { CategoryRow } from "@/components/admin/CategoryRow";
+import { CategoryList } from "@/components/admin/CategoryList";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { listCategoriesForAdmin } from "@/lib/db/categories";
@@ -53,17 +53,7 @@ export default async function AdminSettingsPage() {
           {categories.length === 0 ? (
             <p className="text-sm text-ink-soft">아직 분류가 없어요.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
-              {categories.map((category, index) => (
-                <CategoryRow
-                  key={category.id}
-                  category={category}
-                  isFirst={index === 0}
-                  isLast={index === categories.length - 1}
-                  others={categories.filter((other) => other.id !== category.id)}
-                />
-              ))}
-            </ul>
+            <CategoryList categories={categories} />
           )}
         </section>
       </main>
