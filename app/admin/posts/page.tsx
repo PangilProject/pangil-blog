@@ -2,8 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
-import { DeletePostButton } from "@/components/admin/DeletePostButton";
-import { VisibilityButton } from "@/components/admin/VisibilityButton";
+import { AdminPostList } from "@/components/admin/AdminPostList";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
 import { Pagination } from "@/components/record/Pagination";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -145,37 +144,22 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
             {query ? `"${query}" 결과가 없어요.` : "이 조건에 맞는 글이 없어요."}
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
-            {list.posts.map((post) => (
-              <li key={post.id} className="flex flex-wrap items-baseline gap-3 px-4 py-3">
-                {/* TECH는 카테고리를 청구기호에 병기한다 — 공개 목록과 같은 표기다(03 §5.2) */}
-                <span className="w-[120px] font-typewriter text-[10.5px] text-(--accent)">
-                  {formatCallNumber({
-                    type: post.type,
-                    callNumber: post.callNumber,
-                    categoryName: post.categoryName,
-                  })}
-                </span>
-                <Link
-                  href={editorPath(post.type, post.id)}
-                  className="flex-1 text-[14px] hover:underline"
-                >
-                  {post.title || "제목 없음"}
-                </Link>
-                {/* 발행된 글이 대다수라 상태를 매 줄에 적으면 그게 배경이 된다.
-                    내려둔 글만 표시한다 — 03 §7 문구 규약: 구현 용어(PRIVATE)는 쓰지 않는다 */}
-                {post.status === "PRIVATE" && (
-                  <span className="font-typewriter text-[10.5px] text-(--accent)">비공개</span>
-                )}
-                <VisibilityButton
-                  postId={post.id}
-                  title={post.title}
-                  isPublished={post.status === "PUBLISHED"}
-                />
-                <DeletePostButton postId={post.id} title={post.title} />
-              </li>
-            ))}
-          </ul>
+          // 필터·검색·쪽이 바뀌면 고른 것을 비운다 — 다른 쪽에서 고른 글이 보이지 않는 채로 남으면
+          // "3편 선택됨"이 눈앞에 없는 글까지 세고, 일괄 삭제가 그 글까지 지운다
+          <AdminPostList
+            key={`${type ?? ""}:${categorySlug ?? ""}:${query ?? ""}:${list.page}`}
+            posts={list.posts.map((post) => ({
+              id: post.id,
+              title: post.title,
+              callLabel: formatCallNumber({
+                type: post.type,
+                callNumber: post.callNumber,
+                categoryName: post.categoryName,
+              }),
+              editorHref: editorPath(post.type, post.id),
+              status: post.status === "PRIVATE" ? "PRIVATE" : "PUBLISHED",
+            }))}
+          />
         )}
 
         <Pagination

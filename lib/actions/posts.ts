@@ -246,6 +246,66 @@ export const deleteDrafts = withAdmin(async (_user, ids: string[]): Promise<Dele
   return { ok: true, count: await deleteDraftRecords(unique) };
 });
 
+export type BulkPostsResult =
+  | { ok: true; done: number; skipped: number }
+  | { ok: false; reason: "empty" };
+
+/** 한 번에 다룰 수 있는 글 수. 글 관리 한 페이지가 20편이다(ADMIN_PAGE_SIZE) */
+const MAX_BULK_POSTS = 20;
+
+function bulkIds(ids: string[]): string[] {
+  return [...new Set(ids)].slice(0, MAX_BULK_POSTS);
+}
+
+/**
+ * 고른 글을 한꺼번에 비공개로 내린다 (A-03 일괄).
+ *
+ * 한 편씩의 규칙(unpublishPost)을 그대로 따른다 — 공개 중인 글만 내리고, 초안이나 이미 내린 글은
+ * 건너뛴다(`skipped`). 다시 공개하는 길은 여전히 한 편씩의 `publishPost`다(05 §3.4 발행 게이트
+ * 단일화). 그래서 화면은 일괄 비공개에 확인을 받는다 — 한 편은 같은 버튼으로 바로 되돌리지만,
+ * 스무 편을 되돌리려면 스무 번 눌러야 한다.
+ */
+export const unpublishPosts = withAdmin(async (_user, ids: string[]): Promise<BulkPostsResult> => {
+  const targets = bulkIds(ids);
+  if (targets.length === 0) return { ok: false, reason: "empty" };
+
+  const announced: { type: RecordType; slug: string }[] = [];
+  for (const id of targets) {
+    const post = await findEditablePost(id);
+    if (!post || post.status !== PostStatus.PUBLISHED) continue;
+
+    await unpublishPostRecord(id);
+    await revalidatePost(post.id, post.type, post.categoryId);
+    if (post.slug) announced.push({ type: post.type, slug: post.slug });
+  }
+
+  await announceMany(announced);
+  return { ok: true, done: announced.length, skipped: targets.length - announced.length };
+});
+
+/**
+ * 고른 글을 한꺼번에 지운다 (A-03 일괄). 한 편씩의 삭제(deletePost)와 같은 일을 글마다 한다 —
+ * 지면 무효화, 그리고 검색엔진 통보(지면마다 한 번으로 묶는다).
+ */
+export const deletePosts = withAdmin(async (_user, ids: string[]): Promise<BulkPostsResult> => {
+  const targets = bulkIds(ids);
+  if (targets.length === 0) return { ok: false, reason: "empty" };
+
+  let done = 0;
+  const announced: { type: RecordType; slug: string }[] = [];
+  for (const id of targets) {
+    const deleted = await deletePostRecord(id);
+    if (!deleted) continue;
+
+    done += 1;
+    await revalidatePost(deleted.id, deleted.type, deleted.categoryId);
+    if (deleted.slug) announced.push({ type: deleted.type, slug: deleted.slug });
+  }
+
+  await announceMany(announced);
+  return { ok: true, done, skipped: targets.length - done };
+});
+
 /**
  * 검색엔진 통보 (06 §8).
  *
@@ -255,13 +315,26 @@ export const deleteDrafts = withAdmin(async (_user, ids: string[]): Promise<Dele
  * 이 함수는 실패해도 조용하다(lib/seo/submit) — 발행은 이미 끝났다.
  */
 async function announce(type: RecordType, slug: string) {
-  const host = (await headers()).get("host");
-  const site = siteOf(type);
+  await announceMany([{ type, slug }]);
+}
 
-  await submitToSearchEngines(site, [
-    absolutePostUrl(type, slug, { host }),
-    absoluteUrl(site, `/${site}`, { host }),
-  ]);
+/**
+ * 여러 편을 한 번에 알린다 — 지면마다 요청 하나다. 일괄 처리에서 글마다 보내면 스무 편에 스무
+ * 번 요청이 나가고, 지면 홈 주소가 스무 번 겹친다.
+ */
+async function announceMany(posts: { type: RecordType; slug: string }[]) {
+  if (posts.length === 0) return;
+  const host = (await headers()).get("host");
+
+  const bySite = new Map<ReturnType<typeof siteOf>, string[]>();
+  for (const post of posts) {
+    const site = siteOf(post.type);
+    const urls = bySite.get(site) ?? [absoluteUrl(site, `/${site}`, { host })];
+    urls.push(absolutePostUrl(post.type, post.slug, { host }));
+    bySite.set(site, urls);
+  }
+
+  for (const [site, urls] of bySite) await submitToSearchEngines(site, urls);
 }
 
 /**
