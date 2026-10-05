@@ -10,7 +10,7 @@ import { listCategoriesForAdmin } from "@/lib/db/categories";
 /**
  * A-08 설정 (02 §2.4).
  *
- * 지금은 카테고리 하나다. 프로필(허브 노출 정보)과 크롤러 실행 로그가 같은 화면에 들어올
+ * 지금은 카테고리와 내보내기다. 프로필(허브 노출 정보)과 크롤러 실행 로그가 같은 화면에 들어올
  * 자리이므로 섹션으로 나눠 둔다 — 화면을 하나 더 만들지 않는다.
  *
  * 카테고리는 **기술 지면 전용**이다. 신앙 지면의 큐티·설교·찬양은 분류가 아니라 글의
@@ -55,6 +55,28 @@ export default async function AdminSettingsPage() {
           ) : (
             <CategoryList categories={categories} />
           )}
+        </section>
+
+        {/*
+          언제든 떠날 수 있다는 사실을 화면에 둔다(07 §3 lock-in 방어). 전에는 상단 메뉴에 있었는데,
+          한 달에 한 번도 안 누를 것이 매일 쓰는 초안함·글 관리와 같은 줄에 서 있었다.
+          자리가 바뀌어도 숨기지는 않는다 — 설정을 열면 보인다.
+        */}
+        <section className="flex flex-col gap-3 border-edge border-t pt-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-serif text-[15px]">내보내기</h2>
+            <p className="font-typewriter text-[11px] text-faint">
+              발행한 글 전부를 마크다운 파일 하나로 받아요
+            </p>
+          </div>
+
+          {/* 문서 이동이다 — 파일을 내려받는 주소라 Link의 미리 받기가 할 일이 없다 */}
+          <a
+            href="/admin/export"
+            className="self-start border border-edge bg-card px-3 py-1.5 font-typewriter text-[11px] text-ink-soft transition-colors duration-150 hover:border-ink-soft hover:text-ink"
+          >
+            마크다운으로 내보내기
+          </a>
         </section>
       </main>
     </div>
