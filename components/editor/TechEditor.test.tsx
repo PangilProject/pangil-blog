@@ -188,15 +188,21 @@ describe("TechEditor — 발행", () => {
     expect(assign).toHaveBeenCalledWith("https://dev.example/next-16");
   });
 
-  it("카테고리가 없으면 막는다", async () => {
+  it("카테고리가 없어도 발행된다 — 분류를 지워 미분류가 된 글을 고치다 막히지 않게", async () => {
     renderEditor({ initialValues: { ...filled(), categoryId: "" } });
 
     await act(async () => {
       screen.getByRole("button", { name: "발행" }).click();
+      await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(publishPost).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("카테고리를 골라주세요");
+    expect(publishPost).toHaveBeenCalledWith("post-1");
+  });
+
+  it("카테고리가 없으면 미분류로 보인다", () => {
+    renderEditor({ initialValues: { ...filled(), categoryId: "" } });
+
+    expect(screen.getByLabelText("카테고리")).toHaveTextContent("미분류");
   });
 
   it("태그가 없어도 발행된다 — 권장이지 필수가 아니다", async () => {
