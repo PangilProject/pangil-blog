@@ -42,7 +42,7 @@ export function StatModal({ children }: { children: ReactNode }) {
   }, [close]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:px-6 sm:py-10">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:px-6 sm:py-10">
       {/* 배경은 버튼이다 — 같은 일을 하는 `닫기`가 안에 있으므로 접근성 트리에서는 뺀다 */}
       <button
         type="button"
@@ -52,14 +52,18 @@ export function StatModal({ children }: { children: ReactNode }) {
         className="absolute inset-0 bg-ink/40"
       />
 
-      {/* 좁은 화면에서는 화면 전체를 쓴다 — 조회의 절반이 모바일이고, 가운데 띄운 상자는 그 폭에서 여백만 남는다 */}
+      {/*
+        좁은 화면에서는 아래에서 올라온 시트다. 전에는 화면 전체를 덮었는데, 그러면 모달이 아니라
+        다른 페이지로 넘어간 것처럼 보였다 — 위로 목록이 조금 비쳐야 "닫으면 돌아간다"가 읽힌다.
+        가운데 띄운 상자는 그 폭에서 여백만 남기므로 폭은 다 쓰고 높이만 남긴다
+      */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="post-stats-title"
-        className="relative flex w-full flex-col overflow-y-auto bg-paper shadow-card sm:max-h-full sm:max-w-[760px] sm:border sm:border-edge"
+        className="relative flex max-h-[88dvh] w-full flex-col overflow-y-auto border-edge border-t bg-paper shadow-card sm:max-h-full sm:max-w-[760px] sm:border"
       >
-        <div className="sticky top-0 z-10 flex justify-end bg-paper px-[5%] pt-4">
+        <div className="sticky top-0 z-10 flex justify-end bg-paper px-4 pt-3 sm:px-[5%] sm:pt-4">
           <button
             type="button"
             ref={closeRef}
@@ -70,7 +74,9 @@ export function StatModal({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="flex flex-col gap-8 px-[5%] pt-2 pb-8">{children}</div>
+        <div className="flex flex-col gap-6 px-4 pt-1 pb-6 sm:gap-8 sm:px-[5%] sm:pt-2 sm:pb-8">
+          {children}
+        </div>
       </div>
     </div>
   );
