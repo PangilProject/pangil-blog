@@ -65,10 +65,6 @@ export default async function AdminSettingsPage() {
               ))}
             </ul>
           )}
-
-          <p className="font-typewriter text-[10.5px] text-faint">
-            이름은 언제든 바꿔도 돼요. 주소는 공개 링크에 쓰여서 만든 뒤에는 바꿀 수 없어요
-          </p>
         </section>
       </main>
     </div>
