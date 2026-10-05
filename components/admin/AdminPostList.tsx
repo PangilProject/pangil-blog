@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 export type AdminPostRow = {
   id: string;
   title: string;
-  /** 줄 앞의 표기 — 묵상은 청구기호, 기술은 카테고리 이름. 서버가 만든다. 번호가 없는 글은 null이다 */
-  callLabel: string | null;
+  /** 줄 앞의 분류 — 묵상은 큐티·설교·찬양, 기술은 카테고리 이름. 서버가 만든다 */
+  categoryLabel: string;
   editorHref: string;
   status: "PUBLISHED" | "PRIVATE";
 };
@@ -147,15 +147,16 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
                 className="translate-y-[1px] accent-(--accent)"
               />
               {/*
-                묵상은 청구기호(QT-0201), 기술은 카테고리 이름이다(서버가 정한다).
-                넓은 화면에서만 폭을 고정해 제목의 세로줄을 맞춘다. 둘 다 짧아져 84px이면 되고,
-                그보다 긴 카테고리 이름은 말줄임으로 자른다 — 다 보이는 이름은 title에 있다
+                분류(큐티·설교·찬양 / 기술 카테고리). **어느 폭에서나 칸 폭을 고정한다** — 글자만큼만
+                차지하게 뒀더니 `회고` 행의 제목이 `PR-0267` 행보다 왼쪽에서 시작해 세로줄이 어긋났다.
+                분류명은 두세 글자라 48px이면 되고, 그보다 긴 카테고리 이름은 말줄임으로 자른다 —
+                다 보이는 이름은 title에 있다
               */}
               <span
-                title={post.callLabel ?? undefined}
-                className="shrink-0 truncate whitespace-nowrap font-typewriter text-[10.5px] text-(--accent) sm:w-[84px]"
+                title={post.categoryLabel}
+                className="w-12 shrink-0 truncate font-typewriter text-[10.5px] text-(--accent)"
               >
-                {post.callLabel}
+                {post.categoryLabel}
               </span>
               <Link
                 href={post.editorHref}
