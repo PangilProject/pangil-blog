@@ -427,18 +427,25 @@ export async function findPostStatSummary(postId: string): Promise<PostStatSumma
   );
 }
 
-export type PostDailyStat = { day: string; views: number };
-
-export async function findPostDaily(postId: string, days: number): Promise<PostDailyStat[]> {
-  return prisma.$queryRaw<PostDailyStat[]>`
-    SELECT to_char("occurredAt" + interval '9 hours', 'YYYY-MM-DD') AS day,
-           count(*)::int AS views
+/**
+ * 글 하나의 일별 시계열. **빈 날도 칸을 남긴다**(fillDays) — 조회가 있던 날만 늘어놓으면
+ * 띄엄띄엄 읽힌 글이 "매일 읽혔다"처럼 보인다. 그 모양이 곧 이 화면의 질문이다
+ * ("지금도 읽히나, 발행 직후만 읽혔나"). 전체 시계열과 같은 선택절이라 같은 그래프가 그린다.
+ */
+export async function findPostSeries(postId: string, days: number): Promise<SeriesPoint[]> {
+  const rows = await prisma.$queryRaw<RawBucket[]>`
+    SELECT to_char("occurredAt" + interval '9 hours', 'YYYY-MM-DD') AS key,
+           count(*) FILTER (WHERE "eventType"::text = 'PAGEVIEW')::int AS views,
+           count(*) FILTER (WHERE "eventType"::text = 'PAGEVIEW'
+                              AND "site"::text = 'DEV')::int AS "devViews",
+           count(*) FILTER (WHERE "eventType"::text = 'PAGEVIEW'
+                              AND "site"::text = 'FAITH')::int AS "faithViews",
+           count(DISTINCT "visitorHash")::int AS visitors
     FROM "StatEvent"
-    WHERE "postId" = ${postId} AND NOT "isOwner"
-      AND "eventType"::text = 'PAGEVIEW'
-      AND "occurredAt" >= ${since(days)}
-    GROUP BY 1
-    ORDER BY 1 DESC`;
+    WHERE "postId" = ${postId} AND NOT "isOwner" AND "occurredAt" >= ${since(days)}
+    GROUP BY 1`;
+
+  return fillDays(rows, days);
 }
 
 export async function findPostReferrers(postId: string, limit = 8): Promise<ReferrerStat[]> {
