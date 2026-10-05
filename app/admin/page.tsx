@@ -40,6 +40,13 @@ const CRAWL_LABELS = {
   SKIPPED: "큐티 없는 날",
 } as const;
 
+/**
+ * 세션을 읽는다(`getAdminUser`의 `connection()`) — 요청이 있어야 무엇을 그릴지 정해진다.
+ * 레이아웃의 Suspense가 있어도 Next 16.3은 이 지면을 "즉시 전환 불가"로 개발 로그에 띄운다
+ * (2026-10-05 확인). searchParams를 읽는 관리 페이지들과 같은 선언으로 맞춘다.
+ */
+export const instant = false;
+
 export default async function AdminDashboardPage() {
   // middleware가 이미 막지만, 서버에서 한 번 더 확인한다(05 §3.2 이중 가드).
   const user = await getAdminUser();

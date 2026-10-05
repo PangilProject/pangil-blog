@@ -17,6 +17,13 @@ import { listCategoriesForAdmin } from "@/lib/db/categories";
  * 종류이고(lib/record/axis), 타입마다 에디터·저장 계약·청구기호 시퀀스가 갈리므로 여기서
  * 늘릴 수 없다. 그 사실을 화면에도 한 줄로 적는다 — 없는 기능을 찾게 두지 않는다.
  */
+/**
+ * 세션을 읽는다(`getAdminUser`의 `connection()`) — 요청이 있어야 무엇을 그릴지 정해진다.
+ * 레이아웃의 Suspense가 있어도 Next 16.3은 이 지면을 "즉시 전환 불가"로 개발 로그에 띄운다
+ * (2026-10-05 확인). searchParams를 읽는 관리 페이지들과 같은 선언으로 맞춘다.
+ */
+export const instant = false;
+
 export default async function AdminSettingsPage() {
   const user = await getAdminUser();
   if (!user) redirect(ADMIN_LOGIN_PATH);
