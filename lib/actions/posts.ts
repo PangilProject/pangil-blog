@@ -8,6 +8,7 @@ import { DraftSchema, matchesPostType } from "@/lib/content/schema";
 import { parsePublishContent } from "@/lib/db/content";
 import {
   createDraft,
+  deleteDraftRecords,
   deletePostRecord,
   findCategorySlug,
   findEditablePost,
@@ -225,6 +226,24 @@ export const deletePost = withAdmin(async (_user, postId: string): Promise<Delet
   if (deleted.slug) await announce(deleted.type, deleted.slug);
 
   return { ok: true };
+});
+
+export type DeleteDraftsResult = { ok: true; count: number } | { ok: false; reason: "empty" };
+
+/** 한 번에 지울 수 있는 초안 수. 초안함이 50편까지 보여준다(listDrafts) */
+const MAX_BULK_DELETE = 50;
+
+/**
+ * 초안 일괄 삭제 (A-02).
+ *
+ * 무효화도 검색엔진 통보도 없다 — 초안은 공개된 적이 없다. 발행 글이 섞여 오면 저장소가
+ * 걸러낸다(deleteDraftRecords). 화면에서 확인을 한 번 받는다(02 §3.4 되돌릴 수 없는 동작).
+ */
+export const deleteDrafts = withAdmin(async (_user, ids: string[]): Promise<DeleteDraftsResult> => {
+  const unique = [...new Set(ids)].slice(0, MAX_BULK_DELETE);
+  if (unique.length === 0) return { ok: false, reason: "empty" };
+
+  return { ok: true, count: await deleteDraftRecords(unique) };
 });
 
 /**
