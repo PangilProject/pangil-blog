@@ -16,7 +16,14 @@ const createPrismaClient = () => {
   }
 
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    // **풀을 작게 둔다.** `pg.Pool` 기본값은 10인데, 서버리스에서는 그게 인스턴스 하나당
+    // 10이다 — 인스턴스가 뜰 때마다 Supavisor에 연결이 그만큼 열리고, Pooler 로그는
+    // 연결 하나당 세 줄(authenticated·backend·terminate)을 찍는다. 2026-10-05 측정에서
+    // Pooler가 전체 로그의 58%였고, Free 플랜의 로그 한도를 넘긴 것이 그 58%다.
+    //
+    // 셋인 이유는 **한 요청이 동시에 여는 쿼리 수**가 그 정도이기 때문이다(허브가 사이트
+    // 둘을 나란히 센다). 더 줄이면 그 둘이 서로를 기다린다.
+    adapter: new PrismaPg({ connectionString, max: 3 }),
   });
 };
 
