@@ -23,7 +23,25 @@ import { cn } from "@/lib/utils";
 const TOP_PAD = 8;
 const BOTTOM_PAD = 6;
 
-export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }) {
+export function StatLine({
+  points,
+  unit,
+  labelEvery = 1,
+  sparse = false,
+}: {
+  points: SeriesPoint[];
+  unit: Unit;
+  /**
+   * 축 글자를 몇 칸마다 적나. 기본은 전부다(위 주석). 글 하나의 90일처럼 칸이 30을 크게
+   * 넘으면 날짜가 서로 겹쳐 아무것도 안 읽히므로 그때만 솎는다 — 정확한 날은 툴팁이 말한다.
+   */
+  labelEvery?: number;
+  /**
+   * 조회가 있던 날에만 점을 찍는다. 글 하나의 시계열은 대부분이 0이라, 칸마다 빈 원을 두면
+   * 바닥에 구슬 줄이 깔려 정작 읽힌 날이 묻힌다. 0인 날은 선이 바닥을 지나는 것으로 충분하다.
+   */
+  sparse?: boolean;
+}) {
   /**
    * **두 선이 한 판에 겹친다.** 조회만 보면 "많이 읽혔다"와 "많이들 왔다"가 구별되지 않는다 —
    * 한 사람이 열 편을 본 날과 열 사람이 한 편씩 본 날은 조회 선에서 같은 높이다. 두 선의
@@ -94,7 +112,7 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
                   점. 칸의 가운데에 놓고 값 높이만큼 올린다 — 선의 x좌표와 같은 자리여야
                   선과 점이 어긋나지 않는다.
                 */}
-                {hasVisitors && (
+                {hasVisitors && !(sparse && !point.visitors) && (
                   <span
                     className="absolute left-1/2 size-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-ink-soft bg-card"
                     style={{ top: `${yOf(point.visitors ?? 0, max)}%` }}
@@ -105,14 +123,16 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
                   **평소는 빈 원, 오늘만 채운 원.** 전부 채우면 30개가 같은 무게로 늘어서
                   어느 날을 보고 있는지가 선에 묻힌다 — 채움을 하나만 남겨 그 자리를 만든다.
                 */}
-                <span
-                  className={cn(
-                    "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full",
-                    "border-[1.5px] border-(--accent)",
-                    isLast ? "size-[8px] bg-(--accent)" : "size-[7px] bg-card",
-                  )}
-                  style={{ top: `${yOf(point.views, max)}%` }}
-                />
+                {!(sparse && point.views === 0 && !isLast) && (
+                  <span
+                    className={cn(
+                      "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full",
+                      "border-[1.5px] border-(--accent)",
+                      isLast ? "size-[8px] bg-(--accent)" : "size-[7px] bg-card",
+                    )}
+                    style={{ top: `${yOf(point.views, max)}%` }}
+                  />
+                )}
 
                 <div
                   role="tooltip"
@@ -138,7 +158,7 @@ export function StatLine({ points, unit }: { points: SeriesPoint[]; unit: Unit }
       <div className="flex gap-[1px] font-typewriter text-[9px] text-faint">
         {points.map((point, index) => (
           <span key={point.key} className="min-w-0 flex-1 text-center">
-            {labelOf(points, index, unit)}
+            {labelOf(points, index, unit, labelEvery)}
           </span>
         ))}
       </div>
@@ -212,13 +232,18 @@ function monthOf(key: string | undefined): string {
  * 축 글자. 일별에서는 일자만 적고, **맨 왼쪽과 달이 바뀌는 자리에만** 월을 붙인다.
  * 주·월 단위는 조회 쪽이 이미 사람이 읽을 라벨을 만들어 준다.
  */
-function labelOf(points: SeriesPoint[], index: number, unit: Unit): string {
+function labelOf(points: SeriesPoint[], index: number, unit: Unit, every: number): string {
   const point = points[index];
   if (!point) return "";
+  if (index % every !== 0) return "";
   if (unit !== "day") return point.label;
 
+  // 솎을 때는 "바로 앞 칸"이 아니라 **앞에 적힌 글자**와 달이 다른지를 본다 — 달이 바뀐 자리가
+  // 솎여 나가면 월이 붙을 곳이 없어진다
   const day = Number(point.key.slice(8, 10));
-  return index === 0 || startsMonth(points, index)
+  const previous = points[index - every];
+  const newMonth = previous !== undefined && monthOf(point.key) !== monthOf(previous.key);
+  return index === 0 || (every === 1 ? startsMonth(points, index) : newMonth)
     ? `${Number(point.key.slice(5, 7))}/${day}`
     : String(day);
 }
