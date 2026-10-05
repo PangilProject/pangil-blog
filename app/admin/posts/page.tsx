@@ -11,7 +11,7 @@ import { getAdminUser } from "@/lib/auth/adminSession";
 import { listCategories } from "@/lib/db/categories";
 import { listAdminPosts } from "@/lib/db/posts";
 import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
-import { formatCallNumber, type RecordType } from "@/lib/record/callNumber";
+import type { RecordType } from "@/lib/record/callNumber";
 import { UNCATEGORIZED_KEY, UNCATEGORIZED_LABEL } from "@/lib/record/category";
 import { editorPath } from "@/lib/record/todayCard";
 
@@ -169,16 +169,13 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
             posts={list.posts.map((post) => ({
               id: post.id,
               title: post.title,
-              // 기술 글은 카테고리만 적는다 — 청구기호(T-0514)는 기술 글에서 쓰는 사람이 찾는
-              // 단서가 아니었고, 그 표기가 칸 폭을 잡아먹었다. 묵상은 번호가 곧 날짜의 순서다
-              callLabel:
+              // 줄 앞에는 분류를 적는다 — 묵상은 큐티·설교·찬양, 기술은 카테고리. 필터 탭과 같은
+              // 말이라 "이 글이 어느 탭에 있나"가 바로 읽힌다. 청구기호(QT-0201)는 찾는 단서가
+              // 아니었다: 글은 제목으로 찾고, 번호는 공개 지면의 이력이다
+              categoryLabel:
                 post.type === "TECH"
                   ? (post.categoryName ?? UNCATEGORIZED_LABEL)
-                  : formatCallNumber({
-                      type: post.type,
-                      callNumber: post.callNumber,
-                      categoryName: post.categoryName,
-                    }),
+                  : TYPE_LABELS[post.type],
               editorHref: editorPath(post.type, post.id),
               status: post.status === "PRIVATE" ? "PRIVATE" : "PUBLISHED",
             }))}
