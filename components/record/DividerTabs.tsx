@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -26,26 +27,32 @@ export type DividerTabItem = {
   onSelect?: () => void;
 };
 
+/** 탭 한 칸의 옷. 링크·버튼·메뉴 트리거가 같이 입는다 — 두 벌로 두면 그중 하나만 낡는다 */
+export function dividerTabClassName(active: boolean | undefined): string {
+  return cn(
+    "relative top-px inline-block rounded-t-[5px] border border-edge border-b-0",
+    "px-[15px] pt-2 pb-2.5 font-typewriter text-xs transition-colors duration-200",
+    active
+      ? "bg-card font-bold text-ink shadow-[inset_0_2px_0_var(--accent)]"
+      : "bg-surface-tab text-ink-soft hover:text-ink",
+  );
+}
+
 export type DividerTabsProps = {
   items: DividerTabItem[];
+  /** 줄 끝에 붙는 칸 — 하위 분류를 접어 둔 메뉴 탭(글 관리의 `기술 ▾`)이 여기 온다 */
+  trailing?: ReactNode;
   /** 스크린리더용 이름 (예: "묵상 타입 필터") */
   label: string;
   className?: string;
 };
 
-export function DividerTabs({ items, label, className }: DividerTabsProps) {
+export function DividerTabs({ items, label, className, trailing }: DividerTabsProps) {
   return (
     <nav aria-label={label} className={cn("border-edge border-b", className)}>
       <ul className="flex flex-wrap gap-1.5">
         {items.map((item) => {
-          // 링크와 버튼이 같은 옷을 입는다. 두 벌로 두면 그중 하나만 낡는다
-          const className = cn(
-            "relative top-px inline-block rounded-t-[5px] border border-edge border-b-0",
-            "px-[15px] pt-2 pb-2.5 font-typewriter text-xs transition-colors duration-200",
-            item.active
-              ? "bg-card font-bold text-ink shadow-[inset_0_2px_0_var(--accent)]"
-              : "bg-surface-tab text-ink-soft hover:text-ink",
-          );
+          const className = dividerTabClassName(item.active);
 
           return (
             <li key={item.label}>
@@ -70,6 +77,7 @@ export function DividerTabs({ items, label, className }: DividerTabsProps) {
             </li>
           );
         })}
+        {trailing && <li>{trailing}</li>}
       </ul>
     </nav>
   );
