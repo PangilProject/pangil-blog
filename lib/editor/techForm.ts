@@ -87,10 +87,13 @@ export function toDraftMeta(values: TechFormValues) {
 /**
  * 발행 게이트의 화면 쪽 절반 (02 §5.5 필수 표시).
  * 태그는 "권장"이라 막지 않는다 — 막으면 태그 없는 글을 못 쓰게 된다.
+ *
+ * **카테고리도 막지 않는다(2026-10-05).** 분류를 지우면 딸린 글이 미분류가 될 수 있는데,
+ * 여기서 막으면 그 글을 다른 이유로 고치러 들어갔다가 분류부터 고르라는 요구에 걸린다.
+ * 미분류 글은 공개 지면에서 분류 자리만 비고, 글 관리의 `미분류` 탭에서 모아 볼 수 있다.
  */
 export const TechPublishFormSchema = z.object({
   title: z.string().trim().min(1, "제목을 적어주세요"),
-  categoryId: z.string().trim().min(1, "카테고리를 골라주세요"),
   body: z.custom<RichTextValue>(
     (value) => !isEmptyDoc(value as RichTextValue),
     "본문이 비어 있어요",

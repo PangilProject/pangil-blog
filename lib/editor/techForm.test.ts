@@ -79,11 +79,8 @@ describe("발행 게이트", () => {
     expect(TechPublishFormSchema.safeParse(filled()).success).toBe(true);
   });
 
-  it("카테고리가 없으면 막는다 — dev 목록의 분류가 비면 글이 어디에도 안 걸린다", () => {
-    const result = TechPublishFormSchema.safeParse({ ...filled(), categoryId: "" });
-
-    expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toBe("카테고리를 골라주세요");
+  it("카테고리가 없어도 통과한다 — 미분류 글을 고치다 막히지 않게(2026-10-05)", () => {
+    expect(TechPublishFormSchema.safeParse({ ...filled(), categoryId: "" }).success).toBe(true);
   });
 
   it("태그가 없어도 발행된다 — 권장이지 필수가 아니다", () => {

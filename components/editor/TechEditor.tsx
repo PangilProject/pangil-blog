@@ -36,7 +36,10 @@ import {
 } from "@/lib/editor/techForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 import { usePublishFlow } from "@/lib/editor/usePublishFlow";
+import { UNCATEGORIZED_LABEL } from "@/lib/record/category";
 
+/** 미분류를 뜻하는 Select 값. 폼 값으로는 빈 문자열이 된다(toDraftMeta가 null로 바꾼다) */
+const NO_CATEGORY = "none";
 /**
  * A-07 기술 에디터 (02 §5.5).
  *
@@ -229,7 +232,11 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
               control={control}
               name="categoryId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                // Radix Select는 빈 문자열을 값으로 받지 않는다 — 미분류를 고를 수 있게 대신할 값을 둔다
+                <Select
+                  value={field.value || NO_CATEGORY}
+                  onValueChange={(value) => field.onChange(value === NO_CATEGORY ? "" : value)}
+                >
                   <SelectTrigger
                     aria-label="카테고리"
                     className="min-w-[140px] rounded-none text-[13px]"
@@ -237,6 +244,9 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
                     <SelectValue placeholder="카테고리" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={NO_CATEGORY} className="text-[13px] text-faint">
+                      {UNCATEGORIZED_LABEL}
+                    </SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id} className="text-[13px]">
                         {category.name}
