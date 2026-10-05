@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { DeletePostButton } from "@/components/admin/DeletePostButton";
-import { BulkButton, SelectionBar, useSelection } from "@/components/admin/SelectionBar";
+import { SelectionBar, useSelection } from "@/components/admin/SelectionBar";
 import { ConfirmDialog } from "@/components/record/ConfirmDialog";
 import { deleteDrafts } from "@/lib/actions/posts";
 import type { RecordType } from "@/lib/record/callNumber";
@@ -50,14 +50,15 @@ export function DraftList({ drafts }: { drafts: DraftRow[] }) {
         count={selection.chosen.length}
         allChosen={selection.allChosen}
         onToggleAll={selection.toggleAll}
-      >
-        <BulkButton
-          enabled={selection.chosen.length > 0 && !isPending}
-          onClick={() => setIsConfirming(true)}
-        >
-          선택 삭제
-        </BulkButton>
-      </SelectionBar>
+        actions={[
+          {
+            label: "선택 삭제",
+            enabled: selection.chosen.length > 0 && !isPending,
+            onSelect: () => setIsConfirming(true),
+            danger: true,
+          },
+        ]}
+      />
 
       <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
         {drafts.map((draft) => {

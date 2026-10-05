@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { PostRowMenu } from "@/components/admin/PostRowMenu";
-import { BulkButton, SelectionBar, useSelection } from "@/components/admin/SelectionBar";
+import { SelectionBar, useSelection } from "@/components/admin/SelectionBar";
 import { ConfirmDialog } from "@/components/record/ConfirmDialog";
 import {
   type BulkPostsResult,
@@ -89,25 +89,29 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <SelectionBar count={count} allChosen={selection.allChosen} onToggleAll={selection.toggleAll}>
-        <BulkButton
-          quiet
-          enabled={chosenPublished.length > 0 && !isPending}
-          onClick={() => setConfirming("unpublish")}
-        >
-          비공개 전환
-        </BulkButton>
-        <BulkButton
-          quiet
-          enabled={chosenPrivate.length > 0 && !isPending}
-          onClick={() => setConfirming("republish")}
-        >
-          공개 전환
-        </BulkButton>
-        <BulkButton enabled={count > 0 && !isPending} onClick={() => setConfirming("delete")}>
-          선택 삭제
-        </BulkButton>
-      </SelectionBar>
+      <SelectionBar
+        count={count}
+        allChosen={selection.allChosen}
+        onToggleAll={selection.toggleAll}
+        actions={[
+          {
+            label: "비공개 전환",
+            enabled: chosenPublished.length > 0 && !isPending,
+            onSelect: () => setConfirming("unpublish"),
+          },
+          {
+            label: "공개 전환",
+            enabled: chosenPrivate.length > 0 && !isPending,
+            onSelect: () => setConfirming("republish"),
+          },
+          {
+            label: "선택 삭제",
+            enabled: count > 0 && !isPending,
+            onSelect: () => setConfirming("delete"),
+            danger: true,
+          },
+        ]}
+      />
 
       {/* 상태 영역은 늘 그려 둔다 — 비어 있다가 생긴 글을 화면 읽기가 알린다. 누르면 지운다 */}
       <div role="status" className="self-start pl-4">
