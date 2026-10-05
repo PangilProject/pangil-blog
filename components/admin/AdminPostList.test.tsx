@@ -151,6 +151,28 @@ describe("AdminPostList", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("좁은 화면의 접힌 메뉴는 고른 게 없으면 꺼지고, 할 일이 없는 항목은 흐리다", async () => {
+    render(<AdminPostList posts={posts} />);
+    const trigger = screen.getByRole("button", { name: "선택한 글" });
+
+    expect(trigger).toBeDisabled();
+
+    check("내린 글");
+    await act(async () => {
+      fireEvent.keyDown(trigger, { key: "Enter" });
+    });
+
+    expect(screen.getByRole("menuitem", { name: "비공개 전환" })).toHaveAttribute("data-disabled");
+    expect(screen.getByRole("menuitem", { name: "공개 전환" })).not.toHaveAttribute(
+      "data-disabled",
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "공개 전환" }));
+    });
+    expect(screen.getByRole("dialog")).toHaveTextContent("1편을 공개로 전환할까요?");
+  });
+
   it("줄마다 점 세 개 메뉴가 있고, 줄에 늘어놓던 버튼은 없다", () => {
     render(<AdminPostList posts={posts} />);
 
