@@ -96,6 +96,11 @@ export function CategoryCreateForm() {
           {error}
         </p>
       )}
+
+      {/* 주소를 정하는 자리가 여기뿐이라 안내도 여기 둔다 — 정한 뒤에 알면 늦다 */}
+      <p className="basis-full font-typewriter text-[10.5px] text-faint">
+        주소는 공개 링크에 쓰여서 만든 뒤에는 바꿀 수 없어요. 이름은 목록에서 언제든 바꿀 수 있어요
+      </p>
     </form>
   );
 }
