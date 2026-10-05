@@ -173,6 +173,13 @@ describe("AdminPostList", () => {
     expect(screen.getByRole("dialog")).toHaveTextContent("1편을 공개로 전환할까요?");
   });
 
+  it("비공개 글만 제목에 비공개라고 붙는다 — 공개 글은 표시가 없다", () => {
+    render(<AdminPostList posts={posts} />);
+
+    expect(screen.getByRole("link", { name: "내린 글 (비공개)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "XSS 정리" })).toBeInTheDocument();
+  });
+
   it("줄마다 점 세 개 메뉴가 있고, 줄에 늘어놓던 버튼은 없다", () => {
     render(<AdminPostList posts={posts} />);
 

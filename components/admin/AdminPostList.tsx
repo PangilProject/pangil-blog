@@ -1,5 +1,6 @@
 "use client";
 
+import { LockIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -153,14 +154,25 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
               <span className="shrink-0 whitespace-nowrap font-typewriter text-[10.5px] text-(--accent) sm:w-[120px]">
                 {post.callLabel}
               </span>
-              <Link href={post.editorHref} className="min-w-0 flex-1 text-[14px] hover:underline">
+              <Link
+                href={post.editorHref}
+                // 자물쇠는 보이기만 한다. 읽는 사람에게는 이름으로 말한다
+                aria-label={post.status === "PRIVATE" ? `${title} (비공개)` : undefined}
+                className="min-w-0 flex-1 text-[14px] hover:underline"
+              >
                 {title}
+                {/*
+                  발행된 글이 대다수라 상태를 매 줄에 적으면 그게 배경이 된다. 내려둔 글만 표시한다.
+                  제목 끝의 자물쇠다 — 줄 끝에 "비공개" 글자로 두면 메뉴(⋯) 옆에 붙어 동작처럼
+                  읽혔다. 화면 읽기에는 링크 이름으로 말한다(03 §7: 구현 용어 PRIVATE는 쓰지 않는다)
+                */}
+                {post.status === "PRIVATE" && (
+                  <LockIcon
+                    aria-hidden
+                    className="ml-1.5 inline size-3.5 -translate-y-px text-(--accent)"
+                  />
+                )}
               </Link>
-              {/* 발행된 글이 대다수라 상태를 매 줄에 적으면 그게 배경이 된다.
-                  내려둔 글만 표시한다 — 03 §7 문구 규약: 구현 용어(PRIVATE)는 쓰지 않는다 */}
-              {post.status === "PRIVATE" && (
-                <span className="font-typewriter text-[10.5px] text-(--accent)">비공개</span>
-              )}
               <PostRowMenu
                 postId={post.id}
                 title={post.title}
