@@ -114,7 +114,11 @@ export function StatLine({
                 */}
                 {hasVisitors && !(sparse && !point.visitors) && (
                   <span
-                    className="absolute left-1/2 size-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-ink-soft bg-card"
+                    className={cn(
+                      "absolute left-1/2 size-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-ink-soft bg-card",
+                      // 좁은 화면에서는 0인 날의 점을 감춘다(아래 조회 점과 같은 이유)
+                      !point.visitors && "max-sm:hidden",
+                    )}
                     style={{ top: `${yOf(point.visitors ?? 0, max)}%` }}
                   />
                 )}
@@ -129,6 +133,9 @@ export function StatLine({
                       "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full",
                       "border-[1.5px] border-(--accent)",
                       isLast ? "size-[8px] bg-(--accent)" : "size-[7px] bg-card",
+                      // 좁은 화면에서는 0인 날의 점을 감춘다. 375px에 30칸이면 칸이 10px이라 빈 원이
+                      // 서로 붙어 바닥에 구슬 줄이 깔렸다 — 0인 날은 선이 바닥을 지나는 것으로 충분하다
+                      point.views === 0 && !isLast && "max-sm:hidden",
                     )}
                     style={{ top: `${yOf(point.views, max)}%` }}
                   />
@@ -154,11 +161,33 @@ export function StatLine({
         </div>
       </div>
 
-      {/* **모든 날짜를 적는다.** 솎아내면 어느 점이 며칠인지 세어야 한다 — 그건 읽는 일이다 */}
-      <div className="flex gap-[1px] font-typewriter text-[9px] text-faint">
+      {/*
+        **넓은 화면은 모든 날짜를 적는다.** 솎아내면 어느 점이 며칠인지 세어야 한다 — 그건 읽는 일이다.
+        좁은 화면은 다르다: 375px에 30칸이면 칸이 10px이라 `10111213`처럼 숫자가 붙어 아무것도 안
+        읽혔다. 그때는 여섯 개 남짓만 적고, 정확한 날은 툴팁이 말한다. 두 줄을 그려 폭으로 고른다 —
+        어느 칸을 적을지가 칸 수에 달려 있어서 CSS만으로는 못 고른다
+      */}
+      <div
+        data-axis="wide"
+        className="flex gap-[1px] font-typewriter text-[9px] text-faint max-sm:hidden"
+      >
         {points.map((point, index) => (
           <span key={point.key} className="min-w-0 flex-1 text-center">
             {labelOf(points, index, unit, labelEvery)}
+          </span>
+        ))}
+      </div>
+      <div
+        aria-hidden
+        data-axis="narrow"
+        className="flex gap-[1px] font-typewriter text-[9px] text-faint sm:hidden"
+      >
+        {points.map((point, index) => (
+          <span
+            key={point.key}
+            className="min-w-0 flex-1 overflow-visible whitespace-nowrap text-center"
+          >
+            {labelOf(points, index, unit, narrowEvery(points.length, labelEvery))}
           </span>
         ))}
       </div>
@@ -210,6 +239,11 @@ function Legend({
       {label}
     </span>
   );
+}
+
+/** 좁은 화면에서 축 글자를 몇 칸마다 적나 — 여섯 개 남짓. 넓은 화면의 간격보다 촘촘하지는 않다 */
+function narrowEvery(length: number, wide: number): number {
+  return Math.max(wide, Math.ceil(length / 6));
 }
 
 /** 값 → 위에서부터의 거리(%). 0이면 바닥, 최대면 위쪽 여백 아래 */

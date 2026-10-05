@@ -14,8 +14,11 @@ const point = (key: string, views: number, over: Partial<SeriesPoint> = {}): Ser
   ...over,
 });
 
-const axis = (container: HTMLElement) =>
-  [...container.querySelectorAll("span.flex-1")].map((node) => node.textContent?.trim());
+/** 축 글자. 넓은 화면 줄이 기본이고, 좁은 화면 줄은 따로 그린다(StatLine 주석) */
+const axis = (container: HTMLElement, row: "wide" | "narrow" = "wide") =>
+  [...container.querySelectorAll(`[data-axis="${row}"] span`)].map((node) =>
+    node.textContent?.trim(),
+  );
 
 describe("StatLine", () => {
   it("점을 칸마다 하나씩 놓는다", () => {
@@ -97,6 +100,22 @@ describe("StatLine", () => {
     const { container } = render(<StatLine points={many} unit="day" />);
 
     expect(axis(container).filter((text) => text !== "")).toHaveLength(28);
+  });
+
+  it("좁은 화면 줄은 여섯 개 남짓만 적는다 — 30칸을 다 적으면 숫자가 붙는다", () => {
+    const many = Array.from({ length: 30 }, (_, index) =>
+      point(`2026-09-${String(index + 1).padStart(2, "0")}`, index),
+    );
+    const { container } = render(<StatLine points={many} unit="day" />);
+
+    expect(axis(container, "narrow").filter((text) => text !== "")).toEqual([
+      "9/1",
+      "6",
+      "11",
+      "16",
+      "21",
+      "26",
+    ]);
   });
 
   it("툴팁이 지면별 구성을 말한다 — 선은 총합 하나만 그린다", () => {
