@@ -5,13 +5,11 @@ import { CategoryRow } from "@/components/admin/CategoryRow";
 import type { AdminCategory } from "@/lib/db/categories";
 
 const renameCategory = vi.fn();
-const moveCategory = vi.fn();
 const deleteCategory = vi.fn();
 const refresh = vi.fn();
 
 vi.mock("@/lib/actions/categories", () => ({
   renameCategory: (id: string, name: string) => renameCategory(id, name),
-  moveCategory: (id: string, direction: string) => moveCategory(id, direction),
   deleteCategory: (id: string, slug: string, moveTo: unknown) => deleteCategory(id, slug, moveTo),
 }));
 
@@ -27,7 +25,6 @@ const category: AdminCategory = {
 
 beforeEach(() => {
   renameCategory.mockReset().mockResolvedValue({ ok: true });
-  moveCategory.mockReset().mockResolvedValue({ ok: true });
   deleteCategory.mockReset().mockResolvedValue({ ok: true });
   refresh.mockReset();
 });
@@ -41,13 +38,7 @@ const others = [
 
 function renderRow(overrides: Partial<AdminCategory> = {}, flags = {}) {
   return render(
-    <CategoryRow
-      category={{ ...category, ...overrides }}
-      isFirst={false}
-      isLast={false}
-      others={others}
-      {...flags}
-    />,
+    <CategoryRow category={{ ...category, ...overrides }} others={others} {...flags} />,
   );
 }
 
@@ -150,13 +141,6 @@ describe("CategoryRow", () => {
       id: "cat-2",
       slug: "dev",
     });
-  });
-
-  it("끝에서는 그 방향으로 못 옮긴다", () => {
-    render(<CategoryRow category={category} isFirst isLast={false} others={others} />);
-
-    expect(screen.getByRole("button", { name: "회고 위로" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "회고 아래로" })).not.toBeDisabled();
   });
 
   it("막히면 사유를 남긴다 — 조용히 실패하면 왜 그대로인지 모른다", async () => {

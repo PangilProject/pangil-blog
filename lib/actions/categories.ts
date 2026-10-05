@@ -6,8 +6,8 @@ import { withAdmin } from "@/lib/actions/withAdmin";
 import {
   createCategoryRecord,
   deleteCategoryRecord,
-  moveCategoryRecord,
   renameCategoryRecord,
+  reorderCategoryRecords,
 } from "@/lib/db/categories";
 import { validateCategoryInput } from "@/lib/record/category";
 import { feedTag, listFacetTag, listTag } from "@/lib/revalidate/tags";
@@ -85,10 +85,14 @@ export const renameCategory = withAdmin(
   },
 );
 
-export const moveCategory = withAdmin(
-  async (_user, id: string, direction: "up" | "down"): Promise<CategoryActionResult> => {
-    // 끝에서 더 갈 곳이 없으면 아무 일도 없다. 그건 실패가 아니다
-    if (await moveCategoryRecord(id, direction)) revalidateDev();
+/** 끌어서 놓은 순서를 저장한다. 순서는 공개 지면의 분류 탭·사이드바에 그대로 나간다 */
+export const reorderCategories = withAdmin(
+  async (_user, ids: string[]): Promise<CategoryActionResult> => {
+    if (!(await reorderCategoryRecords(ids))) {
+      return { ok: false, reason: "분류 목록이 그사이 바뀌었어요. 새로고침해 주세요" };
+    }
+
+    revalidateDev();
     return { ok: true };
   },
 );
