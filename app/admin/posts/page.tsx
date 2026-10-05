@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
 import { AdminPostList } from "@/components/admin/AdminPostList";
+import { FilterMenu, TabMenu } from "@/components/admin/FilterMenu";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
 import { Pagination } from "@/components/record/Pagination";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -17,9 +18,10 @@ import { editorPath } from "@/lib/record/todayCard";
 /**
  * A-03 글 관리 (02 §2.4).
  *
- * 두 축으로 걸러 본다 — faith의 분류는 **타입**이고, dev의 분류는 **카테고리**다(02 §5).
- * 카테고리 축은 기술을 골랐을 때만 놓는다. TECH 전용 컬럼이라(02 §5.5) 다른 타입에서는
- * 늘 빈 결과가 되고, 누를 수 있는 빈 필터는 고장으로 읽힌다.
+ * **분류 탭은 다섯 칸이다**(2026-10-05): 전체 · 큐티 · 설교 · 찬양 · 기술 ▾. 기술 칸은 카테고리를
+ * 접은 메뉴라 누르면 회고·FE·…·미분류가 바로 열린다. 전에는 `기술` 탭을 누르면 카테고리 탭 줄이
+ * 하나 더 열려 두 번 눌렀고, 그걸 한 줄로 다 폈더니 카테고리가 늘수록 줄이 길어졌다.
+ * 카테고리를 고르면 기술 글로 좁혀진다(카테고리는 TECH 전용 컬럼이다, 02 §5.5).
  *
  * 필터는 URL이다 — 공개 목록과 같은 규칙이고(02 §2.3), 그래서 이 화면에 JS가 없다.
  *
@@ -27,13 +29,12 @@ import { editorPath } from "@/lib/record/todayCard";
  */
 
 // 축 정의는 lib/record/axis 하나다 — 공개 목록·상세와 같은 것을 본다
-const TYPE_TABS: { label: string; type: RecordType | null }[] = [
-  { label: "전체", type: null },
-  ...[...FAITH_TYPES, "TECH" as const].map((type) => ({ label: TYPE_LABELS[type], type })),
-];
+const FAITH_TABS = FAITH_TYPES.map((type) => ({ label: TYPE_LABELS[type], type }));
 
+/** `?type=`은 faith 타입을 받는다. 기술은 `?category=`로 고른다 — `TECH`는 옛 주소를 위해 남긴다 */
 function parseType(value: unknown): RecordType | null {
-  return TYPE_TABS.find((tab) => tab.type === value)?.type ?? null;
+  if (value === "TECH") return "TECH";
+  return FAITH_TABS.find((tab) => tab.type === value)?.type ?? null;
 }
 
 /**
@@ -48,16 +49,17 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
   if (!user) redirect(ADMIN_LOGIN_PATH);
 
   const params = await searchParams;
-  const type = parseType(typeof params.type === "string" ? params.type : null);
-  // 카테고리는 기술 축 안에서만 뜻이 있다 — 타입을 바꾸면 함께 떨어진다
-  const categorySlug =
-    type === "TECH" && typeof params.category === "string" ? params.category : null;
+  // 카테고리를 고르면 곧 기술 글이다 — 카테고리는 TECH 전용 컬럼이다
+  const categorySlug = typeof params.category === "string" ? params.category : null;
+  const type = categorySlug
+    ? "TECH"
+    : parseType(typeof params.type === "string" ? params.type : null);
   const query = typeof params.q === "string" ? params.q : undefined;
   const page = Number(typeof params.page === "string" ? params.page : 1) || 1;
 
   const [list, categories] = await Promise.all([
     listAdminPosts({ type, categorySlug, query, page }),
-    type === "TECH" ? listCategories() : Promise.resolve([]),
+    listCategories(),
   ]);
 
   const hrefFor = (next: { type?: RecordType | null; category?: string | null; page?: number }) => {
@@ -65,8 +67,9 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
     const nextType = next.type === undefined ? type : next.type;
     const nextCategory = next.category === undefined ? categorySlug : next.category;
 
-    if (nextType) search.set("type", nextType);
-    if (nextType === "TECH" && nextCategory) search.set("category", nextCategory);
+    // 카테고리가 있으면 그것만 적는다 — 타입(TECH)은 거기서 따라온다
+    if (nextCategory) search.set("category", nextCategory);
+    else if (nextType) search.set("type", nextType);
     // 검색어는 축을 바꿔도 남는다 — "이 말이 든 글을 타입별로 훑는" 것이 실제 사용이다
     if (query) search.set("q", query);
     if (next.page && next.page > 1) search.set("page", String(next.page));
@@ -75,23 +78,32 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
     return suffix === "" ? "/admin/posts" : `/admin/posts?${suffix}`;
   };
 
-  const typeTabs: DividerTabItem[] = TYPE_TABS.map((tab) => ({
-    label: tab.label,
-    // 축을 바꾸면 1페이지로 돌아간다 — 3페이지짜리 필터에서 20페이지를 요구하면 빈 목록이다
-    href: hrefFor({ type: tab.type, category: null, page: 1 }),
-    active: type === tab.type,
-  }));
+  // 축을 바꾸면 1페이지로 돌아간다 — 3페이지짜리 필터에서 20페이지를 요구하면 빈 목록이다
+  const faithTabs: DividerTabItem[] = [
+    {
+      label: "전체",
+      href: hrefFor({ type: null, category: null, page: 1 }),
+      active: type === null,
+    },
+    ...FAITH_TABS.map((tab) => ({
+      label: tab.label,
+      href: hrefFor({ type: tab.type, category: null, page: 1 }),
+      active: type === tab.type,
+    })),
+  ];
 
-  const categoryTabs: DividerTabItem[] = [
-    { label: "전체", href: hrefFor({ category: null, page: 1 }), active: categorySlug === null },
+  // 기술은 카테고리를 하나의 탭(`기술 ▾`)에 접는다 — 카테고리가 늘어도 탭 줄은 길어지지 않는다.
+  // `기술 전체`는 두지 않는다: 탭이 `기술 · 기술 전체`로 길어졌고, 기술 글 전부는 `전체`로 본다.
+  // 미분류는 공개 지면의 분류가 아니지만 남긴다 — 분류를 지우며 생긴 글을 찾을 곳이 여기뿐이다
+  const techItems: DividerTabItem[] = [
     ...categories.map((category) => ({
       label: category.name,
-      href: hrefFor({ category: category.slug, page: 1 }),
+      href: hrefFor({ type: null, category: category.slug, page: 1 }),
       active: categorySlug === category.slug,
     })),
     {
       label: UNCATEGORIZED_LABEL,
-      href: hrefFor({ category: UNCATEGORIZED_KEY, page: 1 }),
+      href: hrefFor({ type: null, category: UNCATEGORIZED_KEY, page: 1 }),
       active: categorySlug === UNCATEGORIZED_KEY,
     },
   ];
@@ -115,9 +127,10 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
         {/* 검색은 폼 하나다 — 공개 목록과 같은 문법이고, 이 화면에도 JS를 늘리지 않는다.
             필터는 유지한다: 폼이 감춘 값으로 함께 보낸다 */}
         <form action="/admin/posts" className="flex items-center gap-2 border-edge border-b pb-1.5">
-          {type && <input type="hidden" name="type" value={type} />}
-          {type === "TECH" && categorySlug && (
+          {categorySlug ? (
             <input type="hidden" name="category" value={categorySlug} />
+          ) : (
+            type && <input type="hidden" name="type" value={type} />
           )}
           <input
             type="search"
@@ -132,12 +145,17 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
           </button>
         </form>
 
-        <div className="flex flex-col gap-2">
-          <DividerTabs items={typeTabs} label="글 타입 필터" />
-          {type === "TECH" && categories.length > 0 && (
-            <DividerTabs items={categoryTabs} label="카테고리 필터" />
-          )}
-        </div>
+        {/*
+          넓은 화면은 탭 다섯 칸(기술은 카테고리를 접은 메뉴 탭), 좁은 화면은 드롭다운 하나다.
+          분류를 한 줄로 다 펴면 카테고리가 늘수록 줄이 길어지고, 좁은 화면에서는 세 줄이 됐다
+        */}
+        <DividerTabs
+          items={faithTabs}
+          label="분류 필터"
+          className="hidden sm:block"
+          trailing={<TabMenu label="기술" items={techItems} />}
+        />
+        <FilterMenu items={[...faithTabs, ...techItems]} label="분류 필터" className="sm:hidden" />
 
         {list.posts.length === 0 ? (
           <p className="text-sm text-ink-soft">
@@ -151,11 +169,16 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
             posts={list.posts.map((post) => ({
               id: post.id,
               title: post.title,
-              callLabel: formatCallNumber({
-                type: post.type,
-                callNumber: post.callNumber,
-                categoryName: post.categoryName,
-              }),
+              // 기술 글은 카테고리만 적는다 — 청구기호(T-0514)는 기술 글에서 쓰는 사람이 찾는
+              // 단서가 아니었고, 그 표기가 칸 폭을 잡아먹었다. 묵상은 번호가 곧 날짜의 순서다
+              callLabel:
+                post.type === "TECH"
+                  ? (post.categoryName ?? UNCATEGORIZED_LABEL)
+                  : formatCallNumber({
+                      type: post.type,
+                      callNumber: post.callNumber,
+                      categoryName: post.categoryName,
+                    }),
               editorHref: editorPath(post.type, post.id),
               status: post.status === "PRIVATE" ? "PRIVATE" : "PUBLISHED",
             }))}
