@@ -112,13 +112,38 @@ export type PublishPostResult =
   | { ok: false; reason: "not-found" | "invalid-content" | "type-mismatch"; issues?: string[] };
 
 export const publishPost = withAdmin(async (_user, postId: string): Promise<PublishPostResult> => {
+  const result = await publishOne(postId);
+  if (!result.ok) return result;
+
+  const { post, published } = result;
+  await announce(post.type, published.slug);
+
+  return {
+    ok: true,
+    id: published.id,
+    slug: published.slug,
+    callNumber: published.callNumber,
+    url: absolutePostUrl(post.type, published.slug, { host: (await headers()).get("host") }),
+  };
+});
+
+/**
+ * 발행 게이트 본체 — 한 편 발행(publishPost)과 일괄 공개(republishPosts)가 함께 쓴다.
+ * status를 PUBLISHED로 바꾸는 길은 여기 하나다(05 §3.4). 검색엔진 통보만 부르는 쪽이 한다 —
+ * 일괄에서는 지면마다 한 번으로 묶어야 하기 때문이다.
+ */
+async function publishOne(postId: string) {
   const post = await findEditablePost(postId);
-  if (!post) return { ok: false, reason: "not-found" };
+  if (!post) return { ok: false as const, reason: "not-found" as const };
 
   // 초안 스키마가 아니라 발행 스키마를 통과해야 한다 — 여기가 게이트다
   const parsed = parsePublishContent(post.content.ok ? post.content.content : null);
-  if (!parsed.ok) return { ok: false, reason: "invalid-content", issues: parsed.issues };
-  if (!matchesPostType(post.type, parsed.content)) return { ok: false, reason: "type-mismatch" };
+  if (!parsed.ok) {
+    return { ok: false as const, reason: "invalid-content" as const, issues: parsed.issues };
+  }
+  if (!matchesPostType(post.type, parsed.content)) {
+    return { ok: false as const, reason: "type-mismatch" as const };
+  }
 
   const published = await publishPostRecord({
     id: post.id,
@@ -135,16 +160,8 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
   });
 
   await revalidatePost(post.id, post.type, post.categoryId);
-  await announce(post.type, published.slug);
-
-  return {
-    ok: true,
-    id: published.id,
-    slug: published.slug,
-    callNumber: published.callNumber,
-    url: absolutePostUrl(post.type, published.slug, { host: (await headers()).get("host") }),
-  };
-});
+  return { ok: true as const, post, published };
+}
 
 export type DiscardDraftResult = { ok: true } | { ok: false; reason: "not-found" | "published" };
 
@@ -261,9 +278,7 @@ function bulkIds(ids: string[]): string[] {
  * 고른 글을 한꺼번에 비공개로 내린다 (A-03 일괄).
  *
  * 한 편씩의 규칙(unpublishPost)을 그대로 따른다 — 공개 중인 글만 내리고, 초안이나 이미 내린 글은
- * 건너뛴다(`skipped`). 다시 공개하는 길은 여전히 한 편씩의 `publishPost`다(05 §3.4 발행 게이트
- * 단일화). 그래서 화면은 일괄 비공개에 확인을 받는다 — 한 편은 같은 버튼으로 바로 되돌리지만,
- * 스무 편을 되돌리려면 스무 번 눌러야 한다.
+ * 건너뛴다(`skipped`). 되돌리는 길은 일괄 공개(republishPosts)다.
  */
 export const unpublishPosts = withAdmin(async (_user, ids: string[]): Promise<BulkPostsResult> => {
   const targets = bulkIds(ids);
@@ -282,6 +297,46 @@ export const unpublishPosts = withAdmin(async (_user, ids: string[]): Promise<Bu
   await announceMany(announced);
   return { ok: true, done: announced.length, skipped: targets.length - announced.length };
 });
+
+export type BulkRepublishResult =
+  | { ok: true; done: number; skipped: number; failed: number }
+  | { ok: false; reason: "empty" };
+
+/**
+ * 고른 글을 한꺼번에 다시 공개한다 (A-03 일괄). 내려둔 글(PRIVATE)만 대상이다 — 초안을 여기서
+ * 발행하면 에디터의 발행 흐름(확인·이동)을 건너뛴다.
+ *
+ * **글마다 발행 게이트를 그대로 지난다**(publishOne). 상태만 되돌리면 스키마를 통과하지 않은
+ * content가 공개될 수 있다(05 §3.4). 그래서 일부는 실패할 수 있고(`failed`), 화면이 그 수를 알린다.
+ */
+export const republishPosts = withAdmin(
+  async (_user, ids: string[]): Promise<BulkRepublishResult> => {
+    const targets = bulkIds(ids);
+    if (targets.length === 0) return { ok: false, reason: "empty" };
+
+    let failed = 0;
+    const announced: { type: RecordType; slug: string }[] = [];
+    for (const id of targets) {
+      const post = await findEditablePost(id);
+      if (!post || post.status !== PostStatus.PRIVATE) continue;
+
+      const result = await publishOne(id);
+      if (!result.ok) {
+        failed += 1;
+        continue;
+      }
+      announced.push({ type: result.post.type, slug: result.published.slug });
+    }
+
+    await announceMany(announced);
+    return {
+      ok: true,
+      done: announced.length,
+      failed,
+      skipped: targets.length - announced.length - failed,
+    };
+  },
+);
 
 /**
  * 고른 글을 한꺼번에 지운다 (A-03 일괄). 한 편씩의 삭제(deletePost)와 같은 일을 글마다 한다 —
