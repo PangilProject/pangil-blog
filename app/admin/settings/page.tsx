@@ -55,6 +55,7 @@ export default async function AdminSettingsPage() {
                   category={category}
                   isFirst={index === 0}
                   isLast={index === categories.length - 1}
+                  others={categories.filter((other) => other.id !== category.id)}
                 />
               ))}
             </ul>

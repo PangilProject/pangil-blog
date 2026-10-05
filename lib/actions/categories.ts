@@ -93,21 +93,32 @@ export const moveCategory = withAdmin(
   },
 );
 
+/**
+ * 분류 삭제. 딸린 글은 `moveTo`(다른 분류)로 옮기거나, null이면 미분류로 둔다.
+ *
+ * 글이 있다고 막지 않는다(2026-10-05). 막으면 분류를 정리하려고 글을 한 편씩 열어 바꿔야
+ * 했다. 옮길 곳을 고르게 하면 그게 곧 병합이다.
+ */
 export const deleteCategory = withAdmin(
-  async (_user, id: string, slug: string): Promise<CategoryActionResult> => {
+  async (
+    _user,
+    id: string,
+    slug: string,
+    moveTo: { id: string; slug: string } | null,
+  ): Promise<CategoryActionResult> => {
+    if (moveTo?.id === id) return { ok: false, reason: "지우는 분류로는 옮길 수 없어요" };
+
     try {
-      await deleteCategoryRecord(id);
+      await deleteCategoryRecord(id, moveTo?.id ?? null);
     } catch (cause) {
-      // 글이 딸린 분류는 스키마가 막는다(onDelete: Restrict). 그 사실을 화면 말로 옮긴다 —
-      // 지워버리면 그 글들이 분류 없는 상태로 남고, 그건 조용한 데이터 손실이다
+      // 옮길 곳이 그사이 지워졌다(FK 위반). 트랜잭션이라 아무것도 바뀌지 않았다
       const code = (cause as { code?: string } | null)?.code;
-      if (code === "P2003" || code === "P2014") {
-        return { ok: false, reason: "이 분류에 글이 있어 삭제할 수 없어요" };
-      }
+      if (code === "P2003") return { ok: false, reason: "옮길 분류를 찾지 못했어요" };
       throw cause;
     }
 
     revalidateDev(slug);
+    if (moveTo) updateTag(listFacetTag("dev", moveTo.slug));
     return { ok: true };
   },
 );
