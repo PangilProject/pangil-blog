@@ -8,7 +8,7 @@ import { getAdminUser } from "@/lib/auth/adminSession";
 import { listCategoriesForAdmin } from "@/lib/db/categories";
 
 /**
- * A-08 블로그 관리 (02 §2.4).
+ * A-08 설정 (02 §2.4).
  *
  * 지금은 카테고리 하나다. 프로필(허브 노출 정보)과 크롤러 실행 로그가 같은 화면에 들어올
  * 자리이므로 섹션으로 나눠 둔다 — 화면을 하나 더 만들지 않는다.
@@ -28,7 +28,7 @@ export default async function AdminSettingsPage() {
       <AdminNav />
 
       <main className="mx-auto flex w-full max-w-[720px] flex-col gap-8 px-[5%] py-8">
-        <h1 className="font-serif text-lg">블로그 관리</h1>
+        <h1 className="font-serif text-lg">설정</h1>
 
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
