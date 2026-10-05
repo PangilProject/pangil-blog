@@ -12,6 +12,7 @@ import { listCategories } from "@/lib/db/categories";
 import { listAdminPosts } from "@/lib/db/posts";
 import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import { formatCallNumber, type RecordType } from "@/lib/record/callNumber";
+import { UNCATEGORIZED_KEY, UNCATEGORIZED_LABEL } from "@/lib/record/category";
 import { editorPath } from "@/lib/record/todayCard";
 
 /**
@@ -89,6 +90,11 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
       href: hrefFor({ category: category.slug, page: 1 }),
       active: categorySlug === category.slug,
     })),
+    {
+      label: UNCATEGORIZED_LABEL,
+      href: hrefFor({ category: UNCATEGORIZED_KEY, page: 1 }),
+      active: categorySlug === UNCATEGORIZED_KEY,
+    },
   ];
 
   return (

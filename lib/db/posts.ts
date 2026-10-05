@@ -5,6 +5,7 @@ import { ensureCallNumber } from "@/lib/db/callNumber";
 import { type ContentParseResult, parseDraftContent } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
+import { UNCATEGORIZED_KEY } from "@/lib/record/category";
 import { deriveSlug, findAvailableSlug } from "@/lib/record/slug";
 import { PostStatus, type PostType } from "@/prisma/generated/enums";
 
@@ -141,7 +142,12 @@ export async function listAdminPosts({
   const where = {
     status: { not: PostStatus.DRAFT },
     ...(type ? { type: type as PostType } : {}),
-    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+    // 미분류는 분류를 지우며 생긴 글이다. 따로 모아 볼 수 있어야 나중에 정리한다
+    ...(categorySlug === UNCATEGORIZED_KEY
+      ? { type: "TECH" as PostType, categoryId: null }
+      : categorySlug
+        ? { category: { slug: categorySlug } }
+        : {}),
     /**
      * 공개 검색과 같은 통로를 쓴다 — `searchText`는 발행 시 채워지는 평문이고 pg_trgm GIN
      * 인덱스가 이 ILIKE를 받는다(05 §4A). 제목만 보면 "그 XSS 글"처럼 본문에만 있는 말로는
