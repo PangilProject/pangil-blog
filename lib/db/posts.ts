@@ -346,6 +346,20 @@ export async function deletePostRecord(id: string): Promise<DeletedPost | null> 
   return { ...post, type: post.type as RecordType };
 }
 
+/**
+ * 초안 여러 편을 한 번에 지운다 (A-02 일괄 삭제). 지운 수를 돌려준다.
+ *
+ * **`status: DRAFT`를 조건에 넣는다.** id는 화면에서 넘어온 값이라, 발행 글의 id가 섞여 들어와도
+ * 여기서 걸러져야 한다 — 발행 글 삭제는 무효화·검색엔진 통보가 따라야 하는 다른 길(deletePost)이다.
+ * 초안은 공개된 적이 없으므로 그 둘이 필요 없다.
+ */
+export async function deleteDraftRecords(ids: string[]): Promise<number> {
+  const { count } = await prisma.post.deleteMany({
+    where: { id: { in: ids }, status: PostStatus.DRAFT },
+  });
+  return count;
+}
+
 /** 태그 이름 목록 — 무효화 태그 계산에 쓴다(04 §1.2) */
 export async function findPostTagNames(postId: string): Promise<string[]> {
   const rows = await prisma.postTag.findMany({
