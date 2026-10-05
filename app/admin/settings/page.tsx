@@ -45,6 +45,11 @@ export default async function AdminSettingsPage() {
             </p>
           </div>
 
+          {/* 만드는 칸이 목록 위에 있다 — 분류가 늘수록 아래로 밀려 스크롤해야 닿던 자리였다 */}
+          <div className="border border-edge border-dashed bg-card px-4 py-3">
+            <CategoryCreateForm />
+          </div>
+
           {categories.length === 0 ? (
             <p className="text-sm text-ink-soft">아직 분류가 없어요.</p>
           ) : (
@@ -64,10 +69,6 @@ export default async function AdminSettingsPage() {
           <p className="font-typewriter text-[10.5px] text-faint">
             이름은 언제든 바꿔도 돼요. 주소는 공개 링크에 쓰여서 만든 뒤에는 바꿀 수 없어요
           </p>
-
-          <div className="border-edge border-t pt-4">
-            <CategoryCreateForm />
-          </div>
         </section>
       </main>
     </div>

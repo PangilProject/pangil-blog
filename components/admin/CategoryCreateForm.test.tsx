@@ -52,6 +52,24 @@ describe("CategoryCreateForm", () => {
     expect(slug).toHaveValue("sec");
   });
 
+  it("이름과 주소가 다 차야 버튼이 켜진다", () => {
+    render(<CategoryCreateForm />);
+    const button = screen.getByRole("button", { name: "분류 추가" });
+
+    expect(button).toBeDisabled();
+
+    // 한글 이름은 주소를 제안하지 않으므로 아직 꺼져 있다
+    fireEvent.change(screen.getByRole("textbox", { name: "새 분류 이름" }), {
+      target: { value: "웹 보안" },
+    });
+    expect(button).toBeDisabled();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "새 분류 주소" }), {
+      target: { value: "web-security" },
+    });
+    expect(button).not.toBeDisabled();
+  });
+
   it("만들면 칸을 비우고 목록을 다시 읽는다", async () => {
     render(<CategoryCreateForm />);
 
