@@ -7,6 +7,7 @@ import {
   heatLevel,
   longestStreak,
   monthSpans,
+  seoulToday,
   toHeatmapCells,
 } from "@/lib/record/heatmap";
 
@@ -126,5 +127,44 @@ describe("monthSpans", () => {
     for (const span of narrow) {
       expect(span.label).toBe("");
     }
+  });
+});
+
+/**
+ * 이 블록이 막는 것은 **캐시가 조용히 안 맞는 것**이다. `publishHeatmap`은 `"use cache"`라
+ * 인자가 곧 키인데, 키가 매번 달라져도 화면은 멀쩡해 보인다 — 틀린 그림이 아니라 매번
+ * 새로 계산한 같은 그림이 나오기 때문이다. 그래서 눈으로는 영영 안 잡히고 청구서로만 온다.
+ */
+describe("seoulToday", () => {
+  it("같은 날 안에서는 언제 불러도 같은 값이다", () => {
+    const morning = seoulToday(new Date("2026-10-05T00:10:00.000Z")); // 서울 09:10
+    const night = seoulToday(new Date("2026-10-05T14:59:59.999Z")); // 서울 23:59
+
+    expect(morning.getTime()).toBe(night.getTime());
+  });
+
+  it("서울 기준 날짜를 돌려준다", () => {
+    // UTC로는 10/4지만 서울은 이미 10/5다 — 격자의 마지막 칸이 여기서 갈린다
+    expect(seoulToday(new Date("2026-10-04T15:30:00.000Z")).toISOString().slice(0, 10)).toBe(
+      "2026-10-05",
+    );
+    expect(seoulToday(new Date("2026-10-04T14:30:00.000Z")).toISOString().slice(0, 10)).toBe(
+      "2026-10-04",
+    );
+  });
+
+  it("자정으로 내림한 UTC 시각이다", () => {
+    // `toHeatmapCells`가 `toISOString().slice(0, 10)`으로 칸 이름을 만든다.
+    // 자정이 아니면 칸 이름이 시각에 따라 흔들린다
+    expect(seoulToday(new Date("2026-10-05T07:21:33.123Z")).toISOString()).toBe(
+      "2026-10-05T00:00:00.000Z",
+    );
+  });
+
+  it("날짜 경계를 넘기면 값이 바뀐다", () => {
+    const before = seoulToday(new Date("2026-10-05T14:59:59.999Z")); // 서울 10/5 23:59
+    const after = seoulToday(new Date("2026-10-05T15:00:00.000Z")); // 서울 10/6 00:00
+
+    expect(after.getTime() - before.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 });

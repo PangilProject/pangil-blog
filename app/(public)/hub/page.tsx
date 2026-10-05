@@ -15,6 +15,7 @@ import {
   heatLevel,
   longestStreak,
   monthSpans,
+  seoulToday,
   toHeatmapCells,
 } from "@/lib/record/heatmap";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -522,7 +523,10 @@ async function PublishCalendar({
 }) {
   await connection();
 
-  const today = new Date();
+  // **지금이 아니라 오늘이다.** `publishHeatmap`은 `"use cache"`라 인자가 곧 캐시 키인데,
+  // `new Date()`를 넘기면 밀리초마다 키가 달라져 캐시가 한 번도 맞지 않는다 — 371일치
+  // 집계가 허브 방문마다 DB로 나갔다(2026-10-05 로그 측정)
+  const today = seoulToday();
   const cells = toHeatmapCells(await publishHeatmap(site, today), today);
   const longest = longestStreak(cells);
   const current = currentStreak(cells);

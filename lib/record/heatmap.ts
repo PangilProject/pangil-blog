@@ -5,6 +5,29 @@
  * 붙여 두면 격자 계산 하나를 확인하려고 데이터베이스가 있어야 한다.
  */
 
+/** 서울이 UTC보다 앞서는 시간. 날짜 경계를 자를 때만 쓴다 — 한국은 서머타임이 없다 */
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/**
+ * 오늘(서울 기준)의 **날짜 경계**. 지금 이 순간이 아니라 "오늘이 며칠인가"만 남긴다.
+ *
+ * 이게 따로 있는 이유는 두 가지다.
+ *
+ * 1. **캐시 키.** `publishHeatmap`은 `"use cache"`이고 인자가 곧 키다. 여기에 `new Date()`를
+ *    그대로 넘기면 밀리초마다 키가 달라져 **캐시가 한 번도 맞지 않는다** — 371일치 집계가
+ *    허브 방문마다 DB로 나간다(2026-10-05 로그 측정에서 Pooler가 전체 로그의 58%였다).
+ *    날짜로 내림하면 키는 하루에 한 번만 바뀐다.
+ * 2. **격자의 마지막 칸.** 조회는 `at time zone 'Asia/Seoul'`로 자르는데 칸 이름은
+ *    `toISOString()`이 만든 UTC 날짜였다. 한국 시간 0~9시 사이에는 둘이 하루 어긋나서
+ *    그 시간대에 쓴 글이 격자 밖으로 밀려 보였다.
+ *
+ * UTC 자정으로 맞춘 Date를 돌려준다 — `toISOString().slice(0, 10)`이 서울 날짜가 되게.
+ */
+export function seoulToday(now: Date = new Date()): Date {
+  const shifted = new Date(now.getTime() + SEOUL_OFFSET_MS);
+  return new Date(`${shifted.toISOString().slice(0, 10)}T00:00:00.000Z`);
+}
+
 /** 53주 × 7일 — 격자가 정확히 채워지는 길이 */
 export const HEATMAP_DAYS = 371;
 
