@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 /**
  * 확인 모달 (02 §3.4 "글 지우기는 두 번 눌러야 한다").
@@ -24,6 +24,7 @@ export function ConfirmDialog({
   error,
   onConfirm,
   onCancel,
+  children,
 }: {
   /** 무엇에 대한 확인인지 — 글 제목 */
   title: string;
@@ -34,6 +35,8 @@ export function ConfirmDialog({
   error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
+  /** 메시지와 버튼 사이에 놓을 것 — 확인 전에 하나를 더 골라야 할 때(분류 삭제의 옮길 곳) */
+  children?: ReactNode;
 }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
@@ -78,6 +81,8 @@ export function ConfirmDialog({
       >
         <p className="font-serif text-sm leading-body text-ink">{message}</p>
         <p className="mt-1.5 font-typewriter text-[11px] text-faint">{title}</p>
+
+        {children && <div className="mt-4">{children}</div>}
 
         {error && (
           <p role="alert" className="mt-3 font-typewriter text-[11px] text-(--accent)">

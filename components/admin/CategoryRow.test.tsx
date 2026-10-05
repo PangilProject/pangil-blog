@@ -12,7 +12,7 @@ const refresh = vi.fn();
 vi.mock("@/lib/actions/categories", () => ({
   renameCategory: (id: string, name: string) => renameCategory(id, name),
   moveCategory: (id: string, direction: string) => moveCategory(id, direction),
-  deleteCategory: (id: string, slug: string) => deleteCategory(id, slug),
+  deleteCategory: (id: string, slug: string, moveTo: unknown) => deleteCategory(id, slug, moveTo),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
@@ -34,15 +34,33 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
+const others = [
+  { id: "cat-2", name: "개발", slug: "dev" },
+  { id: "cat-3", name: "정보", slug: "info" },
+];
+
 function renderRow(overrides: Partial<AdminCategory> = {}, flags = {}) {
   return render(
     <CategoryRow
       category={{ ...category, ...overrides }}
       isFirst={false}
       isLast={false}
+      others={others}
       {...flags}
     />,
   );
+}
+
+async function openDelete() {
+  await act(async () => {
+    screen.getByRole("button", { name: "회고 삭제" }).click();
+  });
+}
+
+async function confirmDelete() {
+  await act(async () => {
+    screen.getByRole("button", { name: "삭제" }).click();
+  });
 }
 
 describe("CategoryRow", () => {
@@ -89,32 +107,53 @@ describe("CategoryRow", () => {
     expect(screen.queryByRole("textbox", { name: /주소/ })).toBeNull();
   });
 
-  it("글이 있는 분류에는 삭제 버튼을 놓지 않는다", () => {
+  it("목록에는 글 수를 적지 않는다 — 필요한 순간은 지우기 직전이다", () => {
     renderRow({ postCount: 12 });
 
-    expect(screen.queryByRole("button", { name: "회고 삭제" })).toBeNull();
-    expect(screen.getByText("글 12편")).toBeInTheDocument();
+    expect(screen.queryByText(/12편/)).toBeNull();
   });
 
   it("삭제는 확인을 거친다", async () => {
     renderRow();
-
-    await act(async () => {
-      screen.getByRole("button", { name: "회고 삭제" }).click();
-    });
+    await openDelete();
 
     expect(deleteCategory).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    // 글이 없으면 옮길 곳을 묻지 않는다
+    expect(screen.queryByRole("combobox")).toBeNull();
 
-    await act(async () => {
-      screen.getByRole("button", { name: "삭제" }).click();
+    await confirmDelete();
+
+    expect(deleteCategory).toHaveBeenCalledWith("cat-1", "retrospective", null);
+  });
+
+  it("글이 있어도 지울 수 있고, 기본은 미분류로 둔다", async () => {
+    renderRow({ postCount: 12 });
+    await openDelete();
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("글 12편");
+    expect(screen.getByRole("combobox")).toHaveDisplayValue("미분류");
+
+    await confirmDelete();
+
+    expect(deleteCategory).toHaveBeenCalledWith("cat-1", "retrospective", null);
+  });
+
+  it("옮길 분류를 고르면 그리로 옮긴다 — 병합", async () => {
+    renderRow({ postCount: 12 });
+    await openDelete();
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "cat-2" } });
+    await confirmDelete();
+
+    expect(deleteCategory).toHaveBeenCalledWith("cat-1", "retrospective", {
+      id: "cat-2",
+      slug: "dev",
     });
-
-    expect(deleteCategory).toHaveBeenCalledWith("cat-1", "retrospective");
   });
 
   it("끝에서는 그 방향으로 못 옮긴다", () => {
-    render(<CategoryRow category={category} isFirst isLast={false} />);
+    render(<CategoryRow category={category} isFirst isLast={false} others={others} />);
 
     expect(screen.getByRole("button", { name: "회고 위로" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "회고 아래로" })).not.toBeDisabled();

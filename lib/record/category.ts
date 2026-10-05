@@ -18,6 +18,13 @@ export const CATEGORY_SLUG_MAX = 30;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type CategoryInput = { name: string; slug: string };
+
+/**
+ * 분류 없는 글을 고르는 필터 값(글 관리 `?category=_none`). 밑줄은 위 SLUG 규칙에 걸리므로
+ * 실제 분류의 주소와 겹칠 수 없다.
+ */
+export const UNCATEGORIZED_KEY = "_none";
+export const UNCATEGORIZED_LABEL = "미분류";
 export type CategoryInputError = { field: "name" | "slug"; message: string };
 
 export function validateCategoryInput({ name, slug }: CategoryInput): CategoryInputError | null {

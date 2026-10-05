@@ -23,7 +23,7 @@ export async function listCategories(): Promise<CategoryOption[]> {
 
 export type AdminCategory = CategoryOption & {
   sortOrder: number;
-  /** 이 분류에 든 글 수. 0이 아니면 지울 수 없다(스키마의 onDelete: Restrict) */
+  /** 이 분류에 든 글 수. 목록에는 적지 않고, 지울 때 "몇 편이 옮겨지는지"를 묻는 데 쓴다 */
   postCount: number;
 };
 
@@ -96,6 +96,17 @@ export async function moveCategoryRecord(id: string, direction: "up" | "down"): 
   return true;
 }
 
-export async function deleteCategoryRecord(id: string): Promise<void> {
-  await prisma.category.delete({ where: { id } });
+/**
+ * 분류를 지운다. 딸린 글은 `moveTo`로 옮기고, null이면 분류 없음(미분류)으로 둔다.
+ *
+ * **옮기기와 지우기는 한 트랜잭션이다.** 스키마는 여전히 `onDelete: Restrict`라 글이 남아
+ * 있으면 삭제가 거절된다 — 그래서 옮기기가 절반만 되면 지우기도 안 되고, 글이 어느 쪽에도
+ * 걸리지 않는 상태는 생기지 않는다. 스키마를 `SetNull`로 바꾸지 않은 이유가 그것이다:
+ * 앱이 옮기는 것을 잊으면 DB가 조용히 비우지 않고 시끄럽게 막는다.
+ */
+export async function deleteCategoryRecord(id: string, moveTo: string | null): Promise<void> {
+  await prisma.$transaction([
+    prisma.post.updateMany({ where: { categoryId: id }, data: { categoryId: moveTo } }),
+    prisma.category.delete({ where: { id } }),
+  ]);
 }
