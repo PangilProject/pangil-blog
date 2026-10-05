@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { DeletePostButton } from "@/components/admin/DeletePostButton";
+import { PostRowMenu } from "@/components/admin/PostRowMenu";
 import { BulkButton, SelectionBar, useSelection } from "@/components/admin/SelectionBar";
-import { VisibilityButton } from "@/components/admin/VisibilityButton";
 import { ConfirmDialog } from "@/components/record/ConfirmDialog";
-import { type BulkPostsResult, deletePosts, unpublishPosts } from "@/lib/actions/posts";
+import {
+  type BulkPostsResult,
+  type BulkRepublishResult,
+  deletePosts,
+  republishPosts,
+  unpublishPosts,
+} from "@/lib/actions/posts";
 import { cn } from "@/lib/utils";
 
 export type AdminPostRow = {
@@ -20,29 +25,36 @@ export type AdminPostRow = {
   status: "PUBLISHED" | "PRIVATE";
 };
 
-type Pending = "unpublish" | "delete" | null;
+type Pending = "unpublish" | "republish" | "delete" | null;
 
 /**
- * 글 관리 목록 — 골라서 한꺼번에 비공개로 내리거나 지운다 (A-03).
+ * 글 관리 목록 — 골라서 한꺼번에 비공개·공개로 전환하거나 지운다 (A-03).
  *
- * 한 편씩의 버튼(비공개·삭제)은 그대로 둔다. 고르기는 여러 편을 치울 때의 길이다.
+ * 한 편씩의 동작은 줄 끝의 점 세 개 메뉴에 있다(PostRowMenu).
  *
- * **두 일괄 동작 모두 확인을 받는다.** 삭제는 되돌릴 수 없고(02 §3.4), 비공개는 한 편이면 같은
- * 버튼으로 바로 되돌리지만 여러 편은 한 편씩 다시 공개해야 한다 — 다시 공개하는 길이 발행
- * 게이트 하나이기 때문이다(05 §3.4). 확인창은 무엇이 몇 편 바뀌는지를 적는다.
+ * **일괄 동작은 모두 확인을 받는다.** 삭제는 되돌릴 수 없다(02 §3.4). 전환은 되돌릴 수 있지만
+ * 한 번에 스무 편의 공개 지면이 바뀐다 — 확인창은 무엇이 몇 편 바뀌는지를 적는다.
  *
- * `비공개로`는 고른 것 중 공개 중인 글이 있을 때만 켜진다. 이미 내린 글만 골랐으면 할 일이 없다.
- * 삭제가 더 무거운 동작이므로 액센트는 삭제에 주고, 비공개는 조용한 버튼이다.
+ * `비공개 전환`은 고른 것 중 공개 중인 글이, `공개 전환`은 내려둔 글이 있을 때만 켜진다.
+ * 할 일이 없는 버튼은 꺼 둔다. 삭제가 가장 무거우므로 액센트는 삭제에만 준다.
+ *
+ * 공개 전환은 글마다 발행 게이트를 지난다(05 §3.4) — 내용이 덜 채워진 글은 공개되지 않고,
+ * 확인창이 그 수를 알린다.
  */
 export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 일괄 처리가 끝난 뒤에도 남겨야 할 말 — 일부만 공개된 경우. 확인창은 이미 닫혔다 */
+  const [notice, setNotice] = useState<string | null>(null);
   const selection = useSelection(posts.map((post) => post.id));
 
   const chosenPublished = posts.filter(
     (post) => post.status === "PUBLISHED" && selection.isChosen(post.id),
+  );
+  const chosenPrivate = posts.filter(
+    (post) => post.status === "PRIVATE" && selection.isChosen(post.id),
   );
   const count = selection.chosen.length;
 
@@ -51,7 +63,7 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
     setError(null);
   };
 
-  const run = (task: () => Promise<BulkPostsResult>) =>
+  const run = (task: () => Promise<BulkPostsResult | BulkRepublishResult>) =>
     startTransition(async () => {
       const result = await task();
       if (!result.ok) {
@@ -59,10 +71,21 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
         setError("바꾸지 못했어요");
         return;
       }
+
+      // 일부만 공개됐으면 그 사실을 목록 위에 남긴다. 확인창에 두면 고른 것이 비워진 뒤
+      // "0편을 공개로 전환할까요?"로 바뀐 창이 남는다
+      setNotice(
+        "failed" in result && result.failed > 0
+          ? `${result.failed}편은 내용이 덜 채워져 공개하지 못했어요. 그 글은 열어서 채운 뒤 공개해 주세요`
+          : null,
+      );
       setConfirming(null);
       selection.clear();
       router.refresh();
     });
+
+  const scope = (matched: number) =>
+    matched === count ? `${count}편을` : `고른 ${count}편 중 ${matched}편을`;
 
   return (
     <div className="flex flex-col gap-2">
@@ -72,12 +95,32 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
           enabled={chosenPublished.length > 0 && !isPending}
           onClick={() => setConfirming("unpublish")}
         >
-          비공개로
+          비공개 전환
+        </BulkButton>
+        <BulkButton
+          quiet
+          enabled={chosenPrivate.length > 0 && !isPending}
+          onClick={() => setConfirming("republish")}
+        >
+          공개 전환
         </BulkButton>
         <BulkButton enabled={count > 0 && !isPending} onClick={() => setConfirming("delete")}>
           선택 삭제
         </BulkButton>
       </SelectionBar>
+
+      {/* 상태 영역은 늘 그려 둔다 — 비어 있다가 생긴 글을 화면 읽기가 알린다. 누르면 지운다 */}
+      <div role="status" className="self-start pl-4">
+        {notice && (
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="text-left font-typewriter text-[10.5px] text-(--accent)"
+          >
+            {notice}
+          </button>
+        )}
+      </div>
 
       <ul className="flex flex-col divide-y divide-edge border border-edge bg-card">
         {posts.map((post) => {
@@ -110,12 +153,11 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
               {post.status === "PRIVATE" && (
                 <span className="font-typewriter text-[10.5px] text-(--accent)">비공개</span>
               )}
-              <VisibilityButton
+              <PostRowMenu
                 postId={post.id}
                 title={post.title}
                 isPublished={post.status === "PUBLISHED"}
               />
-              <DeletePostButton postId={post.id} title={post.title} />
             </li>
           );
         })}
@@ -124,17 +166,26 @@ export function AdminPostList({ posts }: { posts: AdminPostRow[] }) {
       {confirming === "unpublish" && (
         <ConfirmDialog
           title="글 관리"
-          message={
-            chosenPublished.length === count
-              ? `${count}편을 비공개로 내릴까요? 다시 공개하려면 한 편씩 공개해야 해요.`
-              : `고른 ${count}편 중 공개 중인 ${chosenPublished.length}편을 비공개로 내릴까요? 다시 공개하려면 한 편씩 공개해야 해요.`
-          }
-          confirmLabel="비공개로"
-          pendingLabel="내리는 중…"
+          message={`${scope(chosenPublished.length)} 비공개로 전환할까요?`}
+          confirmLabel="비공개 전환"
+          pendingLabel="바꾸는 중…"
           isPending={isPending}
           error={error}
           onCancel={close}
           onConfirm={() => run(() => unpublishPosts(chosenPublished.map((post) => post.id)))}
+        />
+      )}
+
+      {confirming === "republish" && (
+        <ConfirmDialog
+          title="글 관리"
+          message={`${scope(chosenPrivate.length)} 공개로 전환할까요?`}
+          confirmLabel="공개 전환"
+          pendingLabel="바꾸는 중…"
+          isPending={isPending}
+          error={error}
+          onCancel={close}
+          onConfirm={() => run(() => republishPosts(chosenPrivate.map((post) => post.id)))}
         />
       )}
 
