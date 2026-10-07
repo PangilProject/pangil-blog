@@ -789,28 +789,6 @@ html[data-hub-live] [data-hub-mq-dup] {
   background: var(--accent);
 }
 
-[data-hub-hud] {
-  position: fixed;
-  left: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  z-index: 40;
-  margin: 0;
-  display: flex;
-  gap: 9px;
-  align-items: baseline;
-  font-family: var(--stack-typewriter);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--faint);
-  pointer-events: none;
-}
-
-[data-hub-hud] b {
-  color: var(--accent);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-
 /*
   장면 목차 (2026-10-07) — 오른쪽 가운데의 짧은 선. 마우스를 올리거나 선을 누르면 이름이 펼쳐진다.
 
@@ -934,12 +912,6 @@ html[data-hub-live] [data-hub-mq-dup] {
   bottom: 6px;
   width: 2px;
   background: var(--accent);
-}
-
-@media (width < 40rem) {
-  [data-hub-hud] {
-    display: none; /* 좁은 화면에서는 붙들지 않으므로 표시할 것도 없다 */
-  }
 }
 
 /* 활자 낱자. 스크롤이 --sx 계열을, 물리가 --px 계열을 쓴다 — 서로 덮지 않는다 */
