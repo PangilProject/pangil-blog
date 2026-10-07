@@ -37,7 +37,9 @@
   --edge: #e7e0d2; /* 보더 */
   --postit: #fbf0b8; /* 메모지 */
   --crawl: #fbf6e9; /* 크롤링 영역 띠 */
-  --chrome: #2b2823; /* 관리 헤더(먹) */
+  /* 테마를 타지 않는 먹 판 — 코드 블록 배경(03 §3.2). --ink를 빌려 쓰면 다크에서 판이 밝은
+     먹색으로 뒤집힌다. 값은 Shiki 잉크 테마(lib/render/inkTheme)의 배경과 같아야 한다 */
+  --chrome: #2b2823;
 
   /* 사이트별 오버라이드는 이 한 축뿐이다(03 §2.1, 프리모템 #12).
      허브는 faith 액센트를 공유하고, 카드 2장에서만 각자의 값을 쓴다. */
@@ -1217,10 +1219,11 @@ html[data-hub-live] [data-hub-mq-dup] {
   padding: 0.1em 0.3em;
 }
 
-/* 코드 블록은 먹 배경 위의 코드(03 §3.2). Shiki 하이라이팅은 M3에서 얹는다 */
+/* 코드 블록은 먹 배경 위의 코드(03 §3.2). 판을 감싼 래퍼가 `dark` 클래스를 달아서
+   (CodeBlock·CodeBlockNodeView) 여기의 --ink는 페이지 테마와 무관하게 밝은 다크 값이다 */
 .record-prose pre {
-  background: var(--ink);
-  color: var(--card);
+  background: var(--chrome);
+  color: var(--ink);
   font-family: var(--stack-code);
   font-size: 13px;
   line-height: 1.7;
@@ -1255,7 +1258,7 @@ html[data-hub-live] [data-hub-mq-dup] {
 /*
   코드 블록 (03 §3.2 · 04 §3.2). Shiki가 만든 <pre>와 폴백 <pre>가 같은 조판을 쓴다.
   래퍼(언어 라벨·복사 버튼)가 테두리를 그리므로 안쪽 pre는 여백만 갖는다. 배경은 Shiki가
-  인라인으로 칠하는 색이 그대로 먹지색(--ink)이라 굳이 덮지 않는다.
+  인라인으로 칠하는 색이 래퍼의 --chrome과 같은 값이라 굳이 덮지 않는다.
 */
 .record-code pre,
 .record-code-plain {
@@ -1265,7 +1268,7 @@ html[data-hub-live] [data-hub-mq-dup] {
   font-family: var(--stack-code);
   font-size: 13px;
   line-height: 1.75;
-  color: #f3efe4;
+  color: var(--ink); /* 래퍼가 늘 다크라 밝은 값이다 */
 }
 
 .record-code code,
