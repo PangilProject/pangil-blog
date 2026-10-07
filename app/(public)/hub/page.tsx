@@ -516,7 +516,7 @@ const HUB_TOC_ID = "hub-toc-open";
 function HubToTop() {
   return (
     <a href="#compose" data-hub-jump="compose" data-hub-top aria-label="맨 위로">
-      {/* 밝기 토글과 같은 결이다: 15px, 획 1.7, 둥근 끝 */}
+      {/* 밝기 토글과 같은 결이다: 획 1.7, 둥근 끝 */}
       <svg
         aria-hidden
         viewBox="0 0 24 24"
@@ -525,7 +525,7 @@ function HubToTop() {
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="size-[15px]"
+        className="size-[13px]"
       >
         <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
       </svg>
