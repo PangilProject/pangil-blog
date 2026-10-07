@@ -166,6 +166,11 @@ export function HubStage() {
 
     /* ── 장면 ────────────────────────────────────── */
     const scenes = Array.from(document.querySelectorAll<HTMLElement>("[data-hub-scene]"));
+    /** 목차의 선과 이름 — 지금 장면에 `data-on`이 선다 */
+    const tocMarks = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-hub-toc-dash], [data-hub-jump]"),
+    );
+    let tocActive = "";
     const tones = scenes.map((el) => Number(el.dataset.tone ?? 0));
     const hues = scenes.map((_, i) => (scenes.length > 1 ? i / (scenes.length - 1) : 0));
 
@@ -438,6 +443,15 @@ export function HubStage() {
           index = i;
           local = 1;
         }
+        // 목차의 지금 장면 — 바뀔 때만 쓴다
+        const sceneId = scenes[index]?.id;
+        if (sceneId && sceneId !== tocActive) {
+          tocActive = sceneId;
+          for (const el of tocMarks)
+            el.dataset.on =
+              el.dataset.hubTocDash === sceneId || el.dataset.hubJump === sceneId ? "1" : "0";
+        }
+
         const hud = hudRef.current;
         if (hud) {
           const pct = hud.querySelector("[data-hub-hud-pct]");
@@ -628,6 +642,83 @@ export function HubStage() {
       }
     }
 
+    /* ── 목차 · 눈금을 누르면 그 자리로 ───────────────
+       목차는 장면으로, 눈금은 장면 안의 항목으로 간다. 머무는 장면은 **첫 항목의 글자가 다 앉은
+       자리**로 보낸다 — 장면 맨 위에 내려 주면 글자가 흩어져 안 보이는 채로 멈춘다. */
+    const tocToggle = document.getElementById("hub-toc-open") as HTMLInputElement | null;
+
+    /**
+     * 스크롤을 **직접 그린다**(2026-10-07). 브라우저의 `behavior: "smooth"`는 먼 거리에서 거의
+     * 순간이동이라 "여기서 저기로 간다"가 보이지 않았다. 거리만큼 시간을 늘리고(0.6~1.4초),
+     * 천천히 출발해 천천히 앉는다. 지나가는 장면의 연출은 스크롤 위치를 따라 그대로 재생된다.
+     * 도중에 휠·터치·키를 쓰면 그 자리에서 놓는다 — 사람의 스크롤을 빼앗지 않는다.
+     */
+    let glideFrame = 0;
+    const stopGlide = () => {
+      cancelAnimationFrame(glideFrame);
+      glideFrame = 0;
+    };
+    const glideTo = (top: number) => {
+      stopGlide();
+      const from = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const to = Math.max(0, Math.min(max, top));
+      const distance = to - from;
+      if (Math.abs(distance) < 2) return;
+
+      const duration = Math.min(1400, Math.max(600, 450 + Math.abs(distance) * 0.18));
+      const start = performance.now();
+      const ease = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        window.scrollTo(0, from + distance * ease(t));
+        glideFrame = t < 1 ? requestAnimationFrame(step) : 0;
+      };
+      glideFrame = requestAnimationFrame(step);
+    };
+    window.addEventListener("wheel", stopGlide, { passive: true });
+    window.addEventListener("touchstart", stopGlide, { passive: true });
+    window.addEventListener("keydown", stopGlide);
+
+    /** 머무는 장면이면 index번째 항목이 다 앉은 자리, 아니면 장면 맨 위 */
+    const targetTop = (sceneEl: HTMLElement, index: number) => {
+      const top = sceneEl.getBoundingClientRect().top + window.scrollY;
+      const track = tracks.find((candidate) => candidate.el === sceneEl);
+      const count = track?.steps.length ?? 0;
+      const span = sceneEl.offsetHeight - window.innerHeight;
+      if (!track || count === 0 || span <= 0) return top;
+      return top + ((index + 0.62) / count) * span;
+    };
+
+    /* ── 눈금을 누르면 그 항목으로 ───────────────────
+       스크롤로 보낸다 — 활자가 모이는 정도도 스크롤 위치가 정하므로, 부드럽게 지나가는 동안
+       흩어졌다 모이는 연출이 그대로 재생된다. 도착점은 **그 항목의 글자가 다 앉은 자리**다
+       (항목 안 55%에서 다 앉는다 — updateTracks). 0%에 내려 주면 흩어진 채로 멈춘다. */
+    const onTickClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+
+      const jump = target?.closest<HTMLAnchorElement>("[data-hub-jump]");
+      if (jump) {
+        const sceneEl = document.getElementById(jump.dataset.hubJump ?? "");
+        if (!sceneEl) return;
+        event.preventDefault();
+        glideTo(targetTop(sceneEl, 0));
+        // 누르면 펼친 목록은 닫는다 — 호버가 없는 기기에서는 닫을 다른 길이 없다
+        if (tocToggle) tocToggle.checked = false;
+        jump.blur();
+        return;
+      }
+
+      const tick = target?.closest<HTMLElement>("[data-hub-tick]");
+      if (!tick) return;
+
+      const track = tracks.find((candidate) => candidate.ticks.includes(tick));
+      if (!track) return;
+      glideTo(targetTop(track.el, track.ticks.indexOf(tick)));
+    };
+    document.addEventListener("click", onTickClick);
+
     /* ── 시작 ────────────────────────────────────── */
     readBase();
     root.setAttribute("data-hub-live", "");
@@ -660,6 +751,11 @@ export function HubStage() {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("click", onTickClick);
+      stopGlide();
+      window.removeEventListener("wheel", stopGlide);
+      window.removeEventListener("touchstart", stopGlide);
+      window.removeEventListener("keydown", stopGlide);
       root.removeAttribute("data-hub-live");
       for (const name of [...PAINTED, "--hub-progress"]) {
         root.style.removeProperty(name);
@@ -668,6 +764,7 @@ export function HubStage() {
         for (const step of track.steps) step.removeAttribute("data-on");
         for (const tick of track.ticks) tick.removeAttribute("data-on");
       }
+      for (const el of tocMarks) el.removeAttribute("data-on");
       for (const row of marqueeRows) row.el.style.removeProperty("--mq-p");
       for (const item of marqueeItems) {
         item.removeAttribute("data-on");

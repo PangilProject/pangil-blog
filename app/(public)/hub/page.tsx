@@ -64,6 +64,7 @@ export default function HubPage() {
       {person && <JsonLd data={person} />}
       {/* 연출 층 (ADR-004 2단계). 이 아일랜드가 없어도 아래는 전부 읽힌다 */}
       <HubStage />
+      <HubToc entries={tocEntries()} />
 
       {/* ═══ 장면 하나 · 조판 ═══ */}
       <HubScene paper={hubScenes.compose.paper} slug={hubIntro.eyebrow} id="compose">
@@ -444,14 +445,81 @@ function tickKeys(count: number): string[] {
   return keys;
 }
 
+/**
+ * 지금 몇 번째 항목인지 — **누르면 그 항목으로 간다**(2026-10-07).
+ *
+ * 버튼이지만 동작은 연출 층(HubStage)이 붙인다. 아일랜드를 늘리지 않으려는 것이고, 눈금은
+ * 연출이 켜졌을 때만 보이므로(`data-hub-live`) 스크립트가 없을 때 눌러도 아무 일 없는 버튼이
+ * 남지 않는다.
+ */
 function HubTicks({ count }: { count: number }) {
   return (
-    <div data-hub-ticks="" aria-hidden>
-      {tickKeys(count).map((key) => (
-        <span key={key} data-hub-tick="" />
+    <div data-hub-ticks="">
+      {tickKeys(count).map((key, index) => (
+        <button key={key} type="button" data-hub-tick="" aria-label={`${index + 1}번째 항목`} />
       ))}
     </div>
   );
+}
+
+/**
+ * 장면 목차 — 오른쪽 가운데의 짧은 선들(2026-10-07, 노션의 그것).
+ *
+ * 평소에는 선만 서고, 마우스를 올리거나(호버가 있는 기기) 선을 누르면(없는 기기) 장면 이름이
+ * 펼쳐진다. 누르면 펼치는 것은 **숨긴 체크박스와 `<label>`**이다 — 사이드바 접기와 같은 수법이라
+ * 스크립트 없이 열리고 닫힌다(04 §3.6).
+ *
+ * 링크는 그냥 `#장면`이다. 스크립트가 없으면 그 자리로 뛰고, 연출이 서 있으면 HubStage가 받아
+ * 부드럽게 보낸다(머무는 장면은 글자가 다 앉은 자리로). 지금 장면 표시도 HubStage가 한다.
+ * 아일랜드는 늘지 않는다.
+ */
+function HubToc({ entries }: { entries: TocEntry[] }) {
+  return (
+    <nav data-hub-toc aria-label="장면 목차">
+      <input id={HUB_TOC_ID} type="checkbox" className="sr-only" aria-label="장면 목차 펼치기" />
+      <label htmlFor={HUB_TOC_ID} data-hub-toc-handle aria-hidden>
+        {entries.map((entry) => (
+          <i key={entry.id} data-hub-toc-dash={entry.id} />
+        ))}
+      </label>
+      <ol data-hub-toc-list>
+        {entries.map((entry) => (
+          <li key={entry.id}>
+            <a href={`#${entry.id}`} data-hub-jump={entry.id}>
+              <span data-hub-toc-no>{entry.no}</span>
+              <span data-hub-toc-name>{entry.name}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+const HUB_TOC_ID = "hub-toc-open";
+
+type TocEntry = { id: string; no: string; name: string };
+
+/** `01 · 어떻게 일하나` → 번호와 이름. 목차는 둘을 두 칸으로 세운다 */
+function tocEntry(id: string, slug: string): TocEntry {
+  const [no, ...rest] = slug.split(" · ");
+  return { id, no: no ?? "", name: rest.join(" · ") };
+}
+
+/**
+ * 목차에 서는 장면 — 그려지는 장면과 같은 조건이다(빈 배열이면 그 장면이 없다).
+ * 라벨은 장면 머리의 것을 그대로 쓴다. 첫 화면만 라벨이 이름이라 `00 · 조판`으로 맞춘다.
+ */
+function tocEntries(): TocEntry[] {
+  return [
+    tocEntry("compose", "00 · 조판"),
+    hubSentences.length > 0 && tocEntry("sentence", hubScenes.sentence.slug),
+    hubRoles.length > 0 && tocEntry("roles", hubScenes.roles.slug),
+    hubTools.length > 0 && tocEntry("tools", hubScenes.tools.slug),
+    hubWorks.length > 0 && tocEntry("works", hubScenes.works.slug),
+    tocEntry("record", hubScenes.record.slug),
+    tocEntry("colophon", hubScenes.colophon.slug),
+  ].filter((entry): entry is TocEntry => Boolean(entry));
 }
 
 /** 마퀴 줄 수. 셋이면 화면이 차고, 넷부터는 글자가 아니라 무늬로 보인다 */
