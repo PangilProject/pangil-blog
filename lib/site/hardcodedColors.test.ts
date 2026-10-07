@@ -20,7 +20,7 @@ import { describe, expect, it } from "vitest";
 const BASELINE: Record<string, string[]> = {
   "components/editor/CodeBlockNodeView.tsx": ["#C7B58A"],
   "components/editor/CrawlBand.tsx": ["#6e5d38", "#98835a", "#efe3c8"],
-  "components/editor/EditorToolbar.tsx": ["#4e483c", "#a79c86", "#c9a98a", "#dcd4c2"],
+  "components/editor/EditorToolbar.tsx": ["#4e483c", "#c9a98a", "#dcd4c2"],
   "components/editor/PraiseSectionList.tsx": ["#c4bcaa", "#ede5d3"],
   "components/editor/QtEditor.tsx": ["#b98f4f", "#dcc9b8", "#fbf5ec"],
   "components/editor/SaveIndicator.tsx": ["#cfc8b6"],

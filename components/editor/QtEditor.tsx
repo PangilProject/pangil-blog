@@ -181,7 +181,7 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
         }
         toolbar={
           <ToolbarDock>
-            <ConnectedEditorToolbar hint="# - > 로 바로 서식이 돼요" />
+            <ConnectedEditorToolbar />
           </ToolbarDock>
         }
         banner={

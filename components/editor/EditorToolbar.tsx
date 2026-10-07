@@ -1,6 +1,8 @@
 "use client";
 
-import { type TableCommand, TableToolbarRow } from "@/components/editor/TableToolbarRow";
+import { useState } from "react";
+
+import { type TableCommand, TablePanel, TableToggle } from "@/components/editor/TableToolbarRow";
 import {
   Select,
   SelectContent,
@@ -23,6 +25,11 @@ import { cn } from "@/lib/utils";
  * 문단 스타일 목록은 브라우저 기본 select을 쓰지 않는다. OS 기본 드롭다운이 라운드
  * 모서리와 파란 하이라이트를 강제해 금지 문법(03 §1.1)과 충돌한다. 툴바에 고정된
  * 목록이므로 "떠다니는 UI 금지"(ADR-001 §5)에도 어긋나지 않는다.
+ *
+ * **모바일에서는 두 줄이다**(2026-10-07). 문단 스타일·굵게·기울임·밑줄이 첫 줄, 목록·번호·인용·
+ * 구분선·표가 둘째 줄이고 둘째 줄은 넘치면 옆으로 민다. 전에는 넘치는 대로 줄을 바꿔 세 줄이
+ * 됐고, 위에 붙은 띠가 쓰는 내내 화면의 한 뼘을 먹었다. 버튼은 손가락 크기(44px)로 키운다.
+ * 데스크탑은 지금처럼 한 줄이다.
  */
 
 export type { TableCommand };
@@ -101,8 +108,6 @@ export type EditorToolbarProps = {
   onTableCommand?: (command: TableCommand) => void;
   /** 지금 할 수 있는 표 명령들 */
   canTable?: Partial<Record<TableCommand, boolean>>;
-  /** 우측 힌트 — "마크다운 단축 입력도 돼요" 등 */
-  hint?: string;
   className?: string;
 };
 
@@ -116,11 +121,12 @@ export function EditorToolbar({
   onInsertTable,
   onTableCommand,
   canTable,
-  hint,
   className,
 }: EditorToolbarProps) {
   const marks = MARK_COMMANDS_BY_VARIANT[variant];
   const blocks = BLOCK_COMMANDS_BY_VARIANT[variant];
+  const hasTable = variant === "full";
+  const [isPickingTable, setIsPickingTable] = useState(false);
 
   return (
     <div
@@ -141,7 +147,7 @@ export function EditorToolbar({
       >
         <SelectTrigger
           aria-label="문단 스타일"
-          className="min-w-[92px] rounded-none text-[13px] text-ink"
+          className="min-w-[92px] rounded-none text-[13px] text-ink max-md:data-[size=default]:h-11"
         >
           <SelectValue />
         </SelectTrigger>
@@ -165,35 +171,47 @@ export function EditorToolbar({
         />
       ))}
 
-      <Separator />
+      <Separator className="max-md:hidden" />
 
-      {blocks.map((command) => (
-        <ToolbarButton
-          key={command}
-          command={command}
-          active={activeCommands.includes(command)}
-          onCommand={onCommand}
-          typewriter
-        />
-      ))}
+      {/* 모바일에서는 이 묶음이 제 줄을 쓰고 넘치면 옆으로 민다. 스크롤바는 감춘다 —
+          잘린 버튼이 이미 "더 있다"를 말한다 */}
+      <div
+        data-toolbar-blocks
+        className="flex items-center gap-1 max-md:w-full max-md:overflow-x-auto max-md:[scrollbar-width:none]"
+      >
+        {blocks.map((command) => (
+          <ToolbarButton
+            key={command}
+            command={command}
+            active={activeCommands.includes(command)}
+            onCommand={onCommand}
+            typewriter
+          />
+        ))}
+
+        {/* 표 안에서는 단추 대신 표를 만지는 줄이 선다 — 이미 표가 있다 */}
+        {hasTable && !inTable && (
+          <TableToggle open={isPickingTable} onToggle={() => setIsPickingTable((open) => !open)} />
+        )}
+      </div>
 
       {/* 표는 켜고 끄는 것이 아니라 크기를 고르는 것이라 제 줄을 쓴다 */}
-      {variant === "full" && (
-        <TableToolbarRow
+      {hasTable && (
+        <TablePanel
           inTable={inTable}
+          open={isPickingTable}
           can={canTable}
           onInsertTable={onInsertTable}
           onTableCommand={onTableCommand}
+          onClose={() => setIsPickingTable(false)}
         />
       )}
-
-      {hint && <span className="ml-auto font-typewriter text-[10px] text-[#a79c86]">{hint}</span>}
     </div>
   );
 }
 
-function Separator() {
-  return <span aria-hidden className="mx-1.5 h-5 w-px bg-[#dcd4c2]" />;
+function Separator({ className }: { className?: string }) {
+  return <span aria-hidden className={cn("mx-1.5 h-5 w-px bg-[#dcd4c2]", className)} />;
 }
 
 function ToolbarButton({
@@ -214,7 +232,8 @@ function ToolbarButton({
       aria-label={COMMAND_LABELS[command]}
       onClick={() => onCommand?.(command)}
       className={cn(
-        "h-8 min-w-8 border px-2 text-[13.5px] text-[#4e483c] transition-colors duration-150",
+        "h-8 min-w-8 shrink-0 border px-2 text-[13.5px] text-[#4e483c] transition-colors duration-150",
+        "max-md:h-11 max-md:min-w-11",
         typewriter && "font-typewriter text-[11px]",
         active
           ? "border-[#c9a98a] bg-card text-(--accent)"

@@ -133,13 +133,7 @@ function tableAvailability(
   };
 }
 
-export function ConnectedEditorToolbar({
-  variant = "full",
-  hint,
-}: {
-  variant?: EditorToolbarVariant;
-  hint?: string;
-}) {
+export function ConnectedEditorToolbar({ variant = "full" }: { variant?: EditorToolbarVariant }) {
   // version은 커서 이동·트랜잭션마다 올라간다. 이 값을 읽어야 툴바가 현재 블록을 따라간다
   const { editor, version } = useEditorFocus();
   void version;
@@ -147,7 +141,6 @@ export function ConnectedEditorToolbar({
   return (
     <EditorToolbar
       variant={variant}
-      hint={hint}
       blockStyle={editor ? currentBlockStyle(editor) : "p"}
       activeCommands={editor ? activeCommands(editor) : []}
       onBlockStyleChange={(style) => editor && applyBlockStyle(editor, style)}

@@ -200,7 +200,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
             {isPublishing ? "발행 중…" : "발행"}
           </Button>
         }
-        toolbar={<ConnectedEditorToolbar hint="마크다운을 붙여넣으면 그 자리에서 서식이 돼요" />}
+        toolbar={<ConnectedEditorToolbar />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner
