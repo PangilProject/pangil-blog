@@ -20,7 +20,7 @@
 export type HubPaper = "paper" | "ink" | "shelf" | "trace";
 
 export type HubScene = {
-  /** 장면 번호 라벨 — "장 하나 · 문장" */
+  /** 장면 번호 라벨 — "01 · 어떻게 일하나" */
   slug: string;
   paper: HubPaper;
 };
@@ -28,12 +28,16 @@ export type HubScene = {
 /** 장면 순서와 명암. 밝게 시작해 먹으로 내려갔다가 다시 종이로 올라온다 */
 export const hubScenes = {
   compose: { slug: "조판 · COMPOSING", paper: "paper" },
-  sentence: { slug: "장 하나 · 문장", paper: "ink" },
-  roles: { slug: "장 둘 · 역할", paper: "shelf" },
-  tools: { slug: "장 셋 · 활자", paper: "ink" },
-  works: { slug: "장 넷 · 만든 것", paper: "paper" },
-  record: { slug: "장 다섯 · 기록", paper: "paper" },
-  colophon: { slug: "마지막 장 · 판권지", paper: "trace" },
+  /*
+    라벨은 **방문자가 궁금한 순서의 질문**이다(2026-10-07). 전에는 `장 하나 · 문장`처럼 형식을
+    말했는데, 우리말에서 "장 하나"가 걸리고 "문장"·"역할"은 그 장에 무엇이 있는지를 말하지 않았다.
+  */
+  sentence: { slug: "01 · 어떻게 일하나", paper: "ink" },
+  roles: { slug: "02 · 무엇을 하나", paper: "shelf" },
+  tools: { slug: "03 · 무엇으로 하나", paper: "ink" },
+  works: { slug: "04 · 무엇을 만들었나", paper: "paper" },
+  record: { slug: "05 · 무엇을 남기나", paper: "paper" },
+  colophon: { slug: "06 · 무엇으로 지었나", paper: "trace" },
 } as const satisfies Record<string, HubScene>;
 
 /* ─────────────────────────────────────────────
@@ -268,7 +272,8 @@ export const hubRecord = {
 export type HubFact = { label: string; value: string };
 
 export const hubColophon = {
-  statement: "이 지면도 제가 만들었습니다.",
+  /** 줄은 손으로 끊는다 — 저절로 끊기면 `제가`가 윗줄 끝에 매달려 주어가 흐려진다 */
+  statement: "이 지면도\n제가 만들었습니다.",
   lede: "인쇄물의 마지막 장에는 인쇄소와 활자와 종이를 적습니다. 화면에도 같은 것이 있어야 한다고 생각해서, 이 지면은 자기가 무엇으로 짜였는지 적어 둡니다.",
   /** 손으로 고치는 값은 최소로 둔다. 빌드가 적을 수 있는 것은 3단계에서 넘긴다(ADR-004) */
   facts: [

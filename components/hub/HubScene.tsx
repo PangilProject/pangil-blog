@@ -37,7 +37,7 @@ export function HubScene({
   stepHeight = 90,
 }: {
   paper: HubPaper;
-  /** 장면 머리의 라벨 — "장 하나 · 문장" */
+  /** 장면 머리의 라벨 — "01 · 어떻게 일하나" */
   slug?: string;
   children: ReactNode;
   className?: string;

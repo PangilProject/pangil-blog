@@ -406,9 +406,9 @@ export default function HubPage() {
         </div>
       </HubScene>
 
-      {/* ═══ 마지막 장 · 판권지 ═══ */}
+      {/* ═══ 06 · 무엇으로 지었나 (판권지) ═══ */}
       <HubScene paper={hubScenes.colophon.paper} slug={hubScenes.colophon.slug} id="colophon">
-        <HubStatement>{hubColophon.statement}</HubStatement>
+        <HubStatement className="whitespace-pre-line">{hubColophon.statement}</HubStatement>
         <p className="mt-3.5 max-w-[58ch] text-[14px] leading-body text-ink-soft">
           {hubColophon.lede}
         </p>
