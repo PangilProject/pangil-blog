@@ -63,7 +63,7 @@ model Post {
   content              Json // Zod discriminated union (05 §2)
   contentSchemaVersion Int        @default(1)
   excerpt              String? // TECH 목록 카드 · OG description
-  thumbnailUrl         String? // TECH 목록 카드
+  thumbnailUrl         String? // 미사용(2026-10-07 에디터에서 걷음). 칸을 지우는 마이그레이션은 trgm 인덱스 함정 때문에 미뤘다
   searchText           String? // 발행 시 title+본문 평문 추출 (검색용, 05 §4A)
   categoryId           String? // TECH만 사용
   category             Category?  @relation(fields: [categoryId], references: [id], onDelete: Restrict)

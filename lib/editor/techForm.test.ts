@@ -29,7 +29,6 @@ function filled(): TechFormValues {
     categoryId: "cat-1",
     body: body("Next 16은 무효화를 두 갈래로 나눴다."),
     excerpt: "",
-    thumbnailUrl: "",
     tags: ["Next.js", "next.js", " 캐시 "],
   };
 }
@@ -112,7 +111,6 @@ describe("저장 계약 변환 (05 §2)", () => {
     expect(toDraftMeta(EMPTY_TECH_FORM)).toEqual({
       categoryId: null,
       excerpt: null,
-      thumbnailUrl: null,
       tags: [],
     });
   });
@@ -133,7 +131,6 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
       title: "제목",
       categoryId: "cat-2",
       excerpt: "저장된 요약",
-      thumbnailUrl: null,
       tags: ["Prisma"],
     });
 
@@ -141,7 +138,6 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
       title: "제목",
       categoryId: "cat-2",
       excerpt: "저장된 요약",
-      thumbnailUrl: "",
       tags: ["Prisma"],
     });
     expect(form.body).toEqual(filled().body);
@@ -154,7 +150,6 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
         title: "제목",
         categoryId: null,
         excerpt: null,
-        thumbnailUrl: null,
         tags: [],
       },
     );

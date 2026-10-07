@@ -31,7 +31,6 @@ export type PublicPost = {
   createdAt: Date;
   updatedAt: Date;
   excerpt: string | null;
-  thumbnailUrl: string | null;
   categoryName: string | null;
   categorySlug: string | null;
   tags: string[];
@@ -49,7 +48,6 @@ const DETAIL_SELECT = {
   createdAt: true,
   updatedAt: true,
   excerpt: true,
-  thumbnailUrl: true,
   content: true,
   category: { select: { name: true, slug: true } },
   tags: { select: { tag: { select: { name: true } } } },
@@ -90,7 +88,6 @@ export async function findPublishedPostBySlug(
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     excerpt: row.excerpt,
-    thumbnailUrl: row.thumbnailUrl,
     categoryName: row.category?.name ?? null,
     categorySlug: row.category?.slug ?? null,
     tags: row.tags.map((entry) => entry.tag.name),

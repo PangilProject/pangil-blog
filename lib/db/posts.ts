@@ -26,7 +26,6 @@ export type EditablePost = {
   callNumber: number | null;
   categoryId: string | null;
   excerpt: string | null;
-  thumbnailUrl: string | null;
   /** 최초 발행 시각. 재공개가 이 값을 밀면 목록에서 옛 글이 맨 위로 올라온다(05 §5) */
   publishedAt: Date | null;
   updatedAt: Date;
@@ -42,7 +41,6 @@ const EDITABLE_SELECT = {
   callNumber: true,
   categoryId: true,
   excerpt: true,
-  thumbnailUrl: true,
   publishedAt: true,
   updatedAt: true,
   content: true,
@@ -57,7 +55,6 @@ function toEditablePost(row: {
   callNumber: number | null;
   categoryId: string | null;
   excerpt: string | null;
-  thumbnailUrl: string | null;
   publishedAt: Date | null;
   updatedAt: Date;
   content: unknown;
@@ -215,7 +212,6 @@ export type SaveDraftInput = {
   /** TECH 전용 메타 */
   categoryId?: string | null;
   excerpt?: string | null;
-  thumbnailUrl?: string | null;
 };
 
 /**

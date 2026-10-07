@@ -38,7 +38,6 @@ export type ListCard = {
   callNumber: number | null;
   publishedAt: Date | null;
   excerpt: string | null;
-  thumbnailUrl: string | null;
   categoryName: string | null;
   categorySlug: string | null;
   /** faith 카드의 부제 — 말씀 범위 */
@@ -62,7 +61,6 @@ const CARD_SELECT = {
   callNumber: true,
   publishedAt: true,
   excerpt: true,
-  thumbnailUrl: true,
   content: true,
   category: { select: { name: true, slug: true } },
   tags: { select: { tag: { select: { name: true } } } },
@@ -97,7 +95,6 @@ export async function findPublishedPosts(query: ListQuery): Promise<ListPage> {
       callNumber: row.callNumber,
       publishedAt: row.publishedAt,
       excerpt: row.excerpt,
-      thumbnailUrl: row.thumbnailUrl,
       categoryName: row.category?.name ?? null,
       categorySlug: row.category?.slug ?? null,
       scriptureRef: scriptureRefOf(row.content),

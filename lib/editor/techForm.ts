@@ -24,7 +24,6 @@ export type TechFormValues = {
   body: RichTextValue;
   /** 비워두면 본문 앞부분에서 뽑는다(02 §5.5). 손으로 적으면 그 값이 이긴다 */
   excerpt: string;
-  thumbnailUrl: string;
   tags: string[];
 };
 
@@ -33,7 +32,6 @@ export const EMPTY_TECH_FORM: TechFormValues = {
   categoryId: "",
   body: EMPTY_RICH_TEXT,
   excerpt: "",
-  thumbnailUrl: "",
   tags: [],
 };
 
@@ -79,7 +77,6 @@ export function toDraftMeta(values: TechFormValues) {
   return {
     categoryId: values.categoryId === "" ? null : values.categoryId,
     excerpt: resolveExcerpt(values) || null,
-    thumbnailUrl: values.thumbnailUrl.trim() === "" ? null : values.thumbnailUrl.trim(),
     tags: values.tags,
   };
 }
@@ -108,7 +105,6 @@ export type TechInitialValues = {
   title: string;
   categoryId: string | null;
   excerpt: string | null;
-  thumbnailUrl: string | null;
   tags: string[];
 };
 
@@ -127,7 +123,6 @@ export function fromDraftContent(
     categoryId: meta.categoryId ?? "",
     body,
     excerpt: meta.excerpt ?? "",
-    thumbnailUrl: meta.thumbnailUrl ?? "",
     tags: meta.tags,
   };
 }
