@@ -129,11 +129,6 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
     <EditorFocusProvider>
       <EditorShell
         type="SERMON"
-        breadcrumb={
-          <>
-            관리 · <b className="text-ink">설교 묵상</b>
-          </>
-        }
         indicator={
           <>
             <SaveIndicator
@@ -182,7 +177,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
           ) : null
         }
       >
-        <div className="flex flex-col gap-5 px-[6%] pt-8">
+        <div className="flex flex-col gap-5 px-[6%] pt-8 max-md:pt-5">
           {/* 서식은 아직 아무것도 안 적었을 때만 고를 수 있다(02 §2.4) — 저장 계약이
               타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
           <FaithFormatTabs current="SERMON" postId={id} isEmpty={isEmptyForm(watch())} />
@@ -241,7 +236,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
                   variant="slim"
                   value={field.value}
                   onChange={field.onChange}
-                  contentClassName="min-h-[420px] px-4 py-3"
+                  contentClassName="min-h-[240px] px-4 py-3 md:min-h-[420px]"
                 />
               </div>
             )}

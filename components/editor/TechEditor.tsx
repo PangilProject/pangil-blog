@@ -166,11 +166,6 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
     <EditorFocusProvider>
       <EditorShell
         type="TECH"
-        breadcrumb={
-          <>
-            관리 · <b className="text-ink">기술 글</b>
-          </>
-        }
         indicator={
           <>
             <SaveIndicator
@@ -219,7 +214,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
           ) : null
         }
       >
-        <div className="flex flex-col gap-5 px-[6%] pt-8">
+        <div className="flex flex-col gap-5 px-[6%] pt-8 max-md:pt-5">
           <input
             {...register("title")}
             placeholder="제목"
@@ -277,7 +272,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
                   onChange={field.onChange}
                   uploadImage={uploadImage}
                   placeholder="마크다운을 붙여넣거나 바로 적어보세요"
-                  contentClassName="min-h-[420px] px-4 py-3"
+                  contentClassName="min-h-[240px] px-4 py-3 md:min-h-[420px]"
                 />
               </div>
             )}
