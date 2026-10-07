@@ -41,11 +41,13 @@ export const hubScenes = {
    ───────────────────────────────────────────── */
 
 export const hubIntro = {
-  eyebrow: "KIM KWANG IL · FRONTEND",
-  /** 이름 아래 한 줄. 직함은 영문으로 두고 설명은 한글로 받는다 */
-  role: "Frontend Developer",
+  eyebrow: "KIM KWANG IL",
+  /**
+   * 이름 아래 한 줄. 영문 직함(`Frontend Developer`)·스택 줄(`React · TypeScript · Next.js`)과
+   * 장면 라벨의 `· FRONTEND`는 2026-10-07에 걷었다 — 같은 말이 첫 화면에 세 번 섰다.
+   * 쓰는 연장은 03(무엇으로 하나)이 말한다.
+   */
   roleKo: "프론트엔드 개발자",
-  stackLine: "React · TypeScript · Next.js",
   /** 이 지면에서 가장 많이 읽힐 한 문장 */
   lede: "UI/UX를 중심에 두고, 사용자에게 물어본 것으로 화면을 고쳐 나갑니다.",
   ledeEmphasis: "사용자에게 물어본 것으로",

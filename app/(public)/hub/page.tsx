@@ -90,18 +90,14 @@ export default function HubPage() {
               </span>
             </h1>
           )}
-          <p className="mt-4 font-typewriter text-[clamp(11px,1.6vw,13px)] uppercase tracking-[0.32em] text-faint">
-            {hubIntro.role}
-          </p>
           <div
             aria-hidden
             data-hub-swipe
             style={{ "--chars": profile.name?.length ?? 3 } as React.CSSProperties}
             className="mt-6 h-0.5 bg-site-accent"
           />
-          <p className="mt-6 flex flex-wrap items-baseline gap-3">
+          <p className="mt-6">
             <strong className="font-serif text-[clamp(17px,2.4vw,21px)]">{hubIntro.roleKo}</strong>
-            <span className="font-typewriter text-[11.5px] text-faint">{hubIntro.stackLine}</span>
           </p>
         </header>
 
