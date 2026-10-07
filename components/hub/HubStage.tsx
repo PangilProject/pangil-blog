@@ -164,6 +164,9 @@ export function HubStage() {
 
     /* ── 장면 ────────────────────────────────────── */
     const scenes = Array.from(document.querySelectorAll<HTMLElement>("[data-hub-scene]"));
+    /** 맨 위로 — 첫 화면을 벗어나면 선다 */
+    const toTop = document.querySelector<HTMLElement>("[data-hub-top]");
+
     /** 목차의 선과 이름 — 지금 장면에 `data-on`이 선다 */
     const tocMarks = Array.from(
       document.querySelectorAll<HTMLElement>("[data-hub-toc-dash], [data-hub-jump]"),
@@ -419,6 +422,8 @@ export function HubStage() {
       const scrolled = window.scrollY;
       if (!force && scrolled === lastScrollY) return;
       lastScrollY = scrolled;
+
+      if (toTop) toTop.dataset.on = scrolled > window.innerHeight * 0.6 ? "1" : "0";
 
       {
         const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -754,6 +759,7 @@ export function HubStage() {
         for (const tick of track.ticks) tick.removeAttribute("data-on");
       }
       for (const el of tocMarks) el.removeAttribute("data-on");
+      toTop?.removeAttribute("data-on");
       for (const row of marqueeRows) row.el.style.removeProperty("--mq-p");
       for (const item of marqueeItems) {
         item.removeAttribute("data-on");
