@@ -358,6 +358,8 @@ html[data-hub-live] [data-hub-steps="highlight"] > [data-hub-step][data-on="1"] 
   */
   html[data-hub-live] [data-hub-glyph] {
     transform: none;
+    /* 흩어지지 않으면 떠오를 일도 없다 — 문장이 다 서 있는데 지금 항목이 아닌 것만 안 보이게 된다 */
+    opacity: 1;
   }
 
   html[data-hub-live] [data-hub-mq-row] {
@@ -816,6 +818,8 @@ html[data-hub-live] [data-hub-mq-dup] {
       0
     )
     rotate(calc(var(--pr, 0deg) + var(--mr, 0deg)));
+  /* 모인 정도만큼 보인다(HubStage가 --po를 쓴다). 스크립트가 없으면 값이 없어 1이다 */
+  opacity: var(--po, 1);
 }
 
 [data-hub-word] {
