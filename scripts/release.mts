@@ -20,6 +20,7 @@ import { createInterface } from "node:readline/promises";
  * 2. `main`이 `origin/main`과 같은가 — 앞서 있으면(안 푼 커밋) 멈춘다. 아무도 안 본 코드가
  *    프로덕션에 서면 그게 사고다.
  * 3. 그 커밋의 CI가 통과했는가 — `gh`가 있을 때만. 없으면 건너뛰고 그렇다고 말한다.
+ * 4. vercel에 로그인돼 있는가 — `vercel whoami`로 미리 묻는다(아래 4b).
  *
  * 검사는 전부 **옮기기 전에** 한다. `--dry-run`이 브랜치를 벗어나게 만들면 그건 dry-run이
  * 아니다 — 처음에 그렇게 만들었다가 고쳤다.
@@ -141,6 +142,24 @@ if (checksRaw === null) {
   }
 }
 
+// ── 4b. vercel 로그인 ────────────────────────────────────────────────────────
+// npx로 부르지 않는다 — 없을 때 조용히 내려받기를 시작해서, 배포를 기다리는 줄 알고
+// 앉아 있게 된다. 전역 vercel을 그대로 부르고 없으면 없다고 말한다
+if (!tryRun("vercel", ["--version"])) {
+  stop("vercel CLI를 찾지 못했습니다.", "npm i -g vercel 후 vercel login");
+}
+
+// **배포 전에 토큰을 깨운다**(2026-10-07). CLI의 액세스 토큰은 8시간쯤이면 만료되고, 만료된
+// 채로 부른 첫 명령은 `Not authorized`로 떨어지면서 그 사이에 토큰을 갱신해 둔다 — 그래서
+// 배포가 늘 "첫 번째는 실패, 다시 돌리면 성공"이었다. 그것도 확인에 y를 누르고 main으로
+// 옮긴 **뒤에** 실패했다. 값싼 명령으로 먼저 갱신시키고, 두 번 다 안 되면 진짜 로그인 문제다.
+// 옮기기 전에 하므로 --dry-run도 로그인까지 확인한다.
+const whoami = tryRun("vercel", ["whoami"]) ?? tryRun("vercel", ["whoami"]);
+if (!whoami) {
+  stop("vercel에 로그인돼 있지 않습니다.", "vercel login 후 다시 돌리세요.");
+}
+step(`vercel: ${whoami.split("\n").at(-1)}`);
+
 // ── 5. 확인 ──────────────────────────────────────────────────────────────────
 console.warn(`
 [release] 배포할 것
@@ -189,12 +208,6 @@ if (head !== sha) {
 }
 
 // ── 7. 배포 ──────────────────────────────────────────────────────────────────
-// npx로 부르지 않는다 — 없을 때 조용히 내려받기를 시작해서, 배포를 기다리는 줄 알고
-// 앉아 있게 된다. 전역 vercel을 그대로 부르고 없으면 없다고 말한다
-if (!tryRun("vercel", ["--version"])) {
-  stop("vercel CLI를 찾지 못했습니다.", "npm i -g vercel 후 vercel login");
-}
-
 step("vercel --prod");
 try {
   execFileSync("vercel", ["--prod"], { stdio: "inherit" });
