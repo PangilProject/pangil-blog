@@ -1,17 +1,24 @@
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { signOut } from "@/lib/actions/auth";
 
 /**
  * 관리 화면 상단 (02 §2.4 관리 네비 · 프로토타입 A-01 헤더).
  * 대시보드·초안함·글 관리·통계·설정이 서로를 가리킨다 — 관리 화면에서 길을 잃지 않을 최소치다.
+ *
+ * 밝기 토글은 **왼쪽 위, 이름 앞**에 선다. 오른쪽 줄은 어딘가로 가는 글자들이라 도형 하나가
+ * 끼면 묻히고, 에디터 헤더(EditorShell)도 같은 자리에 두어 관리 화면 어디서든 한 곳에 있다.
  */
 export function AdminNav() {
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-edge border-b bg-paper px-[5%] py-[13px]">
-      <Link href="/admin" className="font-serif text-[15px]">
-        기록 <em className="font-typewriter text-[11px] text-faint not-italic">관리</em>
-      </Link>
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <Link href="/admin" className="font-serif text-[15px]">
+          기록 <em className="font-typewriter text-[11px] text-faint not-italic">관리</em>
+        </Link>
+      </div>
 
       <nav className="flex items-center gap-4 font-typewriter text-[11.5px] text-faint">
         <Link href="/admin/drafts" className="hover:text-ink">

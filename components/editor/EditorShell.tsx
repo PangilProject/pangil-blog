@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ThemeToggle } from "@/components/public/ThemeToggle";
 import type { RecordType } from "@/lib/record/callNumber";
 import { siteOf } from "@/lib/revalidate/tags";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,11 @@ export function EditorShell({
   return (
     <div data-site={siteOf(type)} className={cn("flex min-h-full flex-col bg-paper", className)}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-edge border-b bg-paper px-[5%] py-[13px]">
-        <div className="font-typewriter text-[11.5px] text-faint">{breadcrumb}</div>
+        {/* 밝기 토글은 관리 헤더(AdminNav)와 같은 자리 — 왼쪽 위 */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <div className="font-typewriter text-[11.5px] text-faint">{breadcrumb}</div>
+        </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {indicator}
           {actions}
