@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 
 import { HubScene, HubStatement } from "@/components/hub/HubScene";
 import { HubStage } from "@/components/hub/HubStage";
@@ -140,15 +140,21 @@ export default function HubPage() {
                   트리를 건드리게 된다 — 여기서 미리 쪼개 두면 연출은 스타일만 얹는다.
                   띄어쓰기에서 줄이 끊기도록 낱말로 한 겹 감싼다.
                 */}
-                {splitIntoGlyphs(line).map((word) => (
-                  <span key={word.key} data-hub-word>
-                    {word.glyphs.map((glyph) => (
-                      <span key={glyph.key} data-hub-glyph>
-                        {glyph.char}
+                {/* `\n`은 손으로 끊은 줄이다(hubContent) — 줄마다 쪼개고 사이에 줄바꿈을 둔다 */}
+                {line.split("\n").map((part, partIndex) => (
+                  <Fragment key={part}>
+                    {partIndex > 0 && <br />}
+                    {splitIntoGlyphs(part).map((word) => (
+                      <span key={word.key} data-hub-word>
+                        {word.glyphs.map((glyph) => (
+                          <span key={glyph.key} data-hub-glyph>
+                            {glyph.char}
+                          </span>
+                        ))}
+                        {word.trailingSpace ? " " : ""}
                       </span>
                     ))}
-                    {word.trailingSpace ? " " : ""}
-                  </span>
+                  </Fragment>
                 ))}
               </p>
             ))}
