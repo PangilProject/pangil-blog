@@ -41,6 +41,11 @@ export function normalizeHost(host: string | null | undefined): string {
 /**
  * 개발 중에는 Vercel 기본 주소·로컬호스트에서 ?site= 로 3면을 전환한다(08 §3).
  * 실제 도메인에서는 캐시·정규 URL 혼선을 막기 위해 허용하지 않는다.
+ *
+ * **공유기 안쪽 주소도 로컬이다**(2026-10-07). 폰에서 `192.168.x.x:3000`으로 개발 서버에 붙으면
+ * 그 주소를 실제 도메인으로 보고 허브로 리라이트해 `/hub/privacy`가 `/hub/hub/privacy` 404가 됐다 —
+ * 관리 화면 푸터의 지면 링크가 전부 그랬다. 이 대역은 인터넷에서 배포로 들어올 수 없으므로
+ * 운영에는 영향이 없다. `*.local`은 맥 이름 주소(next.config의 allowedDevOrigins와 짝)다.
  */
 export function isPreviewHost(host: string | null | undefined): boolean {
   const name = normalizeHost(host);
@@ -50,8 +55,19 @@ export function isPreviewHost(host: string | null | undefined): boolean {
     name === "127.0.0.1" ||
     name === "0.0.0.0" ||
     name.endsWith(".localhost") ||
-    name.endsWith(".vercel.app")
+    name.endsWith(".local") ||
+    name.endsWith(".vercel.app") ||
+    isPrivateIpv4(name)
   );
+}
+
+/** 사설 IPv4 대역 — 10/8 · 172.16/12 · 192.168/16 */
+function isPrivateIpv4(name: string): boolean {
+  const octets = name.split(".");
+  if (octets.length !== 4 || !octets.every((octet) => /^\d{1,3}$/.test(octet))) return false;
+
+  const [a, b] = octets.map(Number);
+  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
 }
 
 export function resolveSite({
