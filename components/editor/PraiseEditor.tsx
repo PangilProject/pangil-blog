@@ -180,11 +180,6 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
     <EditorFocusProvider>
       <EditorShell
         type="PRAISE"
-        breadcrumb={
-          <>
-            관리 · <b className="text-ink">오늘의 찬양</b>
-          </>
-        }
         indicator={
           <>
             <SaveIndicator
@@ -232,7 +227,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
           ) : null
         }
       >
-        <div className="flex flex-col gap-5 px-[6%] pt-8">
+        <div className="flex flex-col gap-5 px-[6%] pt-8 max-md:pt-5">
           {/* 서식은 아직 아무것도 안 적었을 때만 고를 수 있다(02 §2.4) — 저장 계약이
               타입마다 갈리므로, 쓰기 시작한 뒤의 변경은 삭제 후 재작성이다 */}
           <FaithFormatTabs current="PRAISE" postId={id} isEmpty={isEmptyForm(watch())} />

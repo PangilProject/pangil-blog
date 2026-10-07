@@ -53,16 +53,15 @@ describe("EditorToolbar — ADR-001 고정 툴바", () => {
   });
 });
 
-describe("EditorShell — 발행은 시트 끝에", () => {
+describe("EditorShell — 저장과 발행은 툴바 위 띠에", () => {
   /**
-   * 다 쓰고 나서 하는 일이라 글 끝이 손의 동선과 맞다. 헤더에는 쓰는 동안 필요한 것만
-   * 남는다 — 저장 인디케이터·임시저장·작성 취소.
+   * 긴 글에서도 끝까지 내려가지 않게 저장 상태·임시저장·발행이 툴바와 함께 위에 붙어 있다.
+   * 따로 된 헤더는 없다 — 밝기 토글도 띠의 왼쪽 끝에 선다.
    */
-  it("헤더가 아니라 본문 아래에 선다", () => {
+  it("헤더 없이 툴바 위 띠에 서고, 발행이 맨 끝이다", () => {
     render(
       <EditorShell
         type="QT"
-        breadcrumb="관리"
         indicator={<span>저장됨</span>}
         actions={<button type="button">임시저장</button>}
         footer={<button type="button">발행</button>}
@@ -71,15 +70,21 @@ describe("EditorShell — 발행은 시트 끝에", () => {
       </EditorShell>,
     );
 
-    const header = screen.getByRole("banner");
-    expect(header).toHaveTextContent("임시저장");
-    expect(header).not.toHaveTextContent("발행");
-    expect(screen.getByRole("button", { name: "발행" })).toBeInTheDocument();
+    expect(screen.queryByRole("banner")).toBeNull();
+
+    const bar = document.querySelector("[data-editor-action-bar]");
+    // 붙는 것은 띠를 감싼 덩어리다 — 띠와 툴바가 함께 위에 남는다
+    expect(bar?.parentElement?.className).toContain("sticky");
+    expect(bar).toHaveTextContent("저장됨");
+    const buttons = [...(bar?.querySelectorAll("button") ?? [])].map((b) => b.textContent);
+    // 첫 버튼은 밝기 토글(마운트 전에는 글자가 없다)
+    expect(buttons.slice(1)).toEqual(["임시저장", "발행"]);
+    expect(bar?.querySelector("button")).toHaveAccessibleName(/화면/);
   });
 
   it("발행을 안 넘기면 그 자리를 만들지 않는다", () => {
     render(
-      <EditorShell type="QT" breadcrumb="관리" indicator={null} actions={null}>
+      <EditorShell type="QT" indicator={null} actions={null}>
         <p>본문</p>
       </EditorShell>,
     );
@@ -210,7 +215,7 @@ describe("toSaveState — 기계 상태 → 화면 상태", () => {
 describe("EditorShell — 지면 색", () => {
   it("기술 글은 dev, 묵상 글은 faith다", () => {
     const { container, unmount } = render(
-      <EditorShell type="TECH" breadcrumb="관리" indicator={null} actions={null}>
+      <EditorShell type="TECH" indicator={null} actions={null}>
         <p>본문</p>
       </EditorShell>,
     );
@@ -219,7 +224,7 @@ describe("EditorShell — 지면 색", () => {
 
     for (const type of ["QT", "SERMON", "PRAISE"] as const) {
       const { container: faith, unmount: close } = render(
-        <EditorShell type={type} breadcrumb="관리" indicator={null} actions={null}>
+        <EditorShell type={type} indicator={null} actions={null}>
           <p>본문</p>
         </EditorShell>,
       );
