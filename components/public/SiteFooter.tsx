@@ -134,8 +134,11 @@ export function copyrightLine(year: number, name: string | null): string {
   return `© ${year}${name ? ` ${name}` : ""}`;
 }
 
-/** 연도는 요청 시점에 읽는다 — 프리렌더에서는 시계를 볼 수 없다(ADR-003) */
-async function Copyright({ name }: { name: string | null }) {
+/**
+ * 연도는 요청 시점에 읽는다 — 프리렌더에서는 시계를 볼 수 없다(ADR-003).
+ * 관리 화면 푸터(AdminFooter)도 같은 줄을 쓴다. Suspense로 감싸서 부른다.
+ */
+export async function Copyright({ name }: { name: string | null }) {
   await connection();
 
   return copyrightLine(new Date().getFullYear(), name);

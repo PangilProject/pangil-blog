@@ -54,7 +54,9 @@ export function EditorShell({
   className?: string;
 }) {
   return (
-    <div data-site={siteOf(type)} className={cn("flex min-h-full flex-col bg-paper", className)}>
+    // 높이는 `flex-1` — 화면을 다 차지하면(min-h-full) 뒤에 오는 푸터(app/admin/write/layout)가 글이
+    // 짧아도 늘 화면 밖에서 시작한다. 남는 만큼만 늘어나야 짧은 글에서 푸터가 바닥에 붙는다
+    <div data-site={siteOf(type)} className={cn("flex flex-1 flex-col bg-paper", className)}>
       {/* 띠와 툴바가 함께 붙는다. 폰에서 키보드가 뜨면 띠는 숨고 툴바는 키보드 위로 간다(ToolbarDock) */}
       <div className="sticky top-0 z-20">
         <EditorActionBar

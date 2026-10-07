@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SimpleColumns } from "@/components/admin/SimpleColumns";
 import { SITE_BAR, StatBar } from "@/components/admin/StatBars";
@@ -382,6 +383,7 @@ export default async function AdminStatsPage({ searchParams }: PageProps<"/admin
           </>
         )}
       </main>
+      <AdminFooter />
     </div>
   );
 }

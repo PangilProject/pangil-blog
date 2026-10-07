@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { CategoryCreateForm } from "@/components/admin/CategoryCreateForm";
 import { CategoryList } from "@/components/admin/CategoryList";
@@ -79,6 +80,7 @@ export default async function AdminSettingsPage() {
           </a>
         </section>
       </main>
+      <AdminFooter />
     </div>
   );
 }
