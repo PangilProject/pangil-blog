@@ -51,20 +51,50 @@ const REQUIREMENTS: Partial<Record<TableCommand, string>> = {
   splitCell: "합쳐진 칸에서 쓸 수 있어요",
 };
 
-export function TableToolbarRow({
+/** `⊞ 표` — 크기 격자를 펴고 접는다. 툴바의 서식 줄에 선다(모바일에서는 가로 스크롤 줄) */
+export function TableToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className={cn(
+        "h-8 shrink-0 border px-1.5 font-typewriter text-[11.5px] max-md:h-11 max-md:px-2.5",
+        open
+          ? "border-ink-soft bg-paper text-ink"
+          : "border-transparent text-ink-soft hover:border-edge hover:text-ink",
+      )}
+    >
+      ⊞ 표
+    </button>
+  );
+}
+
+/**
+ * 툴바 아래에 펼쳐지는 표 줄. 표 안이면 표를 만지는 줄, 표 밖에서 `⊞ 표`를 눌렀으면 크기 격자다.
+ *
+ * 펴고 접는 상태는 툴바가 든다 — 단추(`TableToggle`)와 이 줄이 툴바의 다른 자리에 서기
+ * 때문이다. 모바일에서는 단추가 가로 스크롤 줄 안에 있고, 이 줄은 그 밖에서 전체 폭을 쓴다.
+ */
+export function TablePanel({
   inTable = false,
+  open,
   can,
   onInsertTable,
   onTableCommand,
+  onClose,
 }: {
   /** 커서가 표 안에 있는가 */
   inTable?: boolean;
+  /** 크기 격자가 펴져 있는가 */
+  open: boolean;
   /** 지금 할 수 있는 일들. 모르면 다 열어 둔다 */
   can?: Partial<Record<TableCommand, boolean>>;
   onInsertTable?: (rows: number, cols: number) => void;
   onTableCommand?: (command: TableCommand) => void;
+  /** 크기를 골랐으면 접는다 — 한 번 하는 일이다 */
+  onClose: () => void;
 }) {
-  const [isPicking, setIsPicking] = useState(false);
   // 마우스가 지나간 칸까지 물들인다 — 끌지 않아도 "여기까지"가 보인다
   const [hover, setHover] = useState<{ rows: number; cols: number } | null>(null);
 
@@ -83,7 +113,7 @@ export function TableToolbarRow({
               title={allowed ? undefined : REQUIREMENTS[command]}
               onClick={() => onTableCommand?.(command)}
               className={cn(
-                "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft",
+                "border border-edge bg-paper px-2 py-[3px] font-typewriter text-[11px] text-ink-soft max-md:h-10 max-md:px-3",
                 "hover:border-ink-soft hover:text-ink disabled:opacity-40 disabled:hover:border-edge",
                 command === "deleteTable" && "ml-auto text-(--accent)",
               )}
@@ -96,64 +126,48 @@ export function TableToolbarRow({
     );
   }
 
+  if (!open) return null;
+
   return (
-    <>
-      <button
-        type="button"
-        aria-expanded={isPicking}
-        onClick={() => setIsPicking((open) => !open)}
-        className={cn(
-          "border px-1.5 py-[3px] font-typewriter text-[11.5px]",
-          isPicking
-            ? "border-ink-soft bg-paper text-ink"
-            : "border-transparent text-ink-soft hover:border-edge hover:text-ink",
-        )}
+    <Row>
+      <fieldset
+        className="flex flex-col gap-[3px]"
+        onMouseLeave={() => setHover(null)}
+        aria-label="표 크기"
       >
-        ⊞ 표
-      </button>
+        {ROW_SIZES.map((rows) => (
+          <div key={rows} className="flex gap-[3px]">
+            {COL_SIZES.map((cols) => {
+              const filled = hover !== null && rows <= hover.rows && cols <= hover.cols;
 
-      {isPicking && (
-        <Row>
-          <fieldset
-            className="flex flex-col gap-[3px]"
-            onMouseLeave={() => setHover(null)}
-            aria-label="표 크기"
-          >
-            {ROW_SIZES.map((rows) => (
-              <div key={rows} className="flex gap-[3px]">
-                {COL_SIZES.map((cols) => {
-                  const filled = hover !== null && rows <= hover.rows && cols <= hover.cols;
+              return (
+                <button
+                  key={`cell-${rows}-${cols}`}
+                  type="button"
+                  aria-label={`${rows}행 ${cols}열 표 넣기`}
+                  onMouseEnter={() => setHover({ rows, cols })}
+                  // 키보드로 옮겨도 같은 자리가 물든다 — 마우스만의 기능이 아니다
+                  onFocus={() => setHover({ rows, cols })}
+                  onClick={() => {
+                    onInsertTable?.(rows, cols);
+                    onClose();
+                    setHover(null);
+                  }}
+                  className={cn(
+                    "size-[13px] border border-edge max-md:size-7",
+                    filled ? "bg-(--accent)" : "bg-card",
+                  )}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </fieldset>
 
-                  return (
-                    <button
-                      key={`cell-${rows}-${cols}`}
-                      type="button"
-                      aria-label={`${rows}행 ${cols}열 표 넣기`}
-                      onMouseEnter={() => setHover({ rows, cols })}
-                      // 키보드로 옮겨도 같은 자리가 물든다 — 마우스만의 기능이 아니다
-                      onFocus={() => setHover({ rows, cols })}
-                      onClick={() => {
-                        onInsertTable?.(rows, cols);
-                        setIsPicking(false);
-                        setHover(null);
-                      }}
-                      className={cn(
-                        "size-[13px] border border-edge",
-                        filled ? "bg-(--accent)" : "bg-card",
-                      )}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </fieldset>
-
-          <span className="font-typewriter text-[10.5px] text-faint">
-            {hover ? `${hover.rows} × ${hover.cols}` : "크기를 고르세요"}
-          </span>
-        </Row>
-      )}
-    </>
+      <span className="font-typewriter text-[10.5px] text-faint">
+        {hover ? `${hover.rows} × ${hover.cols}` : "크기를 고르세요"}
+      </span>
+    </Row>
   );
 }
 

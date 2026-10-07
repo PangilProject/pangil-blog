@@ -170,7 +170,7 @@ export default function DesignGalleryPage() {
 
       <Section title="에디터 셸" note="동작은 M2. 여기서는 표면과 상태 표현만">
         <div className="border border-edge bg-card">
-          <EditorToolbar hint="마크다운 단축 입력도 돼요" />
+          <EditorToolbar />
           <div className="flex flex-wrap items-center gap-4 px-4 py-3">
             <SaveIndicator state="idle" />
             <SaveIndicator state="saving" />

@@ -121,7 +121,7 @@ export function RichTextField({
             Image.configure({ inline: false }),
             // 이관해 온 138편에 표가 298개 있다. 확장이 없으면 그 글을 한 번 편집하는
             // 순간 Tiptap이 모르는 노드를 조용히 버린다 — 이관한 표를 지키는 장치이자,
-            // 이제는 툴바에서 새 표를 놓는 길이기도 하다(TableToolbarRow)
+            // 이제는 툴바에서 새 표를 놓는 길이기도 하다(TablePanel)
             TableKit.configure({ table: false, tableCell: false, tableHeader: false }),
             // 행·열 손잡이를 표 위에 얹는다(TableNodeView). 조작 대상이 화면에 있어야 한다
             // 폭을 끌어서 정한다. 저장은 셀의 colwidth에 실리고, 공개 지면도 같은 폭으로

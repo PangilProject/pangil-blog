@@ -163,7 +163,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
             {isPublishing ? "발행 중…" : "발행"}
           </Button>
         }
-        toolbar={<ConnectedEditorToolbar variant="slim" hint="# - > 로 바로 서식이 돼요" />}
+        toolbar={<ConnectedEditorToolbar variant="slim" />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner

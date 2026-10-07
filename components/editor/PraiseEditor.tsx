@@ -213,7 +213,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
             {isPublishing ? "발행 중…" : "발행"}
           </Button>
         }
-        toolbar={<ConnectedEditorToolbar variant="slim" hint="서식은 묵상과 기도에 적용돼요" />}
+        toolbar={<ConnectedEditorToolbar variant="slim" />}
         banner={
           autosave.recovery ? (
             <RecoveryBanner
