@@ -280,7 +280,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
 
           <details className="border-edge border-t pt-4">
             <summary className="cursor-pointer font-typewriter text-[11px] text-faint">
-              목록 카드 (요약 · 썸네일)
+              목록 카드 (요약)
             </summary>
             <div className="mt-3 flex flex-col gap-3">
               {/* 비워두면 본문 앞부분을 쓴다(02 §5.5) — 그래서 placeholder가 그 파생값이다 */}
@@ -290,13 +290,6 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
                 placeholder={deriveExcerpt(watch("body")) || "비워두면 본문 앞부분을 씁니다"}
                 aria-label="요약"
                 className="resize-y border border-edge bg-card px-3 py-2 text-[13px] outline-none placeholder:text-faint"
-              />
-              <input
-                {...register("thumbnailUrl")}
-                placeholder="썸네일 주소 (본문에 붙여넣은 이미지 주소도 돼요)"
-                aria-label="썸네일 주소"
-                inputMode="url"
-                className="border-edge border-b bg-transparent pb-1.5 font-typewriter text-[11.5px] outline-none placeholder:text-faint"
               />
             </div>
           </details>

@@ -45,7 +45,6 @@ function filled(): TechFormValues {
       content: [{ type: "paragraph", content: [{ type: "text", text: "본문이다." }] }],
     },
     excerpt: "",
-    thumbnailUrl: "",
     tags: ["Next.js"],
   };
 }

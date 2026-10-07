@@ -29,7 +29,6 @@ export default async function EditTechPage({ params }: PageProps<"/admin/write/t
         title: post.title,
         categoryId: post.categoryId,
         excerpt: post.excerpt,
-        thumbnailUrl: post.thumbnailUrl,
         tags,
       })}
       categories={categories}

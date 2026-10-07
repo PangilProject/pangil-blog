@@ -45,7 +45,6 @@ export type UpsertDraftInput = {
   content: unknown;
   categoryId?: string | null;
   excerpt?: string | null;
-  thumbnailUrl?: string | null;
   /** TECH 전용. 넘기지 않으면 기존 태그를 건드리지 않는다 */
   tags?: string[];
 };
@@ -87,7 +86,6 @@ export const upsertDraft = withAdmin(
       content: parsed.data,
       categoryId: input.categoryId,
       excerpt: input.excerpt,
-      thumbnailUrl: input.thumbnailUrl,
     });
 
     // 태그를 안 넘긴 에디터(QT·설교·찬양)의 저장이 기존 태그를 지우지 않는다

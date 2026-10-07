@@ -16,7 +16,6 @@ const base: ListCard = {
   callNumber: 1,
   publishedAt: new Date("2026-08-23T00:00:00Z"),
   excerpt: null,
-  thumbnailUrl: null,
   categoryName: null,
   categorySlug: null,
   scriptureRef: "열왕기상 2장 41~46절",
