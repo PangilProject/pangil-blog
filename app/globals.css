@@ -463,17 +463,29 @@ html[data-hub-live] [data-hub-ticks] {
 [data-hub-ticks] {
   display: none;
   gap: 6px;
-  margin-top: 28px;
+  margin-top: 18px; /* 눈금의 누르는 여백(10px)만큼 줄였다 — 막대의 자리는 그대로다 */
 }
 
-[data-hub-ticks] > span {
+/* 눈금은 버튼이다 — 2px 막대는 손가락으로 누를 수 없어서 위아래 여백까지 누르는 자리로 쓴다 */
+[data-hub-ticks] > button {
+  padding-block: 10px;
+  cursor: pointer;
+}
+
+[data-hub-ticks] > button::before {
+  content: "";
+  display: block;
   height: 2px;
   width: 26px;
   background: color-mix(in oklch, var(--faint), transparent 62%);
   transition: background 0.35s var(--ease-record);
 }
 
-[data-hub-ticks] > span[data-on="1"] {
+[data-hub-ticks] > button:hover::before {
+  background: color-mix(in oklch, var(--faint), transparent 20%);
+}
+
+[data-hub-ticks] > button[data-on="1"]::before {
   background: var(--accent);
 }
 
@@ -797,6 +809,131 @@ html[data-hub-live] [data-hub-mq-dup] {
   color: var(--accent);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
+}
+
+/*
+  장면 목차 (2026-10-07) — 오른쪽 가운데의 짧은 선. 마우스를 올리거나 선을 누르면 이름이 펼쳐진다.
+
+  **새 모양을 만들지 않는다.** 펼친 목록은 카드·원고지와 같은 "위에 액센트 괘를 그은 종이"이고,
+  선은 머무는 장면의 눈금과 같은 2px 막대다. 번호는 장면 라벨처럼 타자기체 액센트다.
+  색은 장면이 칠하는 토큰(--paper·--ink·--faint·--accent)을 따라간다 — 먹 장면에서는 먹색 종이다.
+*/
+[data-hub-toc] {
+  position: fixed;
+  right: 10px;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 40;
+}
+
+[data-hub-toc-handle] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  padding: 12px 6px;
+  cursor: pointer;
+}
+
+[data-hub-toc-handle] > i {
+  display: block;
+  width: 14px;
+  height: 2px;
+  background: color-mix(in oklch, var(--faint), transparent 45%);
+  transition:
+    width 0.25s var(--ease-record),
+    background 0.25s var(--ease-record);
+}
+
+[data-hub-toc-handle] > i[data-on="1"] {
+  width: 22px;
+  background: var(--accent);
+}
+
+[data-hub-toc-list] {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  translate: 6px -50%;
+  min-width: 196px;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--edge);
+  border-top: 1.5px solid var(--accent);
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s var(--ease-record),
+    translate 0.2s var(--ease-record),
+    visibility 0.2s;
+}
+
+/* 펼치기: 호버가 있는 기기는 올리면, 없는 기기는 선을 누르면(체크박스), 키보드는 포커스가 들어오면 */
+@media (hover: hover) {
+  [data-hub-toc]:hover [data-hub-toc-list] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    translate: 0 -50%;
+  }
+}
+
+[data-hub-toc]:has(input:checked) [data-hub-toc-list],
+[data-hub-toc]:focus-within [data-hub-toc-list] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  translate: 0 -50%;
+}
+
+/* 번호 한 칸 · 이름 한 칸 — 번호가 세로로 줄을 서야 훑힌다 */
+[data-hub-toc-list] a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 16px;
+  font-family: var(--stack-typewriter);
+  white-space: nowrap;
+}
+
+[data-hub-toc-no] {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-hub-toc-name] {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  transition: color 0.15s var(--ease-record);
+}
+
+[data-hub-toc-list] a:hover [data-hub-toc-name] {
+  color: var(--ink);
+}
+
+/* 지금 장면 — 이름이 먹색으로 서고 왼쪽에 액센트 막대가 붙는다 */
+[data-hub-toc-list] a[data-on="1"] [data-hub-toc-name] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+[data-hub-toc-list] a[data-on="1"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--accent);
 }
 
 @media (width < 40rem) {
