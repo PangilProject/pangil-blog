@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { DraftList } from "@/components/admin/DraftList";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -48,6 +49,7 @@ export default async function AdminDraftsPage() {
           />
         )}
       </main>
+      <AdminFooter />
     </div>
   );
 }

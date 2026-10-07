@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { AdminPostList } from "@/components/admin/AdminPostList";
 import { FilterMenu, TabMenu } from "@/components/admin/FilterMenu";
@@ -188,6 +189,7 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
           hrefFor={(target) => hrefFor({ page: target })}
         />
       </main>
+      <AdminFooter />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { PostStats } from "@/components/admin/PostStats";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
@@ -38,6 +39,7 @@ export default async function AdminPostStatsPage({ params }: PageProps<"/admin/s
 
         <PostStats postId={postId} />
       </main>
+      <AdminFooter />
     </div>
   );
 }

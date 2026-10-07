@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminFooter } from "@/components/admin/AdminFooter";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { CrawlButton } from "@/components/admin/CrawlButton";
 import { NitList } from "@/components/admin/NitList";
@@ -159,6 +160,7 @@ export default async function AdminDashboardPage() {
         {/* 맨 끝이다 — 아침에 여는 화면의 위쪽은 오늘 쓸 글의 자리다(02 §3.1) */}
         <NitList nits={nits} total={nitTotal} />
       </main>
+      <AdminFooter />
     </div>
   );
 }
