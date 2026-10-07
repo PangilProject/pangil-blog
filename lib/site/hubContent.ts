@@ -248,7 +248,7 @@ export const hubWorks: HubWork[] = [
     repo: "https://github.com/PangilProject/pangil-blog",
     year: "2026 — 운영 중 · 1인",
     role: "기획 · 설계 · 구현 · 운영",
-    title: "지금 보고 있는 이 지면",
+    title: "개인 블로그",
     project: "pangil-blog",
     body: "하나의 Next.js 앱이 호스트에 따라 세 지면으로 갈립니다. 소개 · 기술 블로그 · 묵상 블로그가 같은 코드와 같은 토큰을 쓰고, 갈리는 축은 액센트 색 하나뿐입니다. 다른 플랫폼에 쌓여 있던 749편을 표 298개까지 살려 옮겼고, 매일 새벽 크롤러가 초안을 만들어 둡니다.",
     dropped:
