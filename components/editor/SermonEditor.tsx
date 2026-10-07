@@ -148,7 +148,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
           <>
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
-            <Button size="sm" type="button" onClick={() => void autosave.flush()}>
+            <Button type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>
           </>
