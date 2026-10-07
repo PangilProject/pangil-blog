@@ -280,18 +280,20 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
 
           <details className="border-edge border-t pt-4">
             <summary className="cursor-pointer font-typewriter text-[11px] text-faint">
-              목록 카드 (요약)
+              요약
             </summary>
-            <div className="mt-3 flex flex-col gap-3">
-              {/* 비워두면 본문 앞부분을 쓴다(02 §5.5) — 그래서 placeholder가 그 파생값이다 */}
-              <textarea
-                {...register("excerpt")}
-                rows={2}
-                placeholder={deriveExcerpt(watch("body")) || "비워두면 본문 앞부분을 씁니다"}
-                aria-label="요약"
-                className="resize-y border border-edge bg-card px-3 py-2 text-[13px] outline-none placeholder:text-faint"
-              />
-            </div>
+            {/*
+              비워두면 본문 앞부분을 쓴다(02 §5.5) — 그래서 placeholder가 **실제로 나갈 그 값**이다.
+              값으로 미리 채우지 않는다: 채우는 순간 손으로 적은 요약이 되어 본문을 고쳐도 따라오지 않는다.
+              썸네일 칸은 2026-10-07에 걷었다 — 저장만 되고 어느 화면도 그리지 않았다.
+            */}
+            <textarea
+              {...register("excerpt")}
+              rows={3}
+              placeholder={deriveExcerpt(watch("body"))}
+              aria-label="요약"
+              className="mt-3 w-full resize-y border border-edge bg-card px-3 py-2 text-[13px] outline-none placeholder:text-faint"
+            />
           </details>
 
           {publishError && (
