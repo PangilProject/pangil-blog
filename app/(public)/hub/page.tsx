@@ -200,7 +200,8 @@ export default function HubPage() {
           slug={hubScenes.tools.slug}
           id="tools"
           steps={hubTools.length}
-          stepHeight={42}
+          // 42svh였을 때 마퀴가 순식간에 지나갔다 — 항목마다 읽고 넘길 만큼 머문다
+          stepHeight={80}
         >
           <HubStatement className="mb-9">쓰고 있는 것만 적습니다.</HubStatement>
 
