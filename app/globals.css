@@ -790,7 +790,9 @@ html[data-hub-live] [data-hub-mq-dup] {
 }
 
 /*
-  맨 위로 (2026-10-08) — 오른쪽 아래. 목차 카드와 같은 종이(위 액센트 괘, 각진 모서리)다.
+  맨 위로 (2026-10-08) — 오른쪽 아래. 테두리만 있는 32px 칸이다.
+  처음에는 목차 카드처럼 위 괘·그림자를 얹었는데 구석의 물건치고 무거웠고, 그림자의 첫 겹(밝은 1px
+  선)이 먹 장면에서 흰 줄로 그어졌다. 시안 셋을 나란히 세워 보고 골랐다(활자 라벨·막대·칸).
   연출이 없으면 늘 서 있는 그냥 링크이고, 연출이 서면 첫 화면을 벗어났을 때만 나타난다.
 */
 [data-hub-top] {
@@ -800,22 +802,21 @@ html[data-hub-live] [data-hub-mq-dup] {
   z-index: 40;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  color: var(--ink-soft);
-  background: var(--paper);
+  width: 32px;
+  height: 32px;
+  color: var(--faint);
   border: 1px solid var(--edge);
-  border-top: 1.5px solid var(--accent);
-  box-shadow: var(--shadow-card);
   transition:
     opacity 0.25s var(--ease-record),
     translate 0.25s var(--ease-record),
     visibility 0.25s,
-    color 0.15s var(--ease-record);
+    color 0.15s var(--ease-record),
+    border-color 0.15s var(--ease-record);
 }
 
 [data-hub-top]:hover {
   color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* 숨어 있는 동안 Tab에도 걸리지 않게 visibility까지 내린다 */
@@ -877,7 +878,8 @@ html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
   background: var(--paper);
   border: 1px solid var(--edge);
   border-top: 1.5px solid var(--accent);
-  box-shadow: var(--shadow-card);
+  /* --shadow-card의 첫 겹(밝은 1px 선)은 먹 장면에서 흰 줄로 그어진다 — 번짐만 쓴다 */
+  box-shadow: 0 8px 18px rgb(0 0 0 / 16%);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
