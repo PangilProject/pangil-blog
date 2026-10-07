@@ -19,21 +19,24 @@ import { CODE_LANGUAGES } from "@/lib/editor/codeLanguages";
  * 찬양 섹션 라벨과 같은 형태다. 떠다니는 UI가 아니라 블록의 일부이므로 ADR-001 §5와도 맞다.
  *
  * 하이라이팅은 CodeBlockShiki가 decoration으로 얹으므로 여기서는 자리만 만든다.
+ *
+ * 판은 공개 지면(CodeBlock)과 같이 **늘 다크다**(`dark` 클래스) — 페이지 테마와 무관하게
+ * 토큰이 다크 값으로 읽힌다. 언어 목록은 포털로 판 밖에 뜨므로 페이지 테마를 따른다.
  */
 export function CodeBlockNodeView({ node, updateAttributes }: ReactNodeViewProps) {
   const language = typeof node.attrs.language === "string" ? node.attrs.language : "";
 
   return (
-    <NodeViewWrapper className="my-[1.4em] border border-[#3a3630] bg-ink">
+    <NodeViewWrapper className="dark my-[1.4em] border border-edge bg-chrome">
       <div
-        className="flex items-center justify-between border-[#3a3630] border-b px-2 py-1.5"
+        className="flex items-center justify-between border-edge border-b px-2 py-1.5"
         // 헤더는 편집 대상이 아니다 — 커서가 여기 들어오면 코드가 아닌 곳에 글자가 생긴다
         contentEditable={false}
       >
         <Select value={language} onValueChange={(value) => updateAttributes({ language: value })}>
           <SelectTrigger
             aria-label="코드 언어"
-            className="h-auto min-w-[104px] rounded-none border-[#3a3630] bg-transparent py-0.5 font-typewriter text-[11px] text-[#C7B58A]"
+            className="h-auto min-w-[104px] rounded-none border-edge bg-transparent py-0.5 dark:bg-transparent dark:hover:bg-transparent font-typewriter text-[11px] text-[#C7B58A]"
           >
             <SelectValue placeholder="언어 선택" />
           </SelectTrigger>

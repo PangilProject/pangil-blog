@@ -18,13 +18,12 @@ import { describe, expect, it } from "vitest";
 
 /** 파일 → 그 파일이 들고 있는 색 리터럴. **늘리지 않는다.** */
 const BASELINE: Record<string, string[]> = {
-  "components/editor/CodeBlockNodeView.tsx": ["#3a3630", "#C7B58A"],
+  "components/editor/CodeBlockNodeView.tsx": ["#C7B58A"],
   "components/editor/CrawlBand.tsx": ["#6e5d38", "#98835a", "#efe3c8"],
   "components/editor/EditorToolbar.tsx": ["#4e483c", "#a79c86", "#c9a98a", "#dcd4c2"],
   "components/editor/PraiseSectionList.tsx": ["#c4bcaa", "#ede5d3"],
   "components/editor/QtEditor.tsx": ["#b98f4f", "#dcc9b8", "#fbf5ec"],
   "components/editor/SaveIndicator.tsx": ["#cfc8b6"],
-  "components/public/CodeBlock.tsx": ["#3a3630", "#8B8474", "#F3EFE4"],
 };
 
 /** Tailwind 임의값으로 박힌 색. `bg-[#...]` · `text-[rgb(...)]` 같은 것들 */
