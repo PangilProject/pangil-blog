@@ -272,6 +272,9 @@ export function HubStage() {
           vr: 0,
         })),
       );
+      // 연출이 붙는 순간부터 낱자는 **보이지 않는 데서 시작한다** — 흩어진 채로 먼저 보이면
+      // 모이기 전 글자 더미가 읽힌다. 스크립트가 없으면 이 줄도 없어 그대로 보인다
+      for (const el of found) el.style.setProperty("--po", "0");
     }
 
     /** 지금 글자를 그리는 항목과, 그 항목 안에서 얼마나 앉았는지 */
@@ -514,6 +517,9 @@ export function HubStage() {
       if (glyphsVisible && activeGlyphs) {
         // 처음엔 크게, 끝에서 아주 천천히 0으로. 앉는 순간이 보여야 한다
         const away = (1 - settle) ** 3;
+        // 모일수록 진해진다(2026-10-07). 흩어진 자리에서는 안 보이다가 제자리에 가까워지며 떠오른다 —
+        // 흩어짐(away)보다 늦게 차오르게 해서 글자가 거의 앉은 뒤에야 또렷해진다
+        const fade = (settle ** 1.6).toFixed(3);
 
         for (const glyph of activeGlyphs) {
           if (pointer.active) {
@@ -549,6 +555,7 @@ export function HubStage() {
           style.setProperty("--mx", `${glyph.mx.toFixed(2)}px`);
           style.setProperty("--my", `${glyph.my.toFixed(2)}px`);
           style.setProperty("--mr", `${glyph.mr.toFixed(2)}deg`);
+          style.setProperty("--po", fade);
         }
       }
     };
@@ -668,7 +675,7 @@ export function HubStage() {
       }
       for (const list of glyphsByStep.values()) {
         for (const glyph of list) {
-          for (const name of ["--px", "--py", "--pr", "--mx", "--my", "--mr"]) {
+          for (const name of ["--px", "--py", "--pr", "--mx", "--my", "--mr", "--po"]) {
             glyph.el.style.removeProperty(name);
           }
         }
