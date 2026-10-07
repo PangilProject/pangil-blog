@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   isInternalPath,
+  isPreviewHost,
   resolveSite,
   sitePrefixOf,
   siteRewritePath,
@@ -71,6 +72,20 @@ describe("resolveSite — ?site= 개발 폴백", () => {
 
   it("알 수 없는 ?site= 값은 무시한다", () => {
     expect(resolveSite({ host: "localhost", siteParam: "admin" })).toBe("hub");
+  });
+
+  /** 폰에서 개발 서버에 붙는 주소다. 실제 도메인으로 보면 `/hub/privacy`가 `/hub/hub/privacy`가 된다 */
+  it("공유기 안쪽 주소와 맥 이름 주소도 로컬로 본다", () => {
+    for (const host of ["192.168.219.150:3000", "10.0.0.4", "172.20.1.2", "pangil-mac.local"]) {
+      expect(isPreviewHost(host)).toBe(true);
+    }
+    expect(resolveSite({ host: "192.168.219.150:3000", siteParam: "faith" })).toBe("faith");
+  });
+
+  it("공인 주소와 사설 대역 밖은 로컬이 아니다", () => {
+    for (const host of ["8.8.8.8", "172.32.0.1", "192.169.0.1", "faith.pangil.example"]) {
+      expect(isPreviewHost(host)).toBe(false);
+    }
   });
 });
 
