@@ -65,6 +65,7 @@ export default function HubPage() {
       {/* 연출 층 (ADR-004 2단계). 이 아일랜드가 없어도 아래는 전부 읽힌다 */}
       <HubStage />
       <HubToc entries={tocEntries()} />
+      <HubToTop />
 
       {/* ═══ 장면 하나 · 조판 ═══ */}
       <HubScene paper={hubScenes.compose.paper} slug={hubIntro.eyebrow} id="compose">
@@ -504,6 +505,33 @@ function HubToc({ entries }: { entries: TocEntry[] }) {
 }
 
 const HUB_TOC_ID = "hub-toc-open";
+
+/**
+ * 맨 위로 — 오른쪽 아래(2026-10-08).
+ *
+ * 목차와 같은 물건이다: 그냥 `#compose` 링크라 스크립트가 없으면 맨 위로 뛰고, 연출이 서 있으면
+ * HubStage가 받아 같은 속도로 미끄러져 올라간다(`data-hub-jump`). 첫 화면을 벗어났을 때만 서는
+ * 것도 HubStage가 정한다 — 맨 위에서 맨 위로 가는 단추는 누를 이유가 없다.
+ */
+function HubToTop() {
+  return (
+    <a href="#compose" data-hub-jump="compose" data-hub-top aria-label="맨 위로">
+      {/* 밝기 토글과 같은 결이다: 15px, 획 1.7, 둥근 끝 */}
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-[15px]"
+      >
+        <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
+      </svg>
+    </a>
+  );
+}
 
 type TocEntry = { id: string; no: string; name: string };
 

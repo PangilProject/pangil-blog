@@ -790,6 +790,43 @@ html[data-hub-live] [data-hub-mq-dup] {
 }
 
 /*
+  맨 위로 (2026-10-08) — 오른쪽 아래. 목차 카드와 같은 종이(위 액센트 괘, 각진 모서리)다.
+  연출이 없으면 늘 서 있는 그냥 링크이고, 연출이 서면 첫 화면을 벗어났을 때만 나타난다.
+*/
+[data-hub-top] {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--edge);
+  border-top: 1.5px solid var(--accent);
+  box-shadow: var(--shadow-card);
+  transition:
+    opacity 0.25s var(--ease-record),
+    translate 0.25s var(--ease-record),
+    visibility 0.25s,
+    color 0.15s var(--ease-record);
+}
+
+[data-hub-top]:hover {
+  color: var(--accent);
+}
+
+/* 숨어 있는 동안 Tab에도 걸리지 않게 visibility까지 내린다 */
+html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 8px;
+  pointer-events: none;
+}
+
+/*
   장면 목차 (2026-10-07) — 오른쪽 가운데의 짧은 선. 마우스를 올리거나 선을 누르면 이름이 펼쳐진다.
 
   **새 모양을 만들지 않는다.** 펼친 목록은 카드·원고지와 같은 "위에 액센트 괘를 그은 종이"이고,
