@@ -59,7 +59,8 @@ export function ListHeader({
           defaultValue={searchQuery}
           placeholder="제목·내용 검색"
           aria-label="검색어"
-          className="min-w-0 flex-1 bg-transparent font-typewriter text-[12px] outline-none placeholder:text-faint"
+          // 터치에서는 16px — iOS가 그보다 작은 칸을 누르면 화면을 확대한다(app/admin/layout.tsx 참고)
+          className="min-w-0 flex-1 bg-transparent font-typewriter text-[12px] outline-none placeholder:text-faint pointer-coarse:text-base"
         />
         <button type="submit" className="font-typewriter text-[11px] text-faint hover:text-ink">
           찾기
