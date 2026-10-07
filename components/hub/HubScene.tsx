@@ -105,7 +105,8 @@ export function HubStatement({ children, className }: { children: ReactNode; cla
       className={cn(
         // `hub-statement`는 조판용 클래스가 아니라 **잡을 손잡이**다 —
         // 좁은 화면에서 크기를 내리려면 이름이 있어야 한다(globals.css)
-        "hub-statement max-w-[19ch] text-balance font-serif font-bold leading-[1.34] tracking-[-0.015em]",
+        // `break-keep`: 한국어는 기본값이 글자 단위로 줄을 바꿔 `여기에`가 `여 / 기에`로 갈렸다
+        "hub-statement max-w-[19ch] text-balance break-keep font-serif font-bold leading-[1.34] tracking-[-0.015em]",
         "text-[clamp(26px,5vw,52px)]",
         className,
       )}
