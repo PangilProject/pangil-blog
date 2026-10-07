@@ -161,10 +161,10 @@ export function QtEditor({ postId, initialValues, crawl, isDraft }: QtEditorProp
               제목·말씀·주석·네 그룹을 칸마다 따로 긁어 이어붙여야 했다. 조판은 내보내기
               파일과 같은 함수가 정한다(`postToMarkdown`).
             */}
-            <Button size="sm" type="button" onClick={() => void copy(toCopyText(getValues()))}>
+            <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
               {copyLabel(copyState, "전체 복사")}
             </Button>
-            <Button size="sm" type="button" onClick={() => void autosave.flush()}>
+            <Button type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>
           </>
