@@ -1,4 +1,15 @@
+import { networkInterfaces } from "node:os";
+
 import type { NextConfig } from "next";
+
+/** 이 맥이 지금 공유기에서 받은 IPv4 주소들 — 폰이 붙는 주소가 이것이다 */
+function lanAddresses(): string[] {
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((net) => net?.family === "IPv4" && !net.internal)
+    .map((net) => net?.address ?? "")
+    .filter(Boolean);
+}
 
 const nextConfig: NextConfig = {
   /**
@@ -8,10 +19,11 @@ const nextConfig: NextConfig = {
    * 그 뒤가 조용히 안 돈다 — 실기기에서 "보이긴 하는데 아무것도 안 움직인다"가 이것이다.
    * 개발에서만 읽히는 설정이고 배포에는 영향이 없다.
    *
-   * **주소가 바뀌면 여기도 바꾼다**(공유기를 옮기거나 임대가 끝났을 때).
-   * 지금 주소는 `ipconfig getifaddr en0`로 확인한다.
+   * **주소는 서버를 켤 때 읽는다.** 전에는 손으로 적어 두었는데, 공유기 임대가 바뀌어
+   * `.141`이 `.150`이 되자 폰에서 에디터 본문·드롭다운이 통째로 비어 보였다(2026-10-07).
+   * 주소가 바뀌면 개발 서버만 다시 켜면 된다.
    */
-  allowedDevOrigins: ["192.168.219.141", "*.local"],
+  allowedDevOrigins: [...lanAddresses(), "*.local"],
 
   /**
    * Cache Components (ADR-003).
