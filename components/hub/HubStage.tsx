@@ -25,7 +25,6 @@ import { useEffect, useRef } from "react";
 export function HubStage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
-  const hudRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -35,10 +34,9 @@ export function HubStage() {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motionQuery.matches) {
       // 줄여 달라고 한 사람에게는 이 층이 아예 서지 않는다. 골격이 그대로 폴백이다.
-      // 진행 막대와 상태 표시도 걷는다 — 갱신되지 않으면 0에서 굳은 채 남는다
+      // 진행 막대도 걷는다 — 갱신되지 않으면 0에서 굳은 채 남는다
       canvas.hidden = true;
       if (railRef.current) railRef.current.hidden = true;
-      if (hudRef.current) hudRef.current.hidden = true;
       return;
     }
 
@@ -452,15 +450,6 @@ export function HubStage() {
               el.dataset.hubTocDash === sceneId || el.dataset.hubJump === sceneId ? "1" : "0";
         }
 
-        const hud = hudRef.current;
-        if (hud) {
-          const pct = hud.querySelector("[data-hub-hud-pct]");
-          if (pct) pct.textContent = String(Math.round(progress * 100)).padStart(2, "0");
-          const name = hud.querySelector("[data-hub-hud-scene]");
-          const slug = scenes[index]?.querySelector("[data-hub-slug]")?.textContent;
-          if (name && slug && name.textContent !== slug) name.textContent = slug;
-        }
-
         const blend = clamp((local - 0.7) / 0.3);
         const next = Math.min(scenes.length - 1, index + 1);
         paint(
@@ -794,10 +783,10 @@ export function HubStage() {
       <div ref={railRef} data-hub-rail aria-hidden>
         <i />
       </div>
-      <p ref={hudRef} data-hub-hud aria-hidden>
-        <span data-hub-hud-scene>조판</span>
-        <b data-hub-hud-pct>00</b>
-      </p>
+      {/*
+        왼쪽 아래의 `장면 이름 · 00~100` 표시는 2026-10-07에 걷었다. 지금 장면은 오른쪽 목차가
+        말하고, 얼마나 왔는지는 위의 진행 막대가 말한다 — 같은 것을 세 군데서 말하고 있었다.
+      */}
     </>
   );
 }
