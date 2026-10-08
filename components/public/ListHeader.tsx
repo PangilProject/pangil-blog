@@ -2,7 +2,10 @@ import type { RecordCounts } from "@/lib/db/publicLists";
 import { cn } from "@/lib/utils";
 
 /**
- * 목록 상단 (03 §5.1) — 월 표기 + "이번 달 N장 · 통산 N장".
+ * 목록 상단 (03 §5.1) — "이번 달 N장 · 통산 N장".
+ *
+ * **달 이름을 적지 않는다**(2026-10-08). `10월 0장`으로 적었더니 `10월`이 날짜로, 그 뒤의 숫자가
+ * 일(日)로 읽혔다. 달은 늘 이번 달이므로 이름 대신 `이번 달`이라고 말한다.
  *
  * 제목은 **지금 보고 있는 목록의 이름**이다 — `전체 글`·`큐티`·`#태그`·검색어. 한동안 지면
  * 이름("믿음의 기록")을 적고 화면에서 감춰 뒀는데, 그건 헤더가 같은 말을 하고 있어서였다.
@@ -16,14 +19,11 @@ import { cn } from "@/lib/utils";
  */
 export function ListHeader({
   title,
-  month,
   counts,
   searchAction,
   searchQuery,
 }: {
   title: string;
-  /** "8월" */
-  month: string;
   counts: RecordCounts;
   /** 검색 폼이 향할 경로 (D-04 / F-05) */
   searchAction: string;
@@ -35,7 +35,7 @@ export function ListHeader({
         <h1 className="font-serif text-[clamp(19px,3vw,23px)]">{title}</h1>
 
         <p className="font-typewriter text-[11px] text-faint">
-          {month} <b className="text-ink">{counts.thisMonth}장</b> · 통산{" "}
+          이번 달 <b className="text-ink">{counts.thisMonth}장</b> · 통산{" "}
           <b className="text-ink">{counts.total}장</b>
         </p>
       </div>

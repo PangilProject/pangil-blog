@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { JsonLd } from "@/components/public/JsonLd";
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findAxisCounts, findPublishedPosts } from "@/lib/db/publicLists";
-import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { startOfKstMonth } from "@/lib/record/kst";
 import { blogJsonLd } from "@/lib/seo/jsonLd";
 import { siteAlternates } from "@/lib/site/metadata";
 
@@ -57,7 +57,6 @@ export default async function DevHomePage({ searchParams }: PageProps<"/dev">) {
       <ListPageView
         site="dev"
         title={query ? `"${query}" 검색 결과` : (categoryName ?? "전체 글")}
-        month={`${toKstDate(now).month}월`}
         counts={counts}
         page={list}
         hrefFor={hrefFor}
