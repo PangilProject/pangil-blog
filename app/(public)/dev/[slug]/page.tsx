@@ -11,6 +11,7 @@ import { collectHeadings } from "@/lib/render/richText";
 import { listTag, postTag } from "@/lib/revalidate/tags";
 import { articleJsonLd } from "@/lib/seo/jsonLd";
 import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
+import { cn } from "@/lib/utils";
 
 /**
  * D-02 기술 글 상세 (02 §2.2) — SEO 주력 지면.
@@ -100,7 +101,19 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
           접기는 헤더의 손잡이가 켠다(SiteHeader). 넓은 화면에서만 걷어내는 이유는 좁은 화면의
           목차가 본문 위 접이식이라 이미 접혀 있어서다 — 그쪽까지 걷으면 목차가 아예 사라진다
         */}
-        <div className="order-1 max-lg:sticky max-lg:top-10 max-lg:z-20 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto lg:group-has-[#toc-fold:checked]/page:hidden">
+        {/*
+          접힘은 미끄러진다(2026-10-08): 폭 13rem → 0, 투명도 1 → 0, 앞의 간격(gap-10)도 음수 여백으로
+          함께 접는다. 그만큼 본문 칸이 부드럽게 넓어진다. 전에는 `hidden`이라 순간이동이었다
+        */}
+        <div
+          className={cn(
+            "order-1 max-lg:sticky max-lg:top-10 max-lg:z-20 lg:sticky lg:top-10 lg:order-2 lg:max-h-[calc(100vh-5rem)] lg:flex-none lg:overflow-y-auto",
+            "lg:w-[13rem] lg:overflow-x-hidden",
+            "lg:transition-[width,margin,opacity,visibility] lg:duration-300 lg:ease-(--ease-record) motion-reduce:transition-none",
+            "lg:group-has-[#toc-fold:checked]/page:invisible lg:group-has-[#toc-fold:checked]/page:-ml-10",
+            "lg:group-has-[#toc-fold:checked]/page:w-0 lg:group-has-[#toc-fold:checked]/page:opacity-0",
+          )}
+        >
           <Toc headings={headings} />
         </div>
       </div>
