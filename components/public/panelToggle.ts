@@ -1,3 +1,6 @@
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 /**
  * 칸을 접는 손잡이의 생김새 (03 §1.1).
  *
@@ -6,22 +9,15 @@
  * 따로 두었더니 한쪽은 맨 글리프, 한쪽은 글자와 글리프가 되어 같은 화면에서 다른 물건으로
  * 읽혔다.
  *
- * 네모난 작은 칩이다. 종이 위에 찍힌 다른 것들과 같은 괘선·같은 바탕·같은 타자기체를 쓴다.
+ * **사이트 공통 버튼의 기본형을 그대로 입는다**(2026-10-08). 괘선 테두리·hover에 테두리가
+ * 짙어짐·눌리면 1px 내려앉음·각진 모서리(radius 0 토큰)가 이미 거기 있다. 바탕만 비운다 —
+ * 종이 위에 테두리만 그은 칸이라 옆의 밝기 토글보다 무거워 보이지 않는다. 크기는 `icon`(32px).
+ * 손잡이가 `<label>`이라 `Button`을 쓰지 못하고 클래스만 빌린다.
  */
-export const PANEL_TOGGLE =
-  "inline-flex size-[26px] shrink-0 cursor-pointer select-none items-center justify-center " +
-  "border border-edge bg-card font-typewriter text-[11px] leading-none text-faint " +
-  "transition-colors hover:border-(--accent) hover:text-(--accent)";
-
-/**
- * 방향 기호는 **누르면 어디로 접히는지**를 가리킨다.
- *
- * 그래서 왼쪽 칸과 오른쪽 칸이 서로 반대다 — 사이드바는 펴진 채로 `«`(왼쪽으로 접는다),
- * 목차는 펴진 채로 `»`(오른쪽으로 접는다). 목차가 사이드바를 그대로 따라 했다가 "누르면
- * 왼쪽으로 간다"로 읽히는 화살표를 오른쪽 여백에 달고 있었다.
- */
-export const FOLD_LEFT = "«";
-export const FOLD_RIGHT = "»";
+export const PANEL_TOGGLE = cn(
+  buttonVariants({ size: "icon" }),
+  "cursor-pointer bg-transparent duration-150",
+);
 
 /**
  * 손잡이를 읽어 주는 이름.

@@ -2,13 +2,8 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 
-import {
-  closeLabel,
-  FOLD_LEFT,
-  FOLD_RIGHT,
-  openLabel,
-  PANEL_TOGGLE,
-} from "@/components/public/panelToggle";
+import { PanelIcon } from "@/components/public/PanelIcon";
+import { closeLabel, openLabel, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import { writeHref } from "@/components/public/SiteHeader";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { ViewCount } from "@/components/public/ViewCount";
@@ -66,11 +61,11 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
         //
         // **접힘이 미끄러진다**(2026-10-08). 전에는 폭이 `auto`로 바뀌고 내용이 `hidden`으로
         // 사라져서 순간이동처럼 보였다 — `auto`로는 폭이 이어지지 않는다. 그래서 접힌 폭을
-        // 숫자로 준다: 손잡이(PANEL_TOGGLE 26px) + 안쪽 좌우 여백(px-6 = 24px × 2) = 74px.
+        // 숫자로 준다: 손잡이(PANEL_TOGGLE 32px) + 안쪽 좌우 여백(px-6 = 24px × 2) = 80px.
         // 안쪽 칸은 15rem으로 고정해 두고 바깥 칸만 줄인다 — 줄어드는 동안 글자가 다시 줄바꿈되지
         // 않고, 칸이 닫히듯 가려진다(`overflow-x-clip`은 sticky를 깨지 않는다. hidden은 깬다).
-        // **손잡이 크기나 여백을 바꾸면 74px도 같이 바꾼다.**
-        "lg:overflow-x-clip lg:has-[#panel-axis:checked]:w-[74px]",
+        // **손잡이 크기나 여백을 바꾸면 80px도 같이 바꾼다.**
+        "lg:overflow-x-clip lg:has-[#panel-axis:checked]:w-[80px]",
         "lg:transition-[width] lg:duration-300 lg:ease-(--ease-record) motion-reduce:transition-none",
         /**
          * **좁은 화면에서는 이 칸이 상단에 붙는 줄이 된다.**
@@ -347,8 +342,8 @@ function CollapseHandle() {
     <PanelHandle
       target={PANEL_AXIS}
       name="분류"
-      openGlyph={<Glyph narrow={<MenuIcon />} wide={FOLD_LEFT} />}
-      closeGlyph={<Glyph narrow={<MenuIcon />} wide={FOLD_RIGHT} />}
+      openGlyph={<Glyph narrow={<MenuIcon />} wide={<PanelIcon side="left" open />} />}
+      closeGlyph={<Glyph narrow={<MenuIcon />} wide={<PanelIcon side="left" open={false} />} />}
       openWhenShut="group-has-[#panel-axis:checked]/side:hidden"
       shutWhenOpen="hidden group-has-[#panel-axis:checked]/side:inline-flex"
     />

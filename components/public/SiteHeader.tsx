@@ -1,12 +1,7 @@
 import Link from "next/link";
 
-import {
-  closeLabel,
-  FOLD_LEFT,
-  FOLD_RIGHT,
-  openLabel,
-  PANEL_TOGGLE,
-} from "@/components/public/panelToggle";
+import { PanelIcon } from "@/components/public/PanelIcon";
+import { closeLabel, openLabel, PANEL_TOGGLE } from "@/components/public/panelToggle";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { editorPath } from "@/lib/record/todayCard";
 import type { PublicSite } from "@/lib/revalidate/tags";
@@ -81,17 +76,22 @@ export function SiteHeader({ site, foldsToc = false }: { site: PublicSite; folds
 function TocFold() {
   return (
     <>
-      <input id={TOC_FOLD_ID} type="checkbox" className="sr-only" />
+      <input id={TOC_FOLD_ID} type="checkbox" className="peer sr-only" />
       <label
         htmlFor={TOC_FOLD_ID}
         title="목차"
-        className={cn(PANEL_TOGGLE, "hidden lg:inline-flex")}
+        className={cn(
+          PANEL_TOGGLE,
+          "hidden lg:inline-flex",
+          // 포커스는 숨긴 체크박스가 받는다 — 사이드바 손잡이 묶음과 같은 액센트 윤곽을 라벨에 그린다
+          "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--accent)",
+        )}
       >
-        <span aria-hidden className="group-has-[#toc-fold:checked]/page:hidden">
-          {FOLD_RIGHT}
+        <span className="group-has-[#toc-fold:checked]/page:hidden">
+          <PanelIcon side="right" open />
         </span>
-        <span aria-hidden className="hidden group-has-[#toc-fold:checked]/page:inline">
-          {FOLD_LEFT}
+        <span className="hidden group-has-[#toc-fold:checked]/page:inline">
+          <PanelIcon side="right" open={false} />
         </span>
         {/* 접힌 상태에 따라 말이 갈린다 — 한 물건에 두 문법을 두지 않는다(panelToggle) */}
         <span className="sr-only group-has-[#toc-fold:checked]/page:hidden">
