@@ -52,15 +52,19 @@ export function PostDetail({ post }: { post: PublicPost }) {
       }
       meta={
         post.tags.length > 0 ? (
-          <ul className="flex flex-wrap gap-2">
+          // 칸 대신 `#태그 · #태그` 글자 줄이다(2026-10-08) — 테두리 칸이 아래 다른 글 상자와
+          // 겹쳐 상자가 둘로 읽혔다. 사이 점은 그리는 것일 뿐이라 읽어 주지 않는다
+          <ul className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {post.tags.map((tag) => (
-              <li key={tag}>
-                {/* 태그 목록 지면은 슬라이스 3에서 생긴다 */}
+              <li
+                key={tag}
+                className="flex items-center gap-2 not-first:before:text-edge-strong not-first:before:content-['·']"
+              >
                 <Link
                   href={siteHref(site, `/${site}/tags/${encodeURIComponent(tag)}`, { from: site })}
-                  className="border border-edge px-2 py-0.5 font-typewriter text-[10.5px] text-faint hover:text-ink"
+                  className="font-typewriter text-(--accent) text-[12.5px] underline-offset-[3px] hover:underline"
                 >
-                  {tag}
+                  #{tag}
                 </Link>
               </li>
             ))}
