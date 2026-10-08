@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import type { RecordCounts } from "@/lib/db/publicLists";
 import { cn } from "@/lib/utils";
 
@@ -62,9 +63,10 @@ export function ListHeader({
           // 터치에서는 16px — iOS가 그보다 작은 칸을 누르면 화면을 확대한다(app/admin/layout.tsx 참고)
           className="min-w-0 flex-1 bg-transparent font-typewriter text-[12px] outline-none placeholder:text-faint pointer-coarse:text-base"
         />
-        <button type="submit" className="font-typewriter text-[11px] text-faint hover:text-ink">
+        {/* 글자처럼 서 있으면 누를 것으로 읽히지 않았다 — 사이트 공통 버튼(테두리 칸)을 쓴다 */}
+        <Button type="submit" size="sm" className="rounded-none">
           찾기
-        </button>
+        </Button>
       </form>
     </header>
   );

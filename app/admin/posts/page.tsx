@@ -7,6 +7,7 @@ import { AdminPostList } from "@/components/admin/AdminPostList";
 import { FilterMenu, TabMenu } from "@/components/admin/FilterMenu";
 import { type DividerTabItem, DividerTabs } from "@/components/record/DividerTabs";
 import { Pagination } from "@/components/record/Pagination";
+import { Button } from "@/components/ui/button";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
 import { listCategories } from "@/lib/db/categories";
@@ -141,9 +142,10 @@ export default async function AdminPostsPage({ searchParams }: PageProps<"/admin
             aria-label="검색어"
             className="min-w-0 flex-1 bg-transparent font-typewriter text-[12px] outline-none placeholder:text-faint"
           />
-          <button type="submit" className="font-typewriter text-[11px] text-faint hover:text-ink">
+          {/* 공개 목록과 같은 버튼이다(ListHeader) — 글자처럼 서 있으면 누를 것으로 읽히지 않았다 */}
+          <Button type="submit" size="sm" className="rounded-none">
             찾기
-          </button>
+          </Button>
         </form>
 
         {/*
