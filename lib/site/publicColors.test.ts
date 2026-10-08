@@ -18,7 +18,7 @@ import { describe, expect, it } from "vitest";
 const PUBLIC_DIRS = ["components/public", "components/record"];
 
 /** 공개 지면이 다른 디렉터리에서 끌어다 쓰는 것 (components/public의 import로 확인) */
-const BORROWED = ["components/editor/SectionBlock.tsx"];
+const BORROWED = ["components/editor/SectionBlock.tsx", "components/ui/button.tsx"];
 
 /**
  * 임의 색값이 허용되는 파일과 그 이유. **줄일수록 좋다.**
