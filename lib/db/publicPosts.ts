@@ -6,6 +6,7 @@ import type { PostContent } from "@/lib/content/schema";
 import { type ContentParseResult, parsePublishContent, scriptureRefOf } from "@/lib/db/content";
 import { prisma } from "@/lib/db/prisma";
 import type { RecordType } from "@/lib/record/callNumber";
+import { pickWindow, SHELF_OTHERS } from "@/lib/record/shelfWindow";
 import { listTag, type PublicSite, postTag, siteOf } from "@/lib/revalidate/tags";
 import { blogBrandName } from "@/lib/site/brand";
 import { PostStatus, type PostType } from "@/prisma/generated/enums";
@@ -96,7 +97,12 @@ export async function findPublishedPostBySlug(
 }
 
 /**
- * 이전글·다음글 (F-03).
+ * 같은 축의 다른 글 — 지금 글을 가운데 둔 창 (F-03 · 2026-10-08).
+ *
+ * 전에는 이전글·다음글 둘만 골랐다. 지금은 앞뒤로 두 편씩, 모두 다섯 줄을 내놓는다 —
+ * **최신 N편이 아니다.** 오래된 글을 읽는 사람에게 최신 다섯은 지금 글과 동떨어진 목록이고,
+ * 큐티처럼 천 편이 넘는 축에서는 더 그렇다. 창이면 어느 글에서 봐도 "이 글 언저리"다.
+ * 축의 끝에 닿으면 반대쪽에서 채워 늘 다섯 줄을 맞춘다. 이전·다음은 창의 바로 위아래 줄이다.
  *
  * **어느 축의 앞뒤인지가 이 기능의 전부다.** 목록 상단 탭이 나누는 그 축을 쓴다 —
  * faith는 타입(큐티·설교·찬양, 02 §5), dev는 카테고리(TECH 전용 분류, 02 §5.5).
@@ -111,7 +117,25 @@ export async function findPublishedPostBySlug(
  * 동순위 규칙은 목록과 같다(publishedAt, createdAt). 같은 날 두 편을 올린 날이 있고,
  * 규칙이 갈리면 목록에서 옆에 있던 글이 이전글에서는 건너뛰어진다.
  */
-export type PostNeighbor = { title: string; slug: string; type: RecordType };
+export type ShelfPost = {
+  title: string;
+  slug: string;
+  type: RecordType;
+  callNumber: number | null;
+  publishedAt: Date | null;
+  excerpt: string | null;
+};
+
+export type PostShelf = {
+  /** 이 축의 발행 글 수 (지금 글 포함) */
+  total: number;
+  /** 새 글이 위. 지금 글이 들어 있다 — `current`로 가린다 */
+  items: (ShelfPost & { current: boolean })[];
+  /** 바로 앞(더 오래된) 글 */
+  previous: ShelfPost | null;
+  /** 바로 뒤(더 새) 글 */
+  next: ShelfPost | null;
+};
 
 export type NeighborAxis =
   | { kind: "type"; type: RecordType }
@@ -119,15 +143,24 @@ export type NeighborAxis =
   /** 축이 없는 글(카테고리 없는 기술 글) — 지면 전체에서 잇는다 */
   | { kind: "site" };
 
-export async function findNeighbors(
+export async function findShelf(
   site: PublicSite,
   axis: NeighborAxis,
-  current: { id: string; publishedAt: Date | null; createdAt: Date },
-): Promise<{ previous: PostNeighbor | null; next: PostNeighbor | null }> {
+  current: {
+    id: string;
+    title: string;
+    slug: string;
+    type: RecordType;
+    callNumber: number | null;
+    publishedAt: Date | null;
+    createdAt: Date;
+    excerpt: string | null;
+  },
+): Promise<PostShelf> {
   "use cache";
 
   // 발행 시각이 없는 글은 이웃을 셀 기준이 없다. PUBLISHED에는 늘 있지만 타입은 null을 허용한다
-  if (!current.publishedAt) return { previous: null, next: null };
+  if (!current.publishedAt) return { total: 0, items: [], previous: null, next: null };
 
   const published = current.publishedAt;
 
@@ -138,17 +171,25 @@ export async function findNeighbors(
         ? { category: { slug: axis.categorySlug } }
         : { type: { in: TYPES_BY_SITE[site] } };
 
-  const base = {
+  const inAxis = {
     status: PostStatus.PUBLISHED,
     type: { in: TYPES_BY_SITE[site] },
-    id: { not: current.id },
     ...axisWhere,
   };
+  const base = { ...inAxis, id: { not: current.id } };
 
-  const select = { title: true, slug: true, type: true } as const;
+  const select = {
+    title: true,
+    slug: true,
+    type: true,
+    callNumber: true,
+    publishedAt: true,
+    excerpt: true,
+  } as const;
 
-  const [previous, next] = await Promise.all([
-    prisma.post.findFirst({
+  // 한쪽이 모자라면 다른 쪽에서 채우므로 양쪽 다 넉넉히(SHELF_OTHERS) 읽는다
+  const [older, newer, total] = await Promise.all([
+    prisma.post.findMany({
       where: {
         ...base,
         OR: [
@@ -157,9 +198,10 @@ export async function findNeighbors(
         ],
       },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: SHELF_OTHERS,
       select,
     }),
-    prisma.post.findFirst({
+    prisma.post.findMany({
       where: {
         ...base,
         OR: [
@@ -168,17 +210,53 @@ export async function findNeighbors(
         ],
       },
       orderBy: [{ publishedAt: "asc" }, { createdAt: "asc" }],
+      take: SHELF_OTHERS,
       select,
     }),
+    prisma.post.count({ where: inAxis }),
   ]);
 
-  // 새 글이 발행되면 이 지면의 목록 태그가 만료된다 — 이웃도 그때 함께 다시 계산된다
+  // 새 글이 발행되면 이 지면의 목록 태그가 만료된다 — 창도 그때 함께 다시 계산된다
   cacheTag(postTag(current.id), listTag(site));
 
-  const toNeighbor = (row: typeof previous): PostNeighbor | null =>
-    row?.slug ? { title: row.title, slug: row.slug, type: row.type as RecordType } : null;
+  const toShelf = (row: (typeof older)[number]): ShelfPost | null =>
+    row.slug
+      ? {
+          title: row.title,
+          slug: row.slug,
+          type: row.type as RecordType,
+          callNumber: row.callNumber,
+          publishedAt: row.publishedAt,
+          excerpt: row.excerpt,
+        }
+      : null;
 
-  return { previous: toNeighbor(previous), next: toNeighbor(next) };
+  const olderPosts = older.map(toShelf).filter((post) => post !== null);
+  const newerPosts = newer.map(toShelf).filter((post) => post !== null);
+
+  const window = pickWindow(olderPosts.length, newerPosts.length);
+  const self: ShelfPost = {
+    title: current.title,
+    slug: current.slug,
+    type: current.type,
+    callNumber: current.callNumber,
+    publishedAt: current.publishedAt,
+    excerpt: current.excerpt,
+  };
+
+  return {
+    total,
+    items: [
+      ...newerPosts
+        .slice(0, window.newer)
+        .reverse()
+        .map((post) => ({ ...post, current: false })),
+      { ...self, current: true },
+      ...olderPosts.slice(0, window.older).map((post) => ({ ...post, current: false })),
+    ],
+    previous: olderPosts[0] ?? null,
+    next: newerPosts[0] ?? null,
+  };
 }
 
 export type OgCard = {
