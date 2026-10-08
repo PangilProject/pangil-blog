@@ -25,7 +25,6 @@ import { siteHref } from "@/lib/site/publicUrl";
 export function ListPageView({
   site,
   title,
-  month,
   counts,
   page,
   hrefFor,
@@ -35,7 +34,6 @@ export function ListPageView({
 }: {
   site: PublicSite;
   title: string;
-  month: string;
   counts: RecordCounts;
   page: ListPage;
   hrefFor: (page: number) => string;
@@ -51,7 +49,6 @@ export function ListPageView({
 
       <ListHeader
         title={title}
-        month={month}
         counts={counts}
         searchAction={href(searchAction)}
         searchQuery={searchQuery}

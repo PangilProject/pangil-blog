@@ -5,7 +5,7 @@ import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
 import { FAITH_TYPES, TYPE_LABELS } from "@/lib/record/axis";
 import type { RecordType } from "@/lib/record/callNumber";
-import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { startOfKstMonth } from "@/lib/record/kst";
 import { blogJsonLd } from "@/lib/seo/jsonLd";
 import { siteAlternates } from "@/lib/site/metadata";
 
@@ -79,7 +79,6 @@ export default async function FaithHomePage({ searchParams }: PageProps<"/faith"
       <ListPageView
         site="faith"
         title={listTitle(query, type)}
-        month={`${toKstDate(now).month}월`}
         counts={counts}
         page={list}
         hrefFor={hrefFor}

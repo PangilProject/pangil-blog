@@ -2,7 +2,7 @@ import { connection } from "next/server";
 
 import { ListPageView } from "@/components/public/ListPageView";
 import { countPublishedPosts, findPublishedPosts } from "@/lib/db/publicLists";
-import { startOfKstMonth, toKstDate } from "@/lib/record/kst";
+import { startOfKstMonth } from "@/lib/record/kst";
 import { siteAlternates } from "@/lib/site/metadata";
 
 /**
@@ -34,7 +34,6 @@ export default async function TagListPage({
     <ListPageView
       site="faith"
       title={`#${name}`}
-      month={`${toKstDate(now).month}월`}
       counts={counts}
       page={list}
       hrefFor={(target) =>
