@@ -63,9 +63,15 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
       className={cn(
         "group/side w-full border-edge border-b bg-paper lg:w-[15rem] lg:flex-none lg:border-r lg:border-b-0",
         // 접히면 손잡이 하나 너비만 남기고, 남은 자리는 본문이 가져간다.
-        // 폭을 숫자로 박지 않는 이유는 아래 여백과 같이 움직여야 해서다 — 손잡이가 제자리에
-        // 있으려면 좌우 여백이 접히기 전과 같아야 하고, 그러면 폭은 내용이 정한다
-        "lg:has-[#panel-axis:checked]:w-auto",
+        //
+        // **접힘이 미끄러진다**(2026-10-08). 전에는 폭이 `auto`로 바뀌고 내용이 `hidden`으로
+        // 사라져서 순간이동처럼 보였다 — `auto`로는 폭이 이어지지 않는다. 그래서 접힌 폭을
+        // 숫자로 준다: 손잡이(PANEL_TOGGLE 26px) + 안쪽 좌우 여백(px-6 = 24px × 2) = 74px.
+        // 안쪽 칸은 15rem으로 고정해 두고 바깥 칸만 줄인다 — 줄어드는 동안 글자가 다시 줄바꿈되지
+        // 않고, 칸이 닫히듯 가려진다(`overflow-x-clip`은 sticky를 깨지 않는다. hidden은 깬다).
+        // **손잡이 크기나 여백을 바꾸면 74px도 같이 바꾼다.**
+        "lg:overflow-x-clip lg:has-[#panel-axis:checked]:w-[74px]",
+        "lg:transition-[width] lg:duration-300 lg:ease-(--ease-record) motion-reduce:transition-none",
         /**
          * **좁은 화면에서는 이 칸이 상단에 붙는 줄이 된다.**
          *
@@ -86,6 +92,8 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
       <div
         className={cn(
           "flex flex-col px-[6%] lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:gap-7 lg:px-6 lg:py-10",
+          // 폭 고정 — 바깥 칸이 줄어도 안쪽은 그대로라 접히는 동안 글자가 흐트러지지 않는다(괘선 1px 뺌)
+          "lg:w-[calc(15rem-1px)]",
           // 펼친 사이드바가 화면보다 길면 여기서 스크롤한다 — 상단에 붙은 줄을 밀어내지 않는다
           "max-lg:max-h-screen max-lg:overflow-y-auto",
         )}
@@ -100,7 +108,14 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
             "lg:h-auto lg:flex-col-reverse lg:items-start lg:gap-4",
           )}
         >
-          <section className="flex flex-col gap-2 lg:group-has-[#panel-axis:checked]/side:hidden">
+          <section
+            className={cn(
+              "flex flex-col gap-2",
+              // 사라지지 않고 흐려진다 — invisible이라 접힌 동안 Tab에도 걸리지 않는다
+              "lg:transition-[opacity,visibility] lg:duration-200 motion-reduce:transition-none",
+              "lg:group-has-[#panel-axis:checked]/side:invisible lg:group-has-[#panel-axis:checked]/side:opacity-0",
+            )}
+          >
             <Link
               href={siteHref(site, `/${site}`, { from: site })}
               className="font-typewriter font-bold text-[13px] text-ink"
@@ -172,7 +187,9 @@ export function SiteSidebar({ site }: { site: PublicSite }) {
           className={cn(
             "flex-col gap-7 pb-9 max-lg:pt-4",
             "hidden group-has-[#panel-axis:checked]/side:flex",
-            "lg:flex lg:pb-0 lg:group-has-[#panel-axis:checked]/side:hidden",
+            "lg:flex lg:pb-0",
+            "lg:transition-[opacity,visibility] lg:duration-200 motion-reduce:transition-none",
+            "lg:group-has-[#panel-axis:checked]/side:invisible lg:group-has-[#panel-axis:checked]/side:opacity-0",
           )}
         >
           <Suspense fallback={<CountSkeleton />}>
