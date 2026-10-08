@@ -60,8 +60,9 @@ describe("PostList", () => {
 
     expect(screen.getByRole("link")).toHaveAttribute("href", "/dev/next-16");
     expect(screen.getByText("무효화를 두 갈래로 나눴다")).toBeInTheDocument();
-    // 청구기호 줄에만 카테고리가 있다
-    expect(screen.getByText("0001 · FE")).toBeInTheDocument();
+    // 왼쪽 위는 카테고리만 — 번호는 목록에서 걷었다
+    expect(screen.getByText("FE")).toBeInTheDocument();
+    expect(screen.queryByText(/0001/)).not.toBeInTheDocument();
     expect(screen.getByText("Next.js · 캐시")).toBeInTheDocument();
   });
 
