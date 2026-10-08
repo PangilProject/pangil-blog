@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
-import { PostNeighbors } from "@/components/public/PostNeighbors";
+import { PostShelf } from "@/components/public/PostShelf";
 import { SiteHeader } from "@/components/public/SiteHeader";
-import { findNeighbors, findPublishedPostBySlug } from "@/lib/db/publicPosts";
+import { axisHref } from "@/components/public/SiteSidebar";
+import { findPublishedPostBySlug, findShelf } from "@/lib/db/publicPosts";
 import { TYPE_LABELS } from "@/lib/record/axis";
 import { listTag, postTag } from "@/lib/revalidate/tags";
 import { articleJsonLd } from "@/lib/seo/jsonLd";
@@ -40,7 +41,7 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
   // 것이고, 다시 만들어지는 건 실제로 방문된 지면뿐이다
   cacheTag(postTag(post.id), listTag("faith"));
 
-  const neighbors = await findNeighbors("faith", { kind: "type", type: post.type }, post);
+  const shelf = await findShelf("faith", { kind: "type", type: post.type }, post);
 
   return (
     <main className="flex w-full flex-col gap-8">
@@ -61,10 +62,10 @@ export default async function FaithPostPage({ params }: PageProps<"/faith/[slug]
 
       <PostDetail post={post} />
 
-      <PostNeighbors
-        previous={neighbors.previous}
-        next={neighbors.next}
+      <PostShelf
+        shelf={shelf}
         axisLabel={TYPE_LABELS[post.type]}
+        allHref={axisHref("faith", post.type)}
       />
     </main>
   );

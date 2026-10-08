@@ -3,14 +3,16 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/public/JsonLd";
 import { PostDetail } from "@/components/public/PostDetail";
-import { PostNeighbors } from "@/components/public/PostNeighbors";
+import { PostShelf } from "@/components/public/PostShelf";
 import { SiteHeader } from "@/components/public/SiteHeader";
+import { axisHref } from "@/components/public/SiteSidebar";
 import { Toc } from "@/components/public/Toc";
-import { findNeighbors, findPublishedPostBySlug } from "@/lib/db/publicPosts";
+import { findPublishedPostBySlug, findShelf } from "@/lib/db/publicPosts";
 import { collectHeadings } from "@/lib/render/richText";
 import { listTag, postTag } from "@/lib/revalidate/tags";
 import { articleJsonLd } from "@/lib/seo/jsonLd";
 import { ogImage, openGraphBase, siteAlternates } from "@/lib/site/metadata";
+import { siteHref } from "@/lib/site/publicUrl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -44,7 +46,7 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
 
   // 이 지면의 축은 카테고리다(02 §5.5). 카테고리 없는 이관 글은 지면 전체에서 잇는다 —
   // 적재기가 티스토리 카테고리 없는 글을 null로 넣는다(05 §6)
-  const neighbors = await findNeighbors(
+  const shelf = await findShelf(
     "dev",
     post.categorySlug ? { kind: "category", categorySlug: post.categorySlug } : { kind: "site" },
     post,
@@ -81,10 +83,14 @@ export default async function DevPostPage({ params }: PageProps<"/dev/[slug]">) 
         <div className="order-2 flex min-w-0 flex-1 flex-col gap-8 lg:order-1">
           <PostDetail post={post} />
 
-          <PostNeighbors
-            previous={neighbors.previous}
-            next={neighbors.next}
+          <PostShelf
+            shelf={shelf}
             axisLabel={post.categoryName ?? "기술"}
+            allHref={
+              post.categorySlug
+                ? axisHref("dev", post.categorySlug)
+                : siteHref("dev", "/dev", { from: "dev" })
+            }
           />
         </div>
 

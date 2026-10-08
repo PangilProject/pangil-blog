@@ -1586,3 +1586,77 @@ html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
     animation: none;
   }
 }
+
+/*
+ * 떠오르는 이전 글 · 다음 글 (components/public/PostShelf · 2026-10-08)
+ *
+ * 스크립트 없이 뜬다: 문서 스크롤이 72~82%를 지나는 동안 아래에서 올라온다(스크롤 타임라인).
+ * 그래서 기본은 **안 보임**이고, 타임라인을 아는 브라우저의 넓은 화면에서만 켠다 —
+ * 모르는 브라우저(Firefox)와 좁은 화면에서는 본문 아래 목록이 같은 일을 한다.
+ * 닫기는 바로 앞의 숨긴 체크박스다. 유틸리티(`peer-checked:hidden`)로 걸면 이 층 없는 규칙에
+ * 진다 — 그래서 닫기도 여기 둔다.
+ */
+.shelf-float {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (min-width: 64rem) {
+    .shelf-float {
+      position: fixed;
+      bottom: 1rem;
+      z-index: 40;
+      display: block;
+      width: min(340px, calc(50vw - 2rem));
+      border-top: 2px solid var(--accent);
+      background: var(--card);
+      box-shadow:
+        0 0 0 1px var(--edge),
+        0 10px 24px rgb(0 0 0 / 14%);
+      animation: shelf-float-rise linear both;
+      animation-timeline: scroll(root);
+      animation-range: 72% 82%;
+    }
+  }
+}
+
+@keyframes shelf-float-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+  }
+}
+
+/* 움직임 줄이기: 올라오지 않고 그 자리에서 차오르기만 한다 */
+@keyframes shelf-float-fade {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-float {
+    animation-name: shelf-float-fade;
+  }
+}
+
+.shelf-dismiss:checked + .shelf-float {
+  display: none;
+}
+
+/* 포커스는 숨긴 체크박스가 받는다 — 보이는 ✕에 윤곽을 그린다 */
+.shelf-dismiss:focus-visible + .shelf-float .shelf-x {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

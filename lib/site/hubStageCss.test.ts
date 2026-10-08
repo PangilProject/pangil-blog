@@ -25,6 +25,9 @@ const has = (pattern: RegExp) => pattern.test(squashed);
 /** 주석을 걷어낸 본문. "쓰지 않는다"를 확인하는 가드는 설명글이 아니라 선언만 봐야 한다 */
 const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
+/** 떠오르는 이전·다음 카드의 연출 블록 — 열 0의 `}`까지가 한 덩이다 */
+const SHELF_FLOAT_BLOCK = /@supports \(animation-timeline: scroll\(\)\) \{[\s\S]*?\n\}/;
+
 describe("허브 머무는 구간 CSS", () => {
   it("구간 안에서는 순차 등장 애니메이션을 끈다", () => {
     // `.record-appear`는 animation-fill-mode: both라 끝난 뒤에도 opacity: 1을 붙들고,
@@ -81,8 +84,19 @@ describe("허브 머무는 구간 CSS", () => {
   it("달력에는 사라질 수 있는 연출을 걸지 않는다", () => {
     // 스크롤 타임라인 연출을 걸었더니 빌드가 그 규칙을 떨어뜨리면서 clip-path 시작값만 남아
     // 달력이 잘린 채 굳었다. 보여야 하는 것에 조건부 연출을 얹지 않는다
-    expect(declarations).not.toContain("animation-timeline");
-    expect(declarations).not.toContain("clip-path");
+    //
+    // 떠오르는 이전·다음 카드(PostShelf)만 예외다 — **기본이 안 보임**이라 빌드가 연출을
+    // 떨어뜨려도 굳는 것이 없고, 같은 일을 본문 아래 목록이 한다. 그 블록 하나만 걷고 본다
+    const rest = declarations.replace(SHELF_FLOAT_BLOCK, "");
+    expect(rest).not.toContain("animation-timeline");
+    expect(rest).not.toContain("clip-path");
+  });
+
+  it("떠오르는 카드는 스크롤 타임라인 밖에서 안 보인다", () => {
+    // 예외가 성립하는 조건이다. 이게 깨지면 위 예외도 거둔다
+    expect(declarations).toMatch(SHELF_FLOAT_BLOCK);
+    // 닫기 규칙(`:checked+.shelf-float`)이 아니라 맨몸의 기본 규칙이어야 한다
+    expect(has(/(?<![+\w-])\.shelf-float\{display:none;?\}/)).toBe(true);
   });
 
   it("가로 넘침을 막는 규칙이 color-mix보다 앞에 선다", () => {
