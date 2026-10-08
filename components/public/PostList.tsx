@@ -52,11 +52,7 @@ export function PostList({
             variant={siteOf(card.type)}
             rotate={ROTATIONS[index % ROTATIONS.length]}
             href={postHref(card.type, card.slug, siteOf(card.type))}
-            callNumber={formatCallNumber({
-              type: card.type,
-              callNumber: card.callNumber,
-              categoryName: card.categoryName,
-            })}
+            callNumber={cornerOf(card)}
             aside={formatDate(card.publishedAt)}
             title={card.title}
             subtitle={card.scriptureRef ?? card.excerpt}
@@ -105,10 +101,22 @@ function formatDate(date: Date | null): string | null {
 }
 
 /**
+ * 카드 왼쪽 위.
+ *
+ * **dev는 카테고리만 적는다**(2026-10-08). 청구기호 `0508 · 정보`의 번호는 목록에서 읽는
+ * 사람에게 아무 말도 하지 않았다 — 글을 고르는 손잡이는 분류다. 번호는 상세 지면과 OG 카드에
+ * 그대로 남는다. faith는 `QT-1043`이 곧 타입이라 그대로 둔다.
+ */
+function cornerOf(card: ListCard): string | null {
+  if (card.type === "TECH") return card.categoryName || null;
+  return formatCallNumber({ type: card.type, callNumber: card.callNumber });
+}
+
+/**
  * 카드 메타 한 줄.
  *
- * faith는 타입 배지(02 §2.3), dev는 태그다. dev에서 카테고리를 쓰지 않는 이유는 청구기호가
- * 이미 `0001 · FE`로 카테고리를 담고 있어서다(03 §6.3) — 같은 정보를 두 번 적지 않는다.
+ * faith는 타입 배지(02 §2.3), dev는 태그다. dev에서 카테고리를 쓰지 않는 이유는 왼쪽 위가
+ * 이미 카테고리를 담고 있어서다(cornerOf) — 같은 정보를 두 번 적지 않는다.
  */
 function metaOf(card: ListCard): string | null {
   if (card.type !== "TECH") return RECORD_TYPE_LABELS[card.type].replace("오늘의 ", "");
