@@ -17,9 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      # -f: 2xx가 아니면 실패 — 이미 멈췄다면 빨간불로 드러난다
+      # -f: 2xx가 아니면 실패 — 이미 멈췄다면 빨간불로 드러난다.
+      # 한 번의 네트워크 흔들림으로 빨간불이 뜨지 않게 두 번까지 다시 묻고, 매달리지 않게 20초에 끊는다
       - run: |
-          curl -fsS "$URL/storage/v1/bucket" \
+          curl -fsS --retry 2 --retry-all-errors --max-time 20 "$URL/storage/v1/bucket" \
             -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
         env:
           URL: ${{ secrets.DEV_SUPABASE_URL }}
