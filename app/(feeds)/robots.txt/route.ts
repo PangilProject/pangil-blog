@@ -1,3 +1,4 @@
+import { BLOCKED_BOTS } from "@/lib/site/blockedBots";
 import { absoluteUrl } from "@/lib/site/publicUrl";
 import { isPreviewHost, resolveSite, siteHostsFromEnv } from "@/lib/site/resolveSite";
 
@@ -37,6 +38,8 @@ export function GET(request: Request) {
   });
 
   return robots([
+    // 이 블로그에 돌려주는 것 없이 긁어 가는 봇들은 통째로 막는다(BLOCKED_BOTS)
+    ...BLOCKED_BOTS.flatMap((bot) => [`User-agent: ${bot}`, "Disallow: /", ""]),
     "User-agent: *",
     "Allow: /",
     "Disallow: /admin",
