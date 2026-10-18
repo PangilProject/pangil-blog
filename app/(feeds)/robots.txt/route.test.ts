@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { GET } from "@/app/(feeds)/robots.txt/route";
+import { BLOCKED_BOTS } from "@/lib/site/blockedBots";
 
 /**
  * robots.txt는 **한 줄 잘못 적으면 사이트가 통째로 사라지는** 파일이다. 화면에서는 아무것도
@@ -33,6 +34,23 @@ describe("robots.txt", () => {
     expect(body).toContain("Disallow: /admin");
     expect(body).toContain("Disallow: /api");
     expect(body).toContain("Allow: /");
+  });
+
+  /**
+   * 긁어 가는 봇은 자기 이름의 묶음에서 통째로 막힌다. 반대로 **검색엔진은 그 묶음에 들어가면
+   * 안 된다** — 실수로 하나 섞이면 그 검색에서 사이트가 사라지고, 화면에서는 아무것도 안 보인다.
+   */
+  it("긁어 가는 봇은 통째로 막고, 검색엔진과 링크 미리보기는 건드리지 않는다", async () => {
+    const body = await read("dev.pangil.me");
+
+    for (const bot of BLOCKED_BOTS) {
+      expect(body).toContain(`User-agent: ${bot}\nDisallow: /\n`);
+    }
+    for (const kept of ["Googlebot", "bingbot", "Applebot", "Yeti", "facebookexternalhit"]) {
+      expect(body).not.toContain(kept);
+    }
+    // 나머지 모두의 규칙은 그대로다
+    expect(body).toContain("User-agent: *\nAllow: /");
   });
 
   it("지면마다 자기 sitemap을 가리킨다 — 검색엔진은 호스트 단위로 읽는다", async () => {
