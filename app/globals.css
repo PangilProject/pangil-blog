@@ -1348,6 +1348,34 @@ html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
   background: color-mix(in oklch, var(--accent), transparent 88%);
 }
 
+/* 맞춤법 밑줄 (lib/editor/spellCheck). 에디터 안에만 그려지고 저장되지 않는다.
+   **색만으로 가르지 않는다** — 맞춤법은 물결, 띄어쓰기는 점선. 액센트가 아니라 인주 빨강을
+   직접 쓴다: 기술 글(잉크 블루 지면)에서도 "틀렸다"는 같은 색이어야 한다 */
+.spell-typo {
+  cursor: pointer;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  text-decoration-skip-ink: none;
+}
+
+.spell-typo--spell {
+  text-decoration-style: wavy;
+  text-decoration-color: var(--accent-faith);
+}
+
+.spell-typo--space {
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--ok);
+}
+
+/* 하나씩 고치기 창이 지금 가리키는 곳 */
+.spell-typo--current {
+  outline: 2px solid var(--accent-faith);
+  outline-offset: 2px;
+}
+
 /* 링크는 밑줄 하나로 표시한다 — 색만 바꾸면 먹지 팔레트에서 눌린다(03 §1.1) */
 .record-prose a {
   color: var(--accent);
