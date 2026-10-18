@@ -219,6 +219,12 @@ export type SaveDraftInput = {
  * DRAFT뿐 아니라 발행된 글의 수정 저장도 같은 경로를 쓴다 — 수정 저장 = 즉시 공개 반영이고,
  * 무효화는 호출하는 Server Action이 담당한다.
  */
+/** 상태만 — 자동 저장이 공개 글을 덮지 않게 저장 전에 본다(ADR-006) */
+export async function findPostStatus(id: string): Promise<PostStatus | null> {
+  const row = await prisma.post.findUnique({ where: { id }, select: { status: true } });
+  return row?.status ?? null;
+}
+
 export async function saveDraft({ id, ...rest }: SaveDraftInput) {
   return prisma.post.update({
     where: { id },

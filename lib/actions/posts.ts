@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { headers } from "next/headers";
 
 import { withAdmin } from "@/lib/actions/withAdmin";
-import { DraftSchema, matchesPostType } from "@/lib/content/schema";
+import { type DraftContent, DraftSchema, matchesPostType } from "@/lib/content/schema";
 import { parsePublishContent } from "@/lib/db/content";
 import {
   createDraft,
@@ -12,6 +12,7 @@ import {
   deletePostRecord,
   findCategorySlug,
   findEditablePost,
+  findPostStatus,
   findPostTagNames,
   publishPostRecord,
   saveDraft,
@@ -31,10 +32,12 @@ import { PostStatus } from "@/prisma/generated/enums";
  * 전부 withAdmin을 첫 줄에서 통과한다. Server Action은 별도 POST 엔드포인트로 직접 호출될
  * 수 있어서 middleware만으론 부족하다.
  *
- * 상태 전환 규칙:
- * - upsertDraft: 자동 저장. 무엇이든 저장하고 status는 건드리지 않는다
- * - publishPost: status를 PUBLISHED로 바꾸는 유일한 경로(05 §3.4). PublishSchema 통과 +
- *   청구기호 트랜잭션 + 무효화가 한 묶음이다
+ * 상태 전환 규칙(ADR-006):
+ * - upsertDraft: 임시저장(버튼·3분 자동). 무엇이든 저장하고 status는 건드리지 않는다.
+ *   **발행된 글은 덮지 않는다** — 덮으면 곧 공개 반영인데, 반영은 발행 버튼만 한다
+ * - publishFromEditor: **에디터의 지금 값을 받아** 저장과 발행을 한 요청에서 끝낸다 — 발행이
+ *   앞선 자동 저장을 기다리지 않는다. publishPost(목록 행 메뉴)와 함께 status를 PUBLISHED로
+ *   바꾸는 길은 publishOne 하나다(05 §3.4)
  */
 
 export type UpsertDraftInput = {
@@ -51,7 +54,11 @@ export type UpsertDraftInput = {
 
 export type UpsertDraftResult =
   | { ok: true; id: string; savedAt: Date }
-  | { ok: false; reason: "invalid-content" | "type-mismatch"; issues?: string[] };
+  | {
+      ok: false;
+      reason: "invalid-content" | "type-mismatch" | "published";
+      issues?: string[];
+    };
 
 export const upsertDraft = withAdmin(
   async (_user, input: UpsertDraftInput): Promise<UpsertDraftResult> => {
@@ -68,37 +75,37 @@ export const upsertDraft = withAdmin(
       return { ok: false, reason: "type-mismatch" };
     }
 
-    if (!input.id) {
-      const created = await createDraft({
-        type: input.type,
-        title: input.title,
-        content: parsed.data,
-      });
-
-      if (input.tags) await setPostTags(created.id, input.type, input.tags);
-
-      return { ok: true, id: created.id, savedAt: created.updatedAt };
+    // 발행된 글의 수정은 발행 버튼으로만 반영한다(ADR-006) — 화면이 막지만 서버도 막는다
+    if (input.id && (await findPostStatus(input.id)) === "PUBLISHED") {
+      return { ok: false, reason: "published" };
     }
 
-    const saved = await saveDraft({
-      id: input.id,
-      title: input.title,
-      content: parsed.data,
-      categoryId: input.categoryId,
-      excerpt: input.excerpt,
-    });
-
-    // 태그를 안 넘긴 에디터(QT·설교·찬양)의 저장이 기존 태그를 지우지 않는다
-    if (input.tags) await setPostTags(input.id, input.type, input.tags);
-
-    // 발행된 글의 수정 저장은 즉시 공개 반영이다(04 §1.2 "별도 반영 버튼 없음")
-    if (saved.status === "PUBLISHED") {
-      await revalidatePost(input.id, input.type, input.categoryId ?? null);
-    }
-
+    const saved = await writePost(input, parsed.data);
     return { ok: true, id: saved.id, savedAt: saved.updatedAt };
   },
 );
+
+/** 저장 본체 — 임시저장과 발행이 같이 쓴다. 상태는 건드리지 않는다 */
+async function writePost(input: UpsertDraftInput, content: DraftContent) {
+  if (!input.id) {
+    const created = await createDraft({ type: input.type, title: input.title, content });
+    if (input.tags) await setPostTags(created.id, input.type, input.tags);
+    return created;
+  }
+
+  const saved = await saveDraft({
+    id: input.id,
+    title: input.title,
+    content,
+    categoryId: input.categoryId,
+    excerpt: input.excerpt,
+  });
+
+  // 태그를 안 넘긴 에디터(QT·설교·찬양)의 저장이 기존 태그를 지우지 않는다
+  if (input.tags) await setPostTags(input.id, input.type, input.tags);
+
+  return saved;
+}
 
 export type PublishPostResult =
   /**
@@ -107,8 +114,15 @@ export type PublishPostResult =
    * 화면에서는 `SITE_HOST_*`를 읽을 수 없으니(NEXT_PUBLIC_이 아니다) 서버가 적어 보낸다
    */
   | { ok: true; id: string; slug: string; callNumber: number; url: string }
-  | { ok: false; reason: "not-found" | "invalid-content" | "type-mismatch"; issues?: string[] };
+  | {
+      ok: false;
+      reason: "not-found" | "invalid-content" | "type-mismatch";
+      issues?: string[];
+      /** 새 글이 저장까지는 됐다면 그 id — 다시 누를 때 초안이 하나 더 생기지 않게 */
+      id?: string;
+    };
 
+/** 목록에서 고른 글 하나를 발행한다(A-03 행 메뉴) — 저장된 content 그대로 */
 export const publishPost = withAdmin(async (_user, postId: string): Promise<PublishPostResult> => {
   const result = await publishOne(postId);
   if (!result.ok) return result;
@@ -124,6 +138,36 @@ export const publishPost = withAdmin(async (_user, postId: string): Promise<Publ
     url: absolutePostUrl(post.type, published.slug, { host: (await headers()).get("host") }),
   };
 });
+
+/**
+ * 에디터의 발행 — 지금 값을 저장하고 곧바로 발행한다(ADR-006).
+ *
+ * 발행 게이트를 **저장 전에** 먼저 본다. 발행된 글을 고치다 게이트에 걸렸는데 저장부터 해 두면,
+ * 공개 글의 content가 덜 채운 값으로 바뀐 채 남는다.
+ */
+export const publishFromEditor = withAdmin(
+  async (_user, input: UpsertDraftInput): Promise<PublishPostResult> => {
+    const gate = parsePublishContent(input.content);
+    if (!gate.ok) return { ok: false, reason: "invalid-content", issues: gate.issues };
+    if (!matchesPostType(input.type, gate.content)) return { ok: false, reason: "type-mismatch" };
+
+    const saved = await writePost(input, gate.content);
+
+    const result = await publishOne(saved.id);
+    if (!result.ok) return { ...result, id: saved.id };
+
+    const { post, published } = result;
+    await announce(post.type, published.slug);
+
+    return {
+      ok: true,
+      id: published.id,
+      slug: published.slug,
+      callNumber: published.callNumber,
+      url: absolutePostUrl(post.type, published.slug, { host: (await headers()).get("host") }),
+    };
+  },
+);
 
 /**
  * 발행 게이트 본체 — 한 편 발행(publishPost)과 일괄 공개(republishPosts)가 함께 쓴다.
