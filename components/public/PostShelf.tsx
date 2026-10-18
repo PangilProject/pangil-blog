@@ -41,7 +41,8 @@ export function PostShelf({
 /**
  * 목록 상자. **넓은 화면과 좁은 화면이 모양이 다르다.**
  *
- * - 넓은 화면: 액센트 괘를 위에 그은 상자에 한 줄씩 — 날짜 · 제목 · →.
+ * - 넓은 화면: 액센트 괘를 위에 그은 상자에 한 줄씩 — 날짜 · 제목 · →. 폭은 **본문 지면과 같다**
+ *   (`max-w-sheet`) — 지면 칸을 다 쓰던 동안 본문 아래에서 혼자 넓어 목록이 길게 늘어져 보였다.
  * - 좁은 화면: 티스토리 모바일처럼 덩이 — 굵은 제목 두 줄 · 요약 두 줄 · 날짜. 번호와 →는
  *   손가락 화면에서 읽을 것이 아니라 숨긴다. 썸네일 자리는 없다(썸네일은 걷어냈다).
  *
@@ -59,7 +60,7 @@ function ShelfList({
   return (
     <section
       aria-labelledby="post-shelf-heading"
-      className="lg:border-(--accent) lg:border-t-2 lg:bg-card lg:ring-1 lg:ring-edge"
+      className="mx-auto w-full max-w-sheet lg:border-(--accent) lg:border-t-2 lg:bg-card lg:ring-1 lg:ring-edge"
     >
       <header className="flex items-baseline justify-between gap-3 pb-2.5 lg:border-edge lg:border-b lg:px-[18px] lg:pt-3.5 lg:pb-3">
         <h2 id="post-shelf-heading" className="font-bold text-base lg:font-semibold lg:text-sm">
@@ -169,9 +170,14 @@ function RowBody({ item, current = false }: { item: ShelfPost; current?: boolean
 /**
  * 떠오르는 이전 글 · 다음 글 — **넓은 화면에서만.**
  *
- * 본문 끝 무렵(스크롤 72~82%)에 아래 양쪽 모서리에서 올라온다. 티스토리처럼 이전은 왼쪽,
- * 다음은 오른쪽이고 각자 ✕로 닫는다. 닫은 것은 그 지면에서만 유지된다 — 다른 글로 가면
- * 다시 나온다(기억하려면 스크립트가 필요하다).
+ * 본문 끝 무렵(스크롤 72~82%)에 아래에서 올라온다. 티스토리처럼 이전은 왼쪽, 다음은
+ * 오른쪽이고 각자 ✕로 닫는다. 닫은 것은 그 지면에서만 유지된다 — 다른 글로 가면 다시
+ * 나온다(기억하려면 스크립트가 필요하다).
+ *
+ * **본문 지면 폭 안에서 좌우로 선다.** 전에는 화면 양쪽 모서리에 떴는데, 넓은 화면에서는
+ * 본문에서 한참 떨어진 구석이라 눈이 따라가지 못했다. 그래서 줄(`.shelf-float-row`)을 지면
+ * 폭으로 두고 `sticky`로 화면 아래에 붙인다 — 읽는 동안은 지면 아래 끝에 떠 있다가, 글 끝에
+ * 닿으면 목록 아래 제자리에 내려앉는다.
  *
  * 좁은 화면에서는 띄우지 않는다. 화면 아래를 가리고, 바로 위 목록 덩이가 같은 일을 한다.
  * 스크롤 타임라인을 모르는 브라우저(Firefox)에서도 나오지 않는다 — 목록이 남으므로 잃는 것이
@@ -189,7 +195,7 @@ function FloatingNeighbors({
   if (!previous && !next) return null;
 
   return (
-    <nav aria-label="이전 글 다음 글">
+    <nav aria-label="이전 글 다음 글" className="shelf-float-row">
       {previous && <FloatingCard post={previous} side="left" kicker={`← ${axisLabel} · 이전 글`} />}
       {next && <FloatingCard post={next} side="right" kicker={`${axisLabel} · 다음 글 →`} />}
     </nav>
@@ -217,7 +223,8 @@ function FloatingCard({
         className="shelf-dismiss sr-only"
         aria-label={`${side === "left" ? "이전" : "다음"} 글 카드 닫기`}
       />
-      <div className={cn("shelf-float", side === "left" ? "left-4" : "right-4")}>
+      {/* 이전 글이 없으면 다음 글 카드 혼자 오른쪽에 붙는다 */}
+      <div className={cn("shelf-float", side === "right" && "ml-auto")}>
         <Link
           href={postHref(post.type, post.slug, siteOf(post.type))}
           rel={side === "left" ? "prev" : "next"}
