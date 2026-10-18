@@ -1,6 +1,7 @@
 import { Extension } from "@tiptap/core";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { type EditorState, Plugin, PluginKey } from "@tiptap/pm/state";
+import type { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 
 import { readRange } from "@/lib/editor/spellSegments";
@@ -182,6 +183,20 @@ export function listSpellMarks(state: EditorState): SpellPlacement[] {
     .find()
     .map((decoration) => ({ from: decoration.from, to: decoration.to, mark: markOf(decoration) }))
     .sort((a, b) => a.from - b.from);
+}
+
+/**
+ * 검사를 보낸 때의 자리를 지금 문서의 자리로 옮긴다. 검사를 기다리는 동안 사람이 앞쪽에
+ * 글을 더 쓰면 결과의 자리가 통째로 밀린다 — 옮기지 않으면 그 칸의 밑줄이 전부 빠진다.
+ *
+ * 앞은 오른쪽으로, 뒤는 왼쪽으로 붙인다: 틀린 말 바로 앞이나 뒤에 새로 친 글자를 밑줄에
+ * 끌어들이지 않는다. 그 말이 지워졌으면 null이다.
+ */
+export function mapPlacement(mapping: Mapping, from: number, to: number) {
+  const start = mapping.mapResult(from, 1);
+  const end = mapping.mapResult(to, -1);
+  if (start.deleted || end.deleted || end.pos <= start.pos) return null;
+  return { from: start.pos, to: end.pos };
 }
 
 export function currentSpellMark(state: EditorState): string | null {

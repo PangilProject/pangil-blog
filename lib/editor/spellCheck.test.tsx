@@ -1,4 +1,5 @@
 import { Editor } from "@tiptap/core";
+import { Mapping } from "@tiptap/pm/transform";
 import StarterKit from "@tiptap/starter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +8,7 @@ import {
   clearSpellMarks,
   currentSpellMark,
   listSpellMarks,
+  mapPlacement,
   removeSpellMark,
   SPELL_SELECT_EVENT,
   SpellCheck,
@@ -252,5 +254,49 @@ describe("spellToneOf", () => {
     expect(spellToneOf("space")).toBe("space");
     expect(spellToneOf("space_spell")).toBe("spell");
     expect(spellToneOf("doubt")).toBe("spell");
+  });
+});
+
+describe("mapPlacement", () => {
+  /** 편집을 하면서 그 자리 변화를 모은다 — SpellCheckControl이 검사를 기다리는 동안 하는 일 */
+  function track(instance: Editor) {
+    const mapping = new Mapping();
+    instance.on("transaction", ({ transaction }) => {
+      if (transaction.docChanged) mapping.appendMapping(transaction.mapping);
+    });
+    return mapping;
+  }
+
+  it("앞쪽에 글을 더 쓰면 그만큼 자리를 옮긴다", () => {
+    const instance = open("<p>오늘 몇일 동안</p>");
+    const { from, to } = place(instance, mark("a", "몇일", "며칠"));
+    const mapping = track(instance);
+
+    instance.commands.insertContentAt(1, "아, ");
+
+    const moved = mapPlacement(mapping, from, to);
+    expect(moved && readRange(instance.state.doc, moved.from, moved.to)).toBe("몇일");
+  });
+
+  it("틀린 말 바로 앞뒤에 친 글자를 끌어들이지 않는다", () => {
+    const instance = open("<p>몇일</p>");
+    const { from, to } = place(instance, mark("a", "몇일", "며칠"));
+    const mapping = track(instance);
+
+    instance.commands.insertContentAt(from, "[");
+    instance.commands.insertContentAt(to + 1, "]");
+
+    const moved = mapPlacement(mapping, from, to);
+    expect(moved && readRange(instance.state.doc, moved.from, moved.to)).toBe("몇일");
+  });
+
+  it("그 말이 지워졌으면 null이다", () => {
+    const instance = open("<p>오늘 몇일 동안</p>");
+    const { from, to } = place(instance, mark("a", "몇일", "며칠"));
+    const mapping = track(instance);
+
+    instance.commands.deleteRange({ from: from - 1, to: to + 1 });
+
+    expect(mapPlacement(mapping, from, to)).toBeNull();
   });
 });
