@@ -1,13 +1,13 @@
 import "server-only";
 
 import { watchdogVerdict } from "@/lib/crawler/watchdog";
-import { dumpDatabase } from "@/lib/db/backup";
+import { dumpChanges, dumpDatabase } from "@/lib/db/backup";
 import { findCrawlRun } from "@/lib/db/crawlRuns";
 import { findWeeklyStats } from "@/lib/db/weeklyDigest";
 import { notifySlack } from "@/lib/notify/slack";
 import { isSunday, kstDateKey } from "@/lib/record/kst";
 import { weeklyMessage } from "@/lib/stats/weeklyMessage";
-import { pruneBackups, uploadBackup } from "@/lib/storage/backups";
+import { listBackupNames, planBackup, pruneBackups, uploadBackup } from "@/lib/storage/backups";
 
 /**
  * 크론 작업 본체 (06 §5 · §8).
@@ -49,17 +49,37 @@ async function sweepOldBackups(dateKey: string): Promise<string> {
   }
 }
 
-export async function runBackup(now = new Date()): Promise<TaskResult> {
+/**
+ * 백업 한 장. 일요일엔 전체, 나머지 날엔 변경분이다(`planBackup`).
+ *
+ * @param options.full 손으로 부를 때(`/api/cron/backup`) — 마이그레이션 직전처럼 온전한 한 장이
+ *   필요한 때라 요일과 상관없이 전체를 뜬다
+ */
+export async function runBackup(
+  now = new Date(),
+  options: { full?: boolean } = {},
+): Promise<TaskResult> {
   const dateKey = kstDateKey(now);
 
   try {
-    const backup = await dumpDatabase(now);
-    const uploaded = await uploadBackup(dateKey, JSON.stringify(backup));
+    // 목록을 못 읽으면 기준을 모르는 것이다 — 변경분 대신 전체를 뜬다
+    const names = await listBackupNames().catch(() => []);
+    const plan = planBackup({ dateKey, sunday: isSunday(now), names, force: options.full });
+
+    const backup =
+      plan.kind === "full"
+        ? await dumpDatabase(now)
+        : await dumpChanges(plan.base, plan.since, now);
+    const uploaded = await uploadBackup(dateKey, JSON.stringify(backup), plan.kind);
     const size = `${Math.round(uploaded.bytes / 1024)}KB`;
+    const label =
+      plan.kind === "full"
+        ? `전체 · 글 ${backup.counts.posts}개`
+        : `변경분(${plan.base} 기준) · 바뀐 글 ${backup.counts.posts}개`;
 
     const swept = await sweepOldBackups(dateKey);
 
-    await notifySlack(`🗄 백업 완료 · ${dateKey} · 글 ${backup.counts.posts}개 · ${size}${swept}`, {
+    await notifySlack(`🗄 백업 완료 · ${dateKey} · ${label} · ${size}${swept}`, {
       quiet: true,
     });
 

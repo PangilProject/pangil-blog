@@ -2,7 +2,13 @@ import { gunzipSync } from "node:zlib";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { KEEP_BACKUPS, pruneBackups, uploadBackup } from "@/lib/storage/backups";
+import {
+  KEEP_BACKUPS,
+  planBackup,
+  pruneBackups,
+  staleBackups,
+  uploadBackup,
+} from "@/lib/storage/backups";
 
 /**
  * 첫 백업에서 버킷을 만드는 경로 (06 §8).
@@ -97,6 +103,17 @@ describe("uploadBackup", () => {
     expect(result.bytes).toBe(sent.byteLength);
   });
 
+  it("변경분은 `.delta.json.gz`로 올린다 — 전체와 같은 날짜여도 덮어쓰지 않는다", async () => {
+    const calls = stubFetch(response(200));
+
+    const result = await uploadBackup("2026-10-19", "{}", "delta");
+
+    expect(calls[0].url).toBe(
+      "https://example.supabase.co/storage/v1/object/backups/db/2026-10-19.delta.json.gz",
+    );
+    expect(result.path).toBe("backups/db/2026-10-19.delta.json.gz");
+  });
+
   it("버킷을 만든 뒤에도 실패하면 던진다", async () => {
     stubFetch(response(400, BUCKET_MISSING), response(200), response(500, "boom"));
 
@@ -187,5 +204,102 @@ describe("pruneBackups", () => {
     stubFetch(listed(...days(9)), response(403, "forbidden"));
 
     await expect(pruneBackups()).rejects.toThrow(/삭제 실패: 403 forbidden/);
+  });
+});
+
+/**
+ * 매일 전체를 뜨면 글 전문(약 17MB)이 매일 DB 밖으로 나간다 — 무료 Egress의 10%였다.
+ * 그래서 일요일만 전체, 나머지는 변경분이다. **기준이 의심스러우면 전체**로 물러선다.
+ */
+describe("planBackup", () => {
+  const weekday = { sunday: false };
+
+  it("일요일엔 전체다", () => {
+    expect(
+      planBackup({ dateKey: "2026-10-18", sunday: true, names: ["2026-10-17.delta.json.gz"] }),
+    ).toEqual({ kind: "full" });
+  });
+
+  it("손으로 부르면 요일과 상관없이 전체다", () => {
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-10-19", names: ["2026-10-18.json.gz"], force: true }),
+    ).toEqual({ kind: "full" });
+  });
+
+  it("평일엔 가장 최근 전체를 기준으로 변경분을 뜬다 — 그 날 KST 0시부터", () => {
+    const plan = planBackup({
+      ...weekday,
+      dateKey: "2026-10-21",
+      names: ["2026-10-20.delta.json.gz", "2026-10-19.delta.json.gz", "2026-10-18.json.gz"],
+    });
+
+    expect(plan).toEqual({
+      kind: "delta",
+      base: "2026-10-18",
+      since: new Date("2026-10-17T15:00:00.000Z"),
+    });
+  });
+
+  it("전체가 하나도 없으면 전체다 — 변경분만으로는 복원할 수 없다", () => {
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-10-19", names: ["2026-10-18.delta.json.gz"] }),
+    ).toEqual({ kind: "full" });
+    expect(planBackup({ ...weekday, dateKey: "2026-10-19", names: [] })).toEqual({ kind: "full" });
+  });
+
+  it("최근 전체가 일주일 넘게 낡았으면 전체다 — 일요일 전체가 실패한 주", () => {
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-10-25", names: ["2026-10-18.json.gz"] }),
+    ).toEqual({ kind: "full" });
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-10-24", names: ["2026-10-18.json.gz"] }).kind,
+    ).toBe("delta");
+  });
+
+  it("오늘 이미 전체가 있으면 같은 날짜의 변경분을 만들지 않고 전체를 다시 뜬다", () => {
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-10-19", names: ["2026-10-19.json.gz"] }),
+    ).toEqual({ kind: "full" });
+  });
+
+  it("압축 이전의 `.json`도 전체로 본다", () => {
+    expect(
+      planBackup({ ...weekday, dateKey: "2026-09-20", names: ["2026-09-19.json"] }),
+    ).toMatchObject({ kind: "delta", base: "2026-09-19" });
+  });
+});
+
+describe("staleBackups", () => {
+  it("남는 변경분이 기대는 전체는 장수 밖이어도 남긴다", () => {
+    const names = [
+      "2026-10-24.delta.json.gz",
+      "2026-10-23.delta.json.gz",
+      "2026-10-22.delta.json.gz",
+      "2026-10-21.delta.json.gz",
+      "2026-10-20.delta.json.gz",
+      "2026-10-19.delta.json.gz",
+      "2026-10-18.delta.json.gz",
+      // 일요일 전체가 실패해 지난 전체 위에 변경분이 이어진 주 — 이게 없으면 위 일곱 장은 못 읽는다
+      "2026-10-17.json.gz",
+      "2026-10-16.json.gz",
+    ];
+
+    expect(staleBackups(names, 7)).toEqual(["2026-10-16.json.gz"]);
+  });
+
+  it("평소 한 주(전체 + 변경분 여섯)는 지난주 것만 버린다", () => {
+    const names = [
+      "2026-10-24.delta.json.gz",
+      "2026-10-23.delta.json.gz",
+      "2026-10-22.delta.json.gz",
+      "2026-10-21.delta.json.gz",
+      "2026-10-20.delta.json.gz",
+      "2026-10-19.delta.json.gz",
+      "2026-10-18.json.gz",
+      "2026-10-17.delta.json.gz",
+      "2026-10-11.json.gz",
+    ];
+
+    expect(staleBackups(names, 7)).toEqual(["2026-10-17.delta.json.gz", "2026-10-11.json.gz"]);
   });
 });
