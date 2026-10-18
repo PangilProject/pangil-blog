@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { type TableCommand, TablePanel, TableToggle } from "@/components/editor/TableToolbarRow";
 import {
@@ -108,6 +108,8 @@ export type EditorToolbarProps = {
   onTableCommand?: (command: TableCommand) => void;
   /** 지금 할 수 있는 표 명령들 */
   canTable?: Partial<Record<TableCommand, boolean>>;
+  /** 줄 끝에 붙는 것(맞춤법 검사). 서식이 아니라 글 전체에 하는 일이라 오른쪽에 따로 선다 */
+  trailing?: ReactNode;
   className?: string;
 };
 
@@ -121,6 +123,7 @@ export function EditorToolbar({
   onInsertTable,
   onTableCommand,
   canTable,
+  trailing,
   className,
 }: EditorToolbarProps) {
   const marks = MARK_COMMANDS_BY_VARIANT[variant];
@@ -194,6 +197,8 @@ export function EditorToolbar({
           <TableToggle open={isPickingTable} onToggle={() => setIsPickingTable((open) => !open)} />
         )}
       </div>
+
+      {trailing}
 
       {/* 표는 켜고 끄는 것이 아니라 크기를 고르는 것이라 제 줄을 쓴다 */}
       {hasTable && (
