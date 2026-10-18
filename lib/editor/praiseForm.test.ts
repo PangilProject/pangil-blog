@@ -13,6 +13,7 @@ import {
   PraisePublishFormSchema,
   parseBarCount,
   sectionOrdinals,
+  toCopyText,
   toDraftContent,
   toPublishContent,
 } from "@/lib/editor/praiseForm";
@@ -430,5 +431,16 @@ describe("isEmptyForm — 서식 전환 조건", () => {
       }),
     ).toBe(false);
     expect(isEmptyForm(filled())).toBe(false);
+  });
+});
+
+describe("toCopyText — 에디터 전체 복사 (A-05)", () => {
+  it("제목·가사·묵상이 한 덩이로 들어간다", () => {
+    const text = toCopyText(filled());
+
+    expect(text.startsWith("# 마커스워십 - 주님의 시간에")).toBe(true);
+    for (const part of ["주님의 시간에", "내가 주를 찬양하리", "기다림을 배웁니다"]) {
+      expect(text).toContain(part);
+    }
   });
 });

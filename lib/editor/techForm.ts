@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { DraftContent, PostContent } from "@/lib/content/schema";
 import { EMPTY_TIPTAP_DOC } from "@/lib/content/schema";
+import { copyTextOf } from "@/lib/editor/copyText";
 import {
   EMPTY_RICH_TEXT,
   isEmptyDoc,
@@ -99,6 +100,11 @@ export const TechPublishFormSchema = z.object({
 
 export function toPublishContent(values: TechFormValues): PostContent {
   return { kind: "TECH", body: toTiptapDoc(values.body) };
+}
+
+/** 지금 적힌 글을 글자 한 덩이로 — 에디터 `전체 복사`. 조판은 네 에디터가 같다(`copyTextOf`) */
+export function toCopyText(values: TechFormValues): string {
+  return copyTextOf(values.title, toPublishContent(values));
 }
 
 export type TechInitialValues = {
