@@ -8,7 +8,7 @@ import { CancelDraftButton } from "@/components/editor/CancelDraftButton";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import {
   DraftDrawerButton,
-  DraftDrawerList,
+  DraftDrawerModal,
   type DraftItem,
 } from "@/components/editor/DraftDrawer";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
@@ -82,6 +82,7 @@ export function TechEditor({
   const router = useRouter();
   const [id, setId] = useState(postId);
   const [draftsOpen, setDraftsOpen] = useState(false);
+  const closeDrafts = useCallback(() => setDraftsOpen(false), []);
   /**
    * 초안 id는 ref로도 들고 있는다. 첫 저장이 발행 클릭 안에서(flush) 끝나면 setId의 결과가
    * 이 클로저에 보이지 않아 "아직 저장되지 않았어요"로 막힌다 — 방금 저장에 성공했는데도.
@@ -219,18 +220,18 @@ export function TechEditor({
         }
         actions={
           <>
-            {/* 서버 초안과 브라우저에만 남은 내용을 고른다 — 눌렀을 때만 펼친다 */}
-            <DraftDrawerButton
-              count={drafts.length + (autosave.recovery ? 1 : 0)}
-              open={draftsOpen}
-              onToggle={() => setDraftsOpen((open) => !open)}
-            />
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
             {/* 한 번에 다 복사한다 — 큐티와 같은 조판(`copyTextOf`). 다른 도구에 붙여넣을 때 쓴다 */}
             <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
               {copyLabel(copyState, "전체 복사")}
             </Button>
+            {/* 서버 초안과 브라우저에만 남은 내용을 고른다 — 누를 때만 모달로 뜬다. 임시저장 바로 왼쪽 */}
+            <DraftDrawerButton
+              count={drafts.length + (autosave.recovery ? 1 : 0)}
+              open={draftsOpen}
+              onToggle={() => setDraftsOpen((open) => !open)}
+            />
             {/* 발행된 글은 임시저장이 없다 — 서버에 올리면 곧 공개 반영이다(ADR-006) */}
             {!isPublished && (
               <Button type="button" onClick={() => void autosave.flush()}>
@@ -250,26 +251,6 @@ export function TechEditor({
           </Button>
         }
         toolbar={<ConnectedEditorToolbar />}
-        banner={
-          draftsOpen ? (
-            <DraftDrawerList
-              type="TECH"
-              drafts={drafts}
-              currentId={id}
-              local={autosave.recovery}
-              onRestoreLocal={() => {
-                const recovered = autosave.recovery?.value;
-                if (recovered) {
-                  for (const [key, value] of Object.entries(recovered)) {
-                    setValue(key as keyof TechFormValues, value as never);
-                  }
-                }
-                autosave.dismissRecovery();
-                setDraftsOpen(false);
-              }}
-            />
-          ) : null
-        }
       >
         <div className="flex flex-col gap-5 px-[6%] pt-8 max-md:pt-5">
           <input
@@ -360,6 +341,25 @@ export function TechEditor({
           )}
         </div>
       </EditorShell>
+      {draftsOpen && (
+        <DraftDrawerModal
+          type="TECH"
+          drafts={drafts}
+          currentId={id}
+          local={autosave.recovery}
+          onRestoreLocal={() => {
+            const recovered = autosave.recovery?.value;
+            if (recovered) {
+              for (const [key, value] of Object.entries(recovered)) {
+                setValue(key as keyof TechFormValues, value as never);
+              }
+            }
+            autosave.dismissRecovery();
+            setDraftsOpen(false);
+          }}
+          onClose={closeDrafts}
+        />
+      )}
     </EditorFocusProvider>
   );
 }

@@ -459,11 +459,11 @@ describe("SermonEditor — 초안함 (ADR-006 후속)", () => {
     );
 
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("region", { name: "초안함" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "초안함" })).toBeNull();
     expect(screen.getByRole("button", { name: "초안함 (2)" })).toBeInTheDocument();
   });
 
-  it("초안함을 펴면 서버 초안은 그 초안으로 가는 링크이고, 지금 글은 표시만 한다", async () => {
+  it("초안함 모달에서 서버 초안은 그 초안으로 가는 링크이고, 지금 글은 표시만 한다", async () => {
     render(
       <SermonEditor
         postId="post-1"
@@ -479,12 +479,18 @@ describe("SermonEditor — 초안함 (ADR-006 후속)", () => {
       screen.getByRole("button", { name: "초안함 (2)" }).click();
     });
 
-    const drawer = screen.getByRole("region", { name: "초안함" });
+    const drawer = screen.getByRole("dialog", { name: "초안함" });
     expect(drawer).toHaveTextContent("지금 편집 중");
     expect(screen.getByRole("link", { name: /지난주 설교/ })).toHaveAttribute(
       "href",
       "/admin/write/sermon/d-1",
     );
+
+    // ESC로 닫힌다 — 화면 위에 뜬 것이라 닫아도 본문은 그대로다
+    await act(async () => {
+      fireEvent.keyDown(document, { key: "Escape" });
+    });
+    expect(screen.queryByRole("dialog", { name: "초안함" })).toBeNull();
   });
 
   /** 브라우저에만 남은 내용은 버리지 않는다(프리모템 #2) — 원할 때 불러온다 */
