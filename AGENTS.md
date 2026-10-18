@@ -40,6 +40,7 @@
 - **Zod** (JSONB content 스키마 검증 — 저장/발행/렌더링 3중)
 - **Tiptap** (에디터 리치 텍스트), **react-hook-form + @hookform/resolvers**, **dnd-kit**(찬양 섹션), **nanoid**
 - **Shiki**(서버 사이드 코드 하이라이팅), **satori**(OG 카드 — `@vercel/og`/`next/og`가 아니다. Node 24에서 그쪽 래스터화가 `Unsupported input`으로 죽어 satori를 직접 쓴다. `lib/og/card.tsx` 머리 주석에 경위가 있다)
+- **hanspell**(에디터 맞춤법 검사 — 서버 전용. **공식 API가 아니다**: dic.daum.net 페이지를 읽는 래퍼라 다음이 페이지를 바꾸면 깨진다. 그래서 실패는 "밑줄 없음"으로 끝나고 저장·편집에 닿지 않으며, 고장은 거슬림 목록에 한 줄 남는다. `lib/spell/daum.ts` 머리 주석 참고)
 - **next-themes**(다크모드 수동 토글 + OS 기본 + 무FOUC)
 - **@upstash/ratelimit + Upstash Redis**(통계·향후 댓글 rate limit)
 - **pg_trgm**(Postgres 확장 — 검색 GIN. dev/prod 양쪽 프로젝트에 `create extension` 활성화)
