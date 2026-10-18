@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
-import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
+import { findEditablePost, findPostTagNames, listDrafts } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/sermonForm";
 
 /**
@@ -23,13 +23,14 @@ export default async function EditSermonPage({ params }: PageProps<"/admin/write
 
   if (post?.type !== "SERMON") notFound();
 
-  const tags = await findPostTagNames(post.id);
+  const [tags, drafts] = await Promise.all([findPostTagNames(post.id), listDrafts(50, "SERMON")]);
 
   return (
     <SermonEditor
       postId={post.id}
       isDraft={post.status === "DRAFT"}
       isPublished={post.status === "PUBLISHED"}
+      drafts={drafts}
       initialValues={fromDraftContent(
         post.content.ok ? post.content.content : null,
         post.title,

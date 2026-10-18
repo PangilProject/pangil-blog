@@ -434,8 +434,8 @@ describe("SermonEditor — 발행", () => {
   });
 });
 
-describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
-  it("서버에 안 올라간 로컬 스냅샷이 있으면 복원 여부를 묻는다", () => {
+describe("SermonEditor — 초안함 (ADR-006 후속)", () => {
+  function leaveLocalSnapshot() {
     window.localStorage.setItem(
       "draft:SERMON:post-1",
       JSON.stringify({
@@ -445,29 +445,58 @@ describe("SermonEditor — 복구 배너 (04 §2.3)", () => {
         updatedAt: new Date("2026-08-16T02:00:00.000Z").toISOString(),
       }),
     );
+  }
 
-    renderEditor();
+  /** 서버 데이터가 우선이다 — 열자마자 브라우저 사본을 들이밀지 않는다 */
+  it("열 때 복구 배너를 띄우지 않는다 — 초안함 개수에만 센다", () => {
+    leaveLocalSnapshot();
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={emptySermonForm()}
+        drafts={[{ id: "d-1", title: "지난주 설교", updatedAt: new Date() }]}
+      />,
+    );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("저장 안 된 내용이 있어요");
-    expect(screen.getByRole("button", { name: "복원" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "서버 내용 그대로 두기" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("region", { name: "초안함" })).toBeNull();
+    expect(screen.getByRole("button", { name: "초안함 (2)" })).toBeInTheDocument();
   });
 
-  it("복원을 누르면 로컬 값이 폼에 들어온다", async () => {
-    window.localStorage.setItem(
-      "draft:SERMON:post-1",
-      JSON.stringify({
-        rev: 4,
-        syncedRev: 1,
-        value: { ...emptySermonForm(), title: "저장 안 된 설교" },
-        updatedAt: new Date("2026-08-16T02:00:00.000Z").toISOString(),
-      }),
+  it("초안함을 펴면 서버 초안은 그 초안으로 가는 링크이고, 지금 글은 표시만 한다", async () => {
+    render(
+      <SermonEditor
+        postId="post-1"
+        initialValues={emptySermonForm()}
+        drafts={[
+          { id: "post-1", title: "지금 쓰는 설교", updatedAt: new Date() },
+          { id: "d-1", title: "지난주 설교", updatedAt: new Date() },
+        ]}
+      />,
     );
 
+    await act(async () => {
+      screen.getByRole("button", { name: "초안함 (2)" }).click();
+    });
+
+    const drawer = screen.getByRole("region", { name: "초안함" });
+    expect(drawer).toHaveTextContent("지금 편집 중");
+    expect(screen.getByRole("link", { name: /지난주 설교/ })).toHaveAttribute(
+      "href",
+      "/admin/write/sermon/d-1",
+    );
+  });
+
+  /** 브라우저에만 남은 내용은 버리지 않는다(프리모템 #2) — 원할 때 불러온다 */
+  it("브라우저에만 남은 내용을 불러오면 폼에 들어온다", async () => {
+    leaveLocalSnapshot();
     renderEditor();
 
     await act(async () => {
-      screen.getByRole("button", { name: "복원" }).click();
+      screen.getByRole("button", { name: "초안함 (1)" }).click();
+    });
+    await act(async () => {
+      screen.getByRole("button", { name: "불러오기" }).click();
     });
 
     expect(screen.getByLabelText("글 제목")).toHaveValue("저장 안 된 설교");

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { TechEditor } from "@/components/editor/TechEditor";
 import { listCategories } from "@/lib/db/categories";
-import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
+import { findEditablePost, findPostTagNames, listDrafts } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/techForm";
 
 /**
@@ -19,13 +19,14 @@ export default async function EditTechPage({ params }: PageProps<"/admin/write/t
 
   if (post?.type !== "TECH") notFound();
 
-  const tags = await findPostTagNames(post.id);
+  const [tags, drafts] = await Promise.all([findPostTagNames(post.id), listDrafts(50, "TECH")]);
 
   return (
     <TechEditor
       postId={post.id}
       isDraft={post.status === "DRAFT"}
       isPublished={post.status === "PUBLISHED"}
+      drafts={drafts}
       initialValues={fromDraftContent(post.content.ok ? post.content.content : null, {
         title: post.title,
         categoryId: post.categoryId,

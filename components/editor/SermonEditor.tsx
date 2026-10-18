@@ -7,10 +7,14 @@ import { Controller, useForm } from "react-hook-form";
 import { AutoGrowTextarea } from "@/components/editor/AutoGrowTextarea";
 import { CancelDraftButton } from "@/components/editor/CancelDraftButton";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
+import {
+  DraftDrawerButton,
+  DraftDrawerList,
+  type DraftItem,
+} from "@/components/editor/DraftDrawer";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { EditorShell } from "@/components/editor/EditorShell";
 import { FaithFormatTabs } from "@/components/editor/FaithFormatTabs";
-import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
 import { SaveIndicator } from "@/components/editor/SaveIndicator";
@@ -52,6 +56,8 @@ export type SermonEditorProps = {
   initialValues: SermonFormValues;
   /** 발행된 글이면 서버 임시저장 없이 `수정 발행`으로만 반영한다(ADR-006) */
   isPublished?: boolean;
+  /** 이 에디터 종류의 초안 — 초안함 목록 */
+  drafts?: DraftItem[];
 };
 
 export function SermonEditor({
@@ -59,9 +65,11 @@ export function SermonEditor({
   initialValues,
   isDraft,
   isPublished = false,
+  drafts = [],
 }: SermonEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   /**
    * 초안 id는 ref로도 들고 있는다. 첫 저장이 발행 클릭 안에서(flush) 끝나면 setId의 결과가
@@ -168,6 +176,12 @@ export function SermonEditor({
         }
         actions={
           <>
+            {/* 서버 초안과 브라우저에만 남은 내용을 고른다 — 눌렀을 때만 펼친다 */}
+            <DraftDrawerButton
+              count={drafts.length + (autosave.recovery ? 1 : 0)}
+              open={draftsOpen}
+              onToggle={() => setDraftsOpen((open) => !open)}
+            />
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
             {/* 한 번에 다 복사한다 — 큐티와 같은 조판(`copyTextOf`). 다른 도구에 붙여넣을 때 쓴다 */}
@@ -194,10 +208,13 @@ export function SermonEditor({
         }
         toolbar={<ConnectedEditorToolbar variant="slim" />}
         banner={
-          autosave.recovery ? (
-            <RecoveryBanner
-              savedAt={new Date(autosave.recovery.updatedAt).toLocaleString("ko-KR")}
-              onRestore={() => {
+          draftsOpen ? (
+            <DraftDrawerList
+              type="SERMON"
+              drafts={drafts}
+              currentId={id}
+              local={autosave.recovery}
+              onRestoreLocal={() => {
                 const recovered = autosave.recovery?.value;
                 if (recovered) {
                   for (const [key, value] of Object.entries(recovered)) {
@@ -205,8 +222,8 @@ export function SermonEditor({
                   }
                 }
                 autosave.dismissRecovery();
+                setDraftsOpen(false);
               }}
-              onDismiss={autosave.dismissRecovery}
             />
           ) : null
         }
