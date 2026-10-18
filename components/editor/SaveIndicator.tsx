@@ -1,70 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import type { AutosaveState } from "@/lib/editor/autosave";
 import { cn } from "@/lib/utils";
 
 /**
- * 저장 인디케이터 (03 §6.2 · 04 §2.2) — "신뢰의 시각화"(02 §3.4).
+ * 저장 인디케이터 (03 §6.2 · ADR-006) — "신뢰의 시각화"(02 §3.4).
  *
- * 점 색으로만 상태를 말한다: 회색 대기 / 호박 저장 중·동기화 대기 / 녹색 저장됨(03 §4).
- * 설교 에디터는 로컬이 진실의 원천이라(04 §2.3) 서버 동기화가 실패해도 "로컬 저장됨 ·
- * 동기화 대기"로 정상 동작해야 한다 — 그래서 variant가 갈린다.
+ * **네 에디터가 같은 문구를 쓴다.** 전에는 설교만 "로컬 저장됨 · 서버 저장 대기"였다 — 같은
+ * 일을 에디터마다 다르게 말하면 읽는 법을 따로 익혀야 한다. 로컬 미러는 늘 돌지만 여기서는
+ * 말하지 않는다. 이 표시는 **서버 임시저장**만 말한다.
  *
- * 여기서 상태를 만들지 않는다. 상태 기계는 M2 자동 저장 파이프라인의 몫이고,
- * 이 컴포넌트는 받은 상태를 그리기만 한다.
+ * 여기서 상태를 만들지 않는다. 받은 상태를 그리기만 한다.
  */
-
-export type SaveState = "idle" | "typing" | "saving" | "saved" | "offline-pending";
-
-/**
- * 저장 상태 기계(04 §2.2)의 상태를 화면 상태(03 §6.2)로 옮긴다.
- *
- * 기계의 "retrying"은 화면에서 "서버 저장 대기"다 — `동기화`는 구현 용어이므로 쓰지 않는다
- * (03 §7.3). 재시도 중이라는 내부 사정이 아니라
- * "아직 서버에 못 올렸다"는 사실을 보여주는 게 작성자에게 필요한 정보다.
- */
-export function toSaveState(state: AutosaveState): SaveState {
-  return state === "retrying" ? "offline-pending" : state;
-}
-
-export type SaveIndicatorVariant = "default" | "sermon";
-
-const DOT_BY_STATE: Record<SaveState, string> = {
-  idle: "bg-[#cfc8b6]",
-  typing: "bg-[#cfc8b6]",
-  saving: "bg-warn motion-safe:animate-pulse",
-  saved: "bg-ok",
-  "offline-pending": "bg-warn",
-};
-
-const LABEL_BY_STATE: Record<SaveState, string> = {
-  idle: "저장 대기",
-  typing: "입력 중",
-  saving: "저장 중…",
-  saved: "저장됨",
-  "offline-pending": "서버 저장 대기",
-};
-
-/** 설교는 로컬 우선이라 같은 상태도 다르게 말한다 — 실패가 아니라 정상 동작이다 */
-const SERMON_LABEL_OVERRIDES: Partial<Record<SaveState, string>> = {
-  saved: "로컬 저장됨",
-  "offline-pending": "로컬 저장됨 · 서버 저장 대기",
-};
 
 export type SaveIndicatorProps = {
-  state: SaveState;
-  variant?: SaveIndicatorVariant;
-  /** "방금", "2분 전" 같은 상대 시각. 저장됨 상태에서만 의미가 있다 */
-  savedAgo?: string;
+  state: AutosaveState;
+  /** 마지막 서버 저장 시각 — `임시저장됨 · 3분 전` */
+  savedAt?: Date | null;
+  /** 서버에 이미 있는 글인가(열었을 때 고친 게 없으면 `임시저장됨`) */
+  hasDraft?: boolean;
+  /** 발행된 글을 고치는 중이면 서버 상태 대신 반영 여부를 말한다 */
+  published?: boolean;
+  /** 이 화면에서 고쳤는가 — 발행된 글에서만 본다 */
+  edited?: boolean;
   className?: string;
+};
+
+type Tone = "idle" | "busy" | "ok" | "warn";
+
+const DOT: Record<Tone, string> = {
+  idle: "bg-[#cfc8b6]",
+  busy: "bg-warn motion-safe:animate-pulse",
+  ok: "bg-ok",
+  warn: "bg-warn",
 };
 
 export function SaveIndicator({
   state,
-  variant = "default",
-  savedAgo,
+  savedAt = null,
+  hasDraft = false,
+  published = false,
+  edited = false,
   className,
 }: SaveIndicatorProps) {
-  const label =
-    (variant === "sermon" ? SERMON_LABEL_OVERRIDES[state] : undefined) ?? LABEL_BY_STATE[state];
+  const ago = useRelativeTime(savedAt);
+  const [tone, label] = describe({ state, ago, hasDraft, published, edited });
 
   return (
     <span
@@ -75,8 +57,56 @@ export function SaveIndicator({
         className,
       )}
     >
-      <span aria-hidden className={cn("size-[7px] rounded-full", DOT_BY_STATE[state])} />
-      {state === "saved" && savedAgo ? `${label} · ${savedAgo}` : label}
+      <span aria-hidden className={cn("size-[7px] rounded-full", DOT[tone])} />
+      {label}
     </span>
   );
+}
+
+function describe({
+  state,
+  ago,
+  hasDraft,
+  published,
+  edited,
+}: {
+  state: AutosaveState;
+  ago: string | null;
+  hasDraft: boolean;
+  published: boolean;
+  edited: boolean;
+}): [Tone, string] {
+  // 발행된 글은 서버에 올리지 않는다 — 반영은 발행 버튼만 한다(ADR-006)
+  if (published) return edited ? ["warn", "수정 중 · 발행해야 반영돼요"] : ["ok", "발행된 글"];
+
+  switch (state) {
+    case "saving":
+      return ["busy", "저장 중…"];
+    case "saved":
+      return ["ok", ago ? `임시저장됨 · ${ago}` : "임시저장됨"];
+    case "retrying":
+      return ["warn", "저장 실패 · 잠시 후 다시 시도"];
+    case "typing":
+      return ["idle", "저장 안 됨"];
+    default:
+      return hasDraft ? ["ok", "임시저장됨"] : ["idle", "저장 안 됨"];
+  }
+}
+
+/** `방금` · `3분 전` · `1시간 전` — 30초마다 다시 센다 */
+function useRelativeTime(at: Date | null): string | null {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!at) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, [at]);
+
+  if (!at) return null;
+  const minutes = Math.floor((now - at.getTime()) / 60_000);
+  if (minutes < 1) return "방금";
+  if (minutes < 60) return `${minutes}분 전`;
+  return `${Math.floor(minutes / 60)}시간 전`;
 }

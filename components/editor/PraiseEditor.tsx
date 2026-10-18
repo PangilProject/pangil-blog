@@ -13,7 +13,7 @@ import { PraiseSectionList } from "@/components/editor/PraiseSectionList";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
-import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SaveIndicator } from "@/components/editor/SaveIndicator";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import { upsertDraft } from "@/lib/actions/posts";
@@ -59,9 +59,16 @@ export type PraiseEditorProps = {
    */
   isDraft?: boolean;
   initialValues: PraiseFormValues;
+  /** 발행된 글이면 서버 임시저장 없이 `수정 발행`으로만 반영한다(ADR-006) */
+  isPublished?: boolean;
 };
 
-export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorProps) {
+export function PraiseEditor({
+  postId,
+  initialValues,
+  isDraft,
+  isPublished = false,
+}: PraiseEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -103,6 +110,17 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
   const youtubeUrl = watch("youtubeUrl");
   const videoId = parseYouTubeId(youtubeUrl);
 
+  /** 첫 서버 저장(임시저장·3분 자동·발행)에서 받은 id를 붙든다. 새로고침해도 같은 초안으로 돌아오게 URL도 맞춘다 */
+  const adoptId = useCallback(
+    (newId: string) => {
+      if (idRef.current) return;
+      idRef.current = newId;
+      setId(newId);
+      router.replace(`/admin/write/praise/${newId}`);
+    },
+    [router],
+  );
+
   const save = useCallback(
     async (values: PraiseFormValues) => {
       const result = await upsertDraft({
@@ -117,18 +135,19 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
         throw new Error(`초안 저장 실패: ${result.reason}`);
       }
 
-      if (!idRef.current) {
-        idRef.current = result.id;
-        setId(result.id);
-        router.replace(`/admin/write/praise/${result.id}`);
-      }
+      adoptId(result.id);
     },
     // id는 ref에서 읽는다 — 상태를 읽으면 첫 저장이 끝나기 전에 큐에 있던 저장이 초안을
     // 하나 더 만든다
-    [router],
+    [adoptId],
   );
 
-  const autosave = useEditorAutosave<PraiseFormValues>({ type: "PRAISE", id: id ?? "new", save });
+  const autosave = useEditorAutosave<PraiseFormValues>({
+    type: "PRAISE",
+    id: id ?? "new",
+    save,
+    serverSave: !isPublished,
+  });
 
   useEffect(() => {
     const subscription = watch((values) => {
@@ -165,11 +184,18 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
     publish,
   } = usePublishFlow<PraiseFormValues>({
     gate: PraisePublishFormSchema,
-    flush: autosave.flush,
-    isDirty: autosave.isDirty,
-    clearMirror: autosave.clearMirror,
-    // 상태가 아니라 ref다 — 첫 저장이 이 클릭 안에서 끝나는 경우가 있다
+    toInput: (values) => ({
+      type: "PRAISE",
+      title: values.title,
+      content: toDraftContent(values),
+      tags: values.tags,
+    }),
+    // 상태가 아니라 ref다 — 발행이 새 글의 첫 저장인 경우가 있다
     currentId: () => idRef.current,
+    onSaved: adoptId,
+    hold: autosave.hold,
+    release: autosave.release,
+    clearMirror: autosave.clearMirror,
   });
 
   const onPublish = handleSubmit(publish);
@@ -186,8 +212,11 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
         indicator={
           <>
             <SaveIndicator
-              state={toSaveState(autosave.state)}
-              savedAgo={autosave.savedAt ? "방금" : undefined}
+              state={autosave.state}
+              savedAt={autosave.savedAt}
+              hasDraft={id !== null}
+              published={isPublished}
+              edited={autosave.edited}
             />
             <SaveErrorNote message={autosave.lastError} />
           </>
@@ -200,9 +229,12 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
             <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
               {copyLabel(copyState, "전체 복사")}
             </Button>
-            <Button type="button" onClick={() => void autosave.flush()}>
-              임시저장
-            </Button>
+            {/* 발행된 글은 임시저장이 없다 — 서버에 올리면 곧 공개 반영이다(ADR-006) */}
+            {!isPublished && (
+              <Button type="button" onClick={() => void autosave.flush()}>
+                임시저장
+              </Button>
+            )}
           </>
         }
         footer={
@@ -212,7 +244,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
             disabled={isPublishing}
             onClick={() => void onPublish()}
           >
-            {isPublishing ? "발행 중…" : "발행"}
+            {isPublishing ? "발행 중…" : isPublished ? "수정 발행" : "발행"}
           </Button>
         }
         toolbar={<ConnectedEditorToolbar variant="slim" />}

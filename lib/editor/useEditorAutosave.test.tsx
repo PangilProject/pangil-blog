@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type MirrorStorage, mirrorKey } from "@/lib/editor/localMirror";
-import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
+import { AUTOSAVE_INTERVAL_MS, useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 
 function memoryStorage(): MirrorStorage {
   const map = new Map<string, string>();
@@ -20,8 +20,8 @@ function memoryStorage(): MirrorStorage {
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
-  it("입력 즉시 로컬에 남기고, 서버 저장은 debounce 뒤에 한다", async () => {
+describe("useEditorAutosave — 04 §2.3 · ADR-006 배선", () => {
+  it("입력 즉시 로컬에 남기고, 서버 저장은 3분 뒤에 한 번 한다", async () => {
     const storage = memoryStorage();
     const saved: string[] = [];
 
@@ -38,6 +38,12 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
 
     // 로컬은 이미 남아 있다 — 네트워크와 무관하다
     expect(storage.getItem(mirrorKey("SERMON", "a"))).toContain("예배 첫 줄");
+    expect(saved).toEqual([]);
+
+    // 입력마다 올리던 1초 주기는 없다 — 3분이 차기 전에는 서버에 가지 않는다
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS - 1000);
+    });
     expect(saved).toEqual([]);
 
     await act(async () => {
@@ -62,7 +68,7 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
 
     act(() => result.current.onChange("설교 노트"));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     });
 
     expect(result.current.state).toBe("retrying");
@@ -114,7 +120,7 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
 
     act(() => result.current.onChange("답변"));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     });
 
     const snapshot = JSON.parse(storage.getItem(mirrorKey("QT", "e")) ?? "{}");
@@ -155,7 +161,7 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
     act(() => result.current.abandon());
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS * 2);
     });
 
     expect(saved).toEqual([]);
@@ -177,10 +183,37 @@ describe("useEditorAutosave — 04 §2.2·§2.3 배선", () => {
 
     act(() => result.current.onChange("내용"));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
     });
 
     expect(saved).toEqual(["내용"]);
     expect(result.current.recovery).toBeNull();
+  });
+
+  /** 발행된 글은 서버에 올리면 곧 공개 반영이다 — 반영은 발행 버튼만 한다(ADR-006) */
+  it("발행된 글(serverSave: false)은 로컬에만 남기고 서버에 올리지 않는다", async () => {
+    const storage = memoryStorage();
+    const saved: string[] = [];
+
+    const { result } = renderHook(() =>
+      useEditorAutosave<string>({
+        type: "TECH",
+        id: "p",
+        storage,
+        serverSave: false,
+        save: async (value) => void saved.push(value),
+      }),
+    );
+
+    expect(result.current.edited).toBe(false);
+    act(() => result.current.onChange("고친 문단"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS * 2);
+      await result.current.flush();
+    });
+
+    expect(saved).toEqual([]);
+    expect(result.current.edited).toBe(true);
+    expect(storage.getItem(mirrorKey("TECH", "p"))).toContain("고친 문단");
   });
 });

@@ -6,14 +6,16 @@ import { type AutosaveState, createAutosave } from "@/lib/editor/autosave";
 import { createLocalMirror, type MirrorSnapshot } from "@/lib/editor/localMirror";
 
 /**
- * 에디터 저장 배선 (04 §2.2·§2.3).
+ * 에디터 저장 배선 (04 §2.3 · ADR-006).
  *
  * 두 계층을 한 훅에서 묶는다.
- * 1. 입력 즉시 로컬 미러에 스냅샷 (네트워크와 무관)
- * 2. 자동 저장 상태 기계가 debounce/maxWait/백오프로 서버에 올림
+ * 1. 입력 즉시 로컬 미러에 스냅샷 (네트워크와 무관) — 무손실의 방어선(프리모템 #2)
+ * 2. 서버 임시저장 — **버튼, 또는 마지막 저장 뒤 바뀐 것이 있으면 3분마다 한 번**.
+ *    입력마다 서버로 보내던 1초·5초 주기는 없앴다 — 상태 표시가 쉴 새 없이 바뀌고, 발행이
+ *    그 저장을 기다려야 했다(ADR-006). 실패하면 다음 3분에 조용히 다시 한다
  *
- * 설교(로컬 우선)와 나머지 에디터의 차이는 **표시 문구**뿐이다(SaveIndicator variant).
- * 저장 순서는 어차피 로컬이 먼저다 — 그게 프리모템 #2의 방어선이고, 전 에디터에 적용된다.
+ * **발행된 글을 고칠 때(`serverSave: false`)는 서버에 올리지 않는다.** 올리면 곧 공개 반영인데,
+ * 반영은 발행 버튼만 한다. 고치는 동안의 보존은 로컬 미러가 맡는다.
  */
 
 export type UseEditorAutosaveOptions<T> = {
@@ -23,15 +25,27 @@ export type UseEditorAutosaveOptions<T> = {
   /** 서버 저장. 예외를 던지면 재시도한다 */
   save: (value: T) => Promise<void>;
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length"> | null;
+  /** 발행된 글이면 false — 서버에 올리지 않고 로컬에만 둔다 */
+  serverSave?: boolean;
+  /** 자동 임시저장 주기. 테스트에서만 바꾼다 */
+  intervalMs?: number;
 };
+
+/** 자동 임시저장 주기 (ADR-006) */
+export const AUTOSAVE_INTERVAL_MS = 3 * 60 * 1000;
 
 export type UseEditorAutosaveResult<T> = {
   state: AutosaveState;
   savedAt: Date | null;
   /** 입력이 들어왔을 때 호출 */
   onChange: (value: T) => void;
-  /** 임시저장 버튼·발행 직전 */
+  /** 임시저장 버튼 — 기다리지 않고 지금 올린다 */
   flush: () => Promise<void>;
+  /** 이 화면에서 한 번이라도 고쳤는가 — 발행된 글의 `수정 중` 표시 */
+  edited: boolean;
+  /** 발행 요청이 도는 동안 자동 저장을 멈추고 푼다(usePublishFlow) */
+  hold: () => void;
+  release: () => void;
   /** 마운트 시점에 발견된 미동기화 로컬 스냅샷 (복구 배너용) */
   recovery: MirrorSnapshot<T> | null;
   dismissRecovery: () => void;
@@ -40,14 +54,6 @@ export type UseEditorAutosaveResult<T> = {
    * "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
    */
   lastError: string | null;
-  /**
-   * 아직 서버로 못 올린 값이 남아 있는가.
-   *
-   * `flush()`는 **저장이 실패해도 정상 종료한다**(상태 기계가 재시도를 걸 뿐 다시 던지지
-   * 않는다). 그래서 발행 직전에 이 값을 봐야 방금 쓴 문단이 빠진 채 발행되는 것을 막는다
-   * (usePublishFlow).
-   */
-  isDirty: () => boolean;
   /** 발행 완료 등 — 미러를 비운다 */
   clearMirror: () => void;
   /**
@@ -62,7 +68,10 @@ export function useEditorAutosave<T>({
   id,
   save,
   storage,
+  serverSave = true,
+  intervalMs = AUTOSAVE_INTERVAL_MS,
 }: UseEditorAutosaveOptions<T>): UseEditorAutosaveResult<T> {
+  const [edited, setEdited] = useState(false);
   const [state, setState] = useState<AutosaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [recovery, setRecovery] = useState<MirrorSnapshot<T> | null>(null);
@@ -101,8 +110,12 @@ export function useEditorAutosave<T>({
         onStateChange: setState,
         onSaved: setSavedAt,
         onError: (error) => setLastError(error instanceof Error ? error.message : String(error)),
+        // 첫 입력부터 한 주기 뒤에 한 번 — 계속 쳐도 미뤄지지 않는다(maxWait와 같은 값)
+        debounceMs: intervalMs,
+        maxWaitMs: intervalMs,
+        backoffMs: [intervalMs],
       }),
-    [],
+    [intervalMs],
   );
 
   /**
@@ -128,10 +141,11 @@ export function useEditorAutosave<T>({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    if (!serverSave) return;
     const onOnline = () => void autosave.flush();
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
-  }, [autosave]);
+  }, [autosave, serverSave]);
 
   useEffect(() => {
     return () => {
@@ -151,17 +165,23 @@ export function useEditorAutosave<T>({
         setLastError(error instanceof Error ? error.message : String(error));
       }
 
-      autosave.change(value);
+      setEdited(true);
+      if (serverSave) autosave.change(value);
     },
-    [autosave, mirror],
+    [autosave, mirror, serverSave],
   );
 
   return {
     state,
     savedAt,
     onChange,
-    flush: useCallback(() => autosave.flush(), [autosave]),
-    isDirty: useCallback(() => autosave.isDirty(), [autosave]),
+    flush: useCallback(
+      () => (serverSave ? autosave.flush() : Promise.resolve()),
+      [autosave, serverSave],
+    ),
+    edited,
+    hold: useCallback(() => autosave.hold(), [autosave]),
+    release: useCallback(() => autosave.release(), [autosave]),
     recovery,
     dismissRecovery: useCallback(() => setRecovery(null), []),
     lastError,

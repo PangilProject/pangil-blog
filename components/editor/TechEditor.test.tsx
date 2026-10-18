@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { TechEditor } from "@/components/editor/TechEditor";
 import { EMPTY_TECH_FORM, type TechFormValues } from "@/lib/editor/techForm";
+import { AUTOSAVE_INTERVAL_MS } from "@/lib/editor/useEditorAutosave";
 
 const upsertDraft = vi.fn();
 const publishPost = vi.fn();
@@ -20,7 +21,7 @@ beforeAll(() => {
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
-  publishPost: (id: string) => publishPost(id),
+  publishFromEditor: (input: { id?: string }) => publishPost(input.id ?? null, input),
 }));
 
 vi.mock("@/lib/actions/images", () => ({
@@ -146,7 +147,7 @@ describe("TechEditor — 저장 (메타는 컬럼으로)", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "고친 제목" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     const input = upsertDraft.mock.calls[0]?.[0];
@@ -168,7 +169,7 @@ describe("TechEditor — 저장 (메타는 컬럼으로)", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "새 글" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(replace).toHaveBeenCalledWith("/admin/write/tech/created-1");
@@ -183,7 +184,7 @@ describe("TechEditor — 발행", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
     expect(assign).toHaveBeenCalledWith("https://dev.example/next-16");
   });
 
@@ -195,7 +196,7 @@ describe("TechEditor — 발행", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
   });
 
   it("카테고리가 없으면 미분류로 보인다", () => {
@@ -211,24 +212,45 @@ describe("TechEditor — 발행", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
   });
 });
 
 describe("TechEditor — 저장 실패 (04 §2.2)", () => {
-  it("첫 저장이 발행 클릭 안에서 끝나도 발행된다 — 방금 저장했는데 막히면 안 된다", async () => {
-    upsertDraft.mockResolvedValue({ ok: true, id: "created-1", savedAt: new Date() });
+  /** 발행이 곧 첫 저장이다 — 자동 저장이 초안을 만들 때까지 기다리지 않는다(ADR-006) */
+  it("새 글은 임시저장 없이 바로 발행된다 — 저장과 발행이 한 요청이다", async () => {
     renderEditor({ postId: null, initialValues: { ...filled(), title: "새 글" } });
 
-    // 자동 저장 debounce가 터지기 전에 바로 발행한다 (flush가 초안을 만든다)
     await act(async () => {
-      screen.getByLabelText("제목").focus();
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "새 글 제목" } });
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("created-1");
-    expect(screen.queryByText(/아직 저장되지 않았어요/)).toBeNull();
+    expect(upsertDraft).not.toHaveBeenCalled();
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBeNull();
+    expect(publishPost.mock.calls.at(-1)?.[1]).toMatchObject({ type: "TECH", title: "새 글 제목" });
+  });
+
+  /** 발행된 글은 서버에 올리면 곧 공개 반영이다 — 반영은 `수정 발행`만 한다(ADR-006) */
+  it("발행된 글은 임시저장이 없고, 고쳐도 서버에 올리지 않으며 수정 발행으로 반영한다", async () => {
+    renderEditor({ isPublished: true });
+
+    expect(screen.queryByRole("button", { name: "임시저장" })).toBeNull();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("제목"), { target: { value: "고친 제목" } });
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS * 2);
+    });
+
+    expect(upsertDraft).not.toHaveBeenCalled();
+    expect(screen.getByText("수정 중 · 발행해야 반영돼요")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByRole("button", { name: "수정 발행" }).click();
+    });
+    expect(publishPost.mock.calls.at(-1)?.[1]).toMatchObject({ id: "post-1", title: "고친 제목" });
   });
 
   it("저장이 계속 실패하면 사유를 화면에 남긴다 — 동기화 대기만 보이면 할 수 있는 일이 없다", async () => {
@@ -237,7 +259,7 @@ describe("TechEditor — 저장 실패 (04 §2.2)", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "고친 제목" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(screen.getByText(/invalid-content/)).toBeInTheDocument();
@@ -249,13 +271,13 @@ describe("TechEditor — 저장 실패 (04 §2.2)", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
     expect(screen.getByText(/invalid-content/)).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "둘" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(screen.queryByText(/invalid-content/)).toBeNull();
@@ -267,9 +289,9 @@ describe("TechEditor — 저장 실패 (04 §2.2)", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
       fireEvent.change(screen.getByLabelText("제목"), { target: { value: "하나 둘" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft.mock.calls[0]?.[0]?.id).toBeUndefined();
@@ -293,7 +315,7 @@ describe("TechEditor — 카테고리 (02 §5.5 필드 2)", () => {
     });
     await act(async () => {
       screen.getByText("트러블슈팅").click();
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft.mock.calls.at(-1)?.[0]?.categoryId).toBe("cat-2");

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { CrawlBand } from "@/components/editor/CrawlBand";
 import { EditorShell } from "@/components/editor/EditorShell";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
-import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SaveIndicator } from "@/components/editor/SaveIndicator";
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { StateStamp } from "@/components/record/StateStamp";
 
@@ -93,29 +93,36 @@ describe("EditorShell — 저장과 발행은 툴바 위 띠에", () => {
   });
 });
 
-describe("SaveIndicator — 04 §2.2 상태 표시", () => {
-  it("상태마다 점 색이 다르다: 대기 회색 / 저장 중 호박 / 저장됨 녹색", () => {
+describe("SaveIndicator — 네 에디터 공통 문구 (ADR-006)", () => {
+  it("상태마다 문구와 점이 다르다", () => {
     const { rerender, container } = render(<SaveIndicator state="idle" />);
-    expect(container.querySelector("span span")?.className).toContain("bg-[#cfc8b6]");
+    const dot = () => container.querySelector("span span")?.className;
+    expect(screen.getByRole("status")).toHaveTextContent("저장 안 됨");
+    expect(dot()).toContain("bg-[#cfc8b6]");
 
     rerender(<SaveIndicator state="saving" />);
-    expect(container.querySelector("span span")?.className).toContain("bg-warn");
+    expect(screen.getByRole("status")).toHaveTextContent("저장 중…");
+    expect(dot()).toContain("bg-warn");
 
-    rerender(<SaveIndicator state="saved" />);
-    expect(container.querySelector("span span")?.className).toContain("bg-ok");
+    rerender(<SaveIndicator state="saved" savedAt={new Date()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("임시저장됨 · 방금");
+    expect(dot()).toContain("bg-ok");
+
+    rerender(<SaveIndicator state="retrying" />);
+    expect(screen.getByRole("status")).toHaveTextContent("저장 실패 · 잠시 후 다시 시도");
   });
 
-  it("저장됨에는 상대 시각을 붙인다", () => {
-    render(<SaveIndicator state="saved" savedAgo="방금" />);
-    expect(screen.getByRole("status")).toHaveTextContent("저장됨 · 방금");
+  it("서버에 이미 있는 글을 열었을 때 고친 게 없으면 임시저장됨이다", () => {
+    render(<SaveIndicator state="idle" hasDraft />);
+    expect(screen.getByRole("status")).toHaveTextContent("임시저장됨");
   });
 
-  it("설교는 같은 상태를 로컬 우선 어법으로 말한다 — 동기화 실패는 실패가 아니다", () => {
-    const { rerender } = render(<SaveIndicator state="offline-pending" variant="sermon" />);
-    expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨 · 서버 저장 대기");
+  it("발행된 글은 고치면 발행해야 반영된다고 말한다", () => {
+    const { rerender } = render(<SaveIndicator state="idle" published />);
+    expect(screen.getByRole("status")).toHaveTextContent("발행된 글");
 
-    rerender(<SaveIndicator state="saved" variant="sermon" />);
-    expect(screen.getByRole("status")).toHaveTextContent("로컬 저장됨");
+    rerender(<SaveIndicator state="idle" published edited />);
+    expect(screen.getByRole("status")).toHaveTextContent("수정 중 · 발행해야 반영돼요");
   });
 
   it("상태 변화를 스크린리더에 알린다", () => {
@@ -189,19 +196,6 @@ describe("SectionBlock — 찬양 섹션", () => {
     render(<SectionBlock label="Verse" lyrics="가사" />);
     expect(screen.getByText("가사").className).toContain("font-serif");
     expect(screen.getByText("가사").tagName).toBe("P");
-  });
-});
-
-describe("toSaveState — 기계 상태 → 화면 상태", () => {
-  it("retrying은 화면에서 서버 저장 대기다 — 내부 사정이 아니라 사실을 보여준다", () => {
-    expect(toSaveState("retrying")).toBe("offline-pending");
-  });
-
-  it("나머지 상태는 그대로 쓴다", () => {
-    expect(toSaveState("idle")).toBe("idle");
-    expect(toSaveState("typing")).toBe("typing");
-    expect(toSaveState("saving")).toBe("saving");
-    expect(toSaveState("saved")).toBe("saved");
   });
 });
 

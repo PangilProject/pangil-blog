@@ -11,7 +11,7 @@ import { EditorShell } from "@/components/editor/EditorShell";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
-import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SaveIndicator } from "@/components/editor/SaveIndicator";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,9 +61,17 @@ export type TechEditorProps = {
   isDraft?: boolean;
   initialValues: TechFormValues;
   categories: CategoryOption[];
+  /** 발행된 글이면 서버 임시저장 없이 `수정 발행`으로만 반영한다(ADR-006) */
+  isPublished?: boolean;
 };
 
-export function TechEditor({ postId, initialValues, categories, isDraft }: TechEditorProps) {
+export function TechEditor({
+  postId,
+  initialValues,
+  categories,
+  isDraft,
+  isPublished = false,
+}: TechEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   /**
@@ -76,6 +84,17 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
   const form = useForm<TechFormValues>({ defaultValues: initialValues ?? EMPTY_TECH_FORM });
   const { control, register, setValue, watch, handleSubmit, getValues } = form;
   const { state: copyState, copy } = useCopyText();
+
+  /** 첫 서버 저장(임시저장·3분 자동·발행)에서 받은 id를 붙든다. 새로고침해도 같은 초안으로 돌아오게 URL도 맞춘다 */
+  const adoptId = useCallback(
+    (newId: string) => {
+      if (idRef.current) return;
+      idRef.current = newId;
+      setId(newId);
+      router.replace(`/admin/write/tech/${newId}`);
+    },
+    [router],
+  );
 
   const save = useCallback(
     async (values: TechFormValues) => {
@@ -91,18 +110,19 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
         throw new Error(`초안 저장 실패: ${result.reason}`);
       }
 
-      if (!idRef.current) {
-        idRef.current = result.id;
-        setId(result.id);
-        router.replace(`/admin/write/tech/${result.id}`);
-      }
+      adoptId(result.id);
     },
     // id는 ref에서 읽는다 — 상태를 읽으면 첫 저장이 끝나기 전에 큐에 있던 저장이 초안을
     // 하나 더 만든다
-    [router],
+    [adoptId],
   );
 
-  const autosave = useEditorAutosave<TechFormValues>({ type: "TECH", id: id ?? "new", save });
+  const autosave = useEditorAutosave<TechFormValues>({
+    type: "TECH",
+    id: id ?? "new",
+    save,
+    serverSave: !isPublished,
+  });
 
   /**
    * 붙여넣은·끌어놓은 이미지를 Storage로 올린다(04 §3.3). 크기는 브라우저가 잰다 — 파일을
@@ -156,11 +176,18 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
     publish,
   } = usePublishFlow<TechFormValues>({
     gate: TechPublishFormSchema,
-    flush: autosave.flush,
-    isDirty: autosave.isDirty,
-    clearMirror: autosave.clearMirror,
-    // 상태가 아니라 ref다 — 첫 저장이 이 클릭 안에서 끝나는 경우가 있다
+    toInput: (values) => ({
+      type: "TECH",
+      title: values.title,
+      content: toDraftContent(values),
+      ...toDraftMeta(values),
+    }),
+    // 상태가 아니라 ref다 — 발행이 새 글의 첫 저장인 경우가 있다
     currentId: () => idRef.current,
+    onSaved: adoptId,
+    hold: autosave.hold,
+    release: autosave.release,
+    clearMirror: autosave.clearMirror,
   });
 
   const onPublish = handleSubmit(publish);
@@ -172,8 +199,11 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
         indicator={
           <>
             <SaveIndicator
-              state={toSaveState(autosave.state)}
-              savedAgo={autosave.savedAt ? "방금" : undefined}
+              state={autosave.state}
+              savedAt={autosave.savedAt}
+              hasDraft={id !== null}
+              published={isPublished}
+              edited={autosave.edited}
             />
             <SaveErrorNote message={autosave.lastError} />
             <SaveErrorNote message={imageError} />
@@ -187,9 +217,12 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
             <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
               {copyLabel(copyState, "전체 복사")}
             </Button>
-            <Button type="button" onClick={() => void autosave.flush()}>
-              임시저장
-            </Button>
+            {/* 발행된 글은 임시저장이 없다 — 서버에 올리면 곧 공개 반영이다(ADR-006) */}
+            {!isPublished && (
+              <Button type="button" onClick={() => void autosave.flush()}>
+                임시저장
+              </Button>
+            )}
           </>
         }
         footer={
@@ -199,7 +232,7 @@ export function TechEditor({ postId, initialValues, categories, isDraft }: TechE
             disabled={isPublishing}
             onClick={() => void onPublish()}
           >
-            {isPublishing ? "발행 중…" : "발행"}
+            {isPublishing ? "발행 중…" : isPublished ? "수정 발행" : "발행"}
           </Button>
         }
         toolbar={<ConnectedEditorToolbar />}

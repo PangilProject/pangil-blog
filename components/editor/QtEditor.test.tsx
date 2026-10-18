@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { QtEditor } from "@/components/editor/QtEditor";
 import { emptyQtForm, type QtFormValues } from "@/lib/editor/qtForm";
 import type { RichTextValue } from "@/lib/editor/richText";
+import { AUTOSAVE_INTERVAL_MS } from "@/lib/editor/useEditorAutosave";
 
 const upsertDraft = vi.fn();
 const publishPost = vi.fn();
@@ -27,7 +28,7 @@ beforeAll(() => {
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
-  publishPost: (id: string) => publishPost(id),
+  publishFromEditor: (input: { id?: string }) => publishPost(input.id ?? null, input),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -220,7 +221,7 @@ describe("QtEditor — 답변 공란은 경고만 (07 M2 DoD)", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
     expect(assign).toHaveBeenCalledWith("https://faith.example/qt-1");
   });
 
@@ -233,7 +234,7 @@ describe("QtEditor — 답변 공란은 경고만 (07 M2 DoD)", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
   });
 
   it("말씀 본문이 없으면 막고 무엇이 빠졌는지 알려준다", async () => {
@@ -264,7 +265,7 @@ describe("QtEditor — 자동 저장 배선", () => {
     expect(upsertDraft).not.toHaveBeenCalled();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft).toHaveBeenCalledTimes(1);
@@ -277,7 +278,7 @@ describe("QtEditor — 자동 저장 배선", () => {
 
     await act(async () => {
       fireEvent.change(screen.getByLabelText("큐티 제목"), { target: { value: "오늘의 큐티" } });
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(replace).toHaveBeenCalledWith("/admin/write/qt/created-1");

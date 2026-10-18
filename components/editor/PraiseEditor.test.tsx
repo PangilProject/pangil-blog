@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { PraiseEditor } from "@/components/editor/PraiseEditor";
 import { emptyPraiseForm, type PraiseFormValues } from "@/lib/editor/praiseForm";
+import { AUTOSAVE_INTERVAL_MS } from "@/lib/editor/useEditorAutosave";
 
 const upsertDraft = vi.fn();
 const publishPost = vi.fn();
@@ -21,7 +22,7 @@ beforeAll(() => {
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
-  publishPost: (id: string) => publishPost(id),
+  publishFromEditor: (input: { id?: string }) => publishPost(input.id ?? null, input),
 }));
 
 vi.mock("@/lib/actions/praise", () => ({
@@ -273,7 +274,7 @@ describe("PraiseEditor — 발행", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
     expect(assign).toHaveBeenCalledWith("https://faith.example/pr-1");
   });
 
@@ -305,7 +306,7 @@ describe("PraiseEditor — 자동 저장 배선", () => {
     expect(window.localStorage.getItem("draft:PRAISE:post-1")).toContain("고친 가사");
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft.mock.calls[0]?.[0]).toMatchObject({ id: "post-1", type: "PRAISE" });

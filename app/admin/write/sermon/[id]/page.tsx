@@ -29,6 +29,7 @@ export default async function EditSermonPage({ params }: PageProps<"/admin/write
     <SermonEditor
       postId={post.id}
       isDraft={post.status === "DRAFT"}
+      isPublished={post.status === "PUBLISHED"}
       initialValues={fromDraftContent(
         post.content.ok ? post.content.content : null,
         post.title,
