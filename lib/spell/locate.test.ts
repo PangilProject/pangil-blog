@@ -4,6 +4,7 @@ import {
   checkSegments,
   chunkSegments,
   locateTypos,
+  SpellDeadlineError,
   type SpellTypo,
   toSegmentTypos,
 } from "@/lib/spell/locate";
@@ -108,11 +109,83 @@ describe("checkSegments", () => {
       return text.includes("되서") ? [typo("되서", "돼서")] : [];
     };
 
-    const result = await checkSegments(["가".repeat(995), "일이 되서 기쁘다.", "나"], check);
+    const result = await checkSegments(["가".repeat(995), "일이 되서 기쁘다.", "나"], check, {
+      concurrency: 1,
+    });
 
     expect(calls).toHaveLength(2);
     expect(result).toEqual([
       { type: "spell", token: "되서", suggestion: "돼서", info: null, segment: 1, from: 3, to: 5 },
     ]);
+  });
+});
+
+describe("checkSegments — 동시성과 마감", () => {
+  const block = (char: string) => char.repeat(999);
+
+  it("정해진 수만큼만 동시에 보낸다", async () => {
+    let running = 0;
+    let peak = 0;
+    const check = async () => {
+      running += 1;
+      peak = Math.max(peak, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running -= 1;
+      return [];
+    };
+
+    await checkSegments([block("가"), block("나"), block("다"), block("라"), block("마")], check, {
+      concurrency: 2,
+    });
+
+    expect(peak).toBe(2);
+  });
+
+  it("먼저 끝난 덩어리와 무관하게 문서 순서로 돌려준다", async () => {
+    // 앞 덩어리가 더 늦게 끝난다
+    const check = async (text: string) => {
+      await new Promise((resolve) => setTimeout(resolve, text.startsWith("되서") ? 20 : 1));
+      return [typo("되서", "돼서")];
+    };
+
+    const result = await checkSegments(
+      [`되서${"가".repeat(997)}`, `되서${"나".repeat(997)}`],
+      check,
+    );
+
+    expect(result.map((item) => item.segment)).toEqual([0, 1]);
+  });
+
+  it("남은 시간을 요청 하나의 상한으로 넘긴다", async () => {
+    const timeouts: number[] = [];
+    let clock = 0;
+
+    await checkSegments(
+      [block("가"), block("나")],
+      async (_text, timeoutMs) => {
+        timeouts.push(timeoutMs);
+        clock += 3000;
+        return [];
+      },
+      { concurrency: 1, deadlineMs: 5000, requestTimeoutMs: 8000, now: () => clock },
+    );
+
+    expect(timeouts).toEqual([5000, 2000]);
+  });
+
+  it("마감을 넘기면 통째로 실패한다 — 반쪽 결과는 나머지가 다 맞다는 뜻이 된다", async () => {
+    let clock = 0;
+    const check = async () => {
+      clock += 6000;
+      return [typo("되서", "돼서")];
+    };
+
+    await expect(
+      checkSegments([block("가"), block("나")], check, {
+        concurrency: 1,
+        deadlineMs: 5000,
+        now: () => clock,
+      }),
+    ).rejects.toBeInstanceOf(SpellDeadlineError);
   });
 });

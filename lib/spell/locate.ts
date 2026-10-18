@@ -129,20 +129,61 @@ export function toSegmentTypos(chunk: Chunk, located: (SpellTypo & Range)[]): Lo
   return result;
 }
 
+/** 정해진 시간 안에 다 보지 못했다. 반쪽 결과는 "나머지는 다 맞다"로 읽히므로 통째로 실패다 */
+export class SpellDeadlineError extends Error {
+  constructor() {
+    super("spell check deadline exceeded");
+    this.name = "SpellDeadlineError";
+  }
+}
+
+export type CheckOptions = {
+  /** 동시에 보내는 덩어리 수. 남의 무료 서비스라 몰아 보내지 않는다 */
+  concurrency?: number;
+  /** 전체 검사가 이 시간을 넘기면 멈춘다(ms). 서버 함수가 중간에 잘리는 것보다 먼저 끝나야 한다 */
+  deadlineMs?: number;
+  /** 요청 하나의 상한(ms). 남은 시간이 더 짧으면 그만큼만 기다린다 */
+  requestTimeoutMs?: number;
+  now?: () => number;
+};
+
 /**
- * 글자열들을 검사한다. 검사기는 주입받는다 — 이 함수는 덩어리 짓기와 자리 찾기만 안다.
- * 덩어리는 **하나씩 차례로** 보낸다. 남의 무료 서비스에 동시에 몰아 보내지 않는다.
+ * 글자열들을 검사한다. 검사기는 주입받는다 — 이 함수는 덩어리 짓기·자리 찾기·시간 관리만 안다.
+ *
+ * 덩어리는 **몇 개씩만 동시에** 보낸다. 하나씩 차례로 보내던 때는 2만 자에 요청 스무 번이
+ * 줄을 서서, 서버 함수 시간 제한에 걸리면 이유도 없이 "검사하지 못했어요"가 됐다.
  */
 export async function checkSegments(
   texts: string[],
-  check: (text: string) => Promise<SpellTypo[]>,
+  check: (text: string, timeoutMs: number) => Promise<SpellTypo[]>,
+  {
+    concurrency = 3,
+    deadlineMs = Number.POSITIVE_INFINITY,
+    requestTimeoutMs = 8000,
+    now = Date.now,
+  }: CheckOptions = {},
 ): Promise<LocatedTypo[]> {
-  const result: LocatedTypo[] = [];
+  const chunks = chunkSegments(texts);
+  const results: LocatedTypo[][] = [];
+  const startedAt = now();
+  let next = 0;
 
-  for (const chunk of chunkSegments(texts)) {
-    const typos = await check(chunk.text);
-    result.push(...toSegmentTypos(chunk, locateTypos(chunk.text, typos)));
-  }
+  const worker = async () => {
+    while (next < chunks.length) {
+      const index = next;
+      next += 1;
 
-  return result;
+      const remaining = deadlineMs - (now() - startedAt);
+      if (remaining <= 0) throw new SpellDeadlineError();
+
+      const chunk = chunks[index];
+      const typos = await check(chunk.text, Math.min(requestTimeoutMs, remaining));
+      results[index] = toSegmentTypos(chunk, locateTypos(chunk.text, typos));
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, chunks.length) }, worker));
+
+  // 덩어리가 끝난 순서와 무관하게 문서 순서로 돌려준다
+  return results.flat();
 }
