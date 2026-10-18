@@ -6,6 +6,7 @@ import {
   fromDraftContent,
   isEmptyForm,
   SermonPublishFormSchema,
+  toCopyText,
   toDraftContent,
   toPublishContent,
 } from "@/lib/editor/sermonForm";
@@ -126,5 +127,16 @@ describe("isEmptyForm — 서식 전환 조건", () => {
 
   it("태그만 붙여둔 것도 쓴 것이다 — 지우면 그것도 유실이다", () => {
     expect(isEmptyForm({ ...emptySermonForm(), tags: ["전도서"] })).toBe(false);
+  });
+});
+
+describe("toCopyText — 에디터 전체 복사 (A-05)", () => {
+  it("제목·말씀·속기·요약이 한 덩이로 들어간다 — 조판은 내보내기 파일과 같다(postToMarkdown)", () => {
+    const text = toCopyText(filled);
+
+    expect(text.startsWith("# 오늘이라는 선물")).toBe(true);
+    for (const part of ["전도서 9장 7~10절", "너는 가서 기쁨으로", "설교 속기", "예배 후 정리"]) {
+      expect(text).toContain(part);
+    }
   });
 });

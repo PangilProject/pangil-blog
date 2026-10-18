@@ -298,4 +298,16 @@ describe("TechEditor — 카테고리 (02 §5.5 필드 2)", () => {
 
     expect(upsertDraft.mock.calls.at(-1)?.[0]?.categoryId).toBe("cat-2");
   });
+
+  it("전체 복사가 있다 — 네 에디터가 같은 버튼으로 지금 적힌 것을 한 덩이로 넘긴다", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderEditor();
+
+    await act(async () => {
+      screen.getByRole("button", { name: "전체 복사" }).click();
+    });
+
+    expect(writeText).toHaveBeenCalledTimes(1);
+  });
 });

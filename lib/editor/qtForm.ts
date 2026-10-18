@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { DraftContent, PostContent } from "@/lib/content/schema";
 import { EMPTY_TIPTAP_DOC, QT_QUESTION_GROUPS } from "@/lib/content/schema";
+import { copyTextOf } from "@/lib/editor/copyText";
 import {
   EMPTY_RICH_TEXT,
   isEmptyDoc,
@@ -9,7 +10,6 @@ import {
   toTiptapDoc,
 } from "@/lib/editor/richText";
 import { defaultTagsFor, hasOwnTags } from "@/lib/record/defaultTags";
-import { postToMarkdown } from "@/lib/render/postText";
 
 /**
  * A-04 QT 에디터의 폼 계약 (02 §5.2).
@@ -153,23 +153,9 @@ export function toPublishContent(values: QtFormValues): PostContent {
   };
 }
 
-/**
- * 지금 적힌 큐티를 글자 한 덩이로 (A-05).
- *
- * 요약을 부탁하려고 **다른 도구에 붙여넣는** 용도다. 전에는 제목·말씀·주석·네 그룹을
- * 칸마다 따로 긁어야 했다 — 여덟 번 복사해서 이어붙이는 일이 매번 있었다.
- *
- * 조판은 `postToMarkdown`이 정한다. 내보내기 파일과 같은 함수다 — 두 벌 적으면 한쪽만
- * 고쳐지고, 그러면 "내보낸 파일과 복사한 글자가 다르다"가 된다. 여기서 더하는 것은
- * **글 제목** 하나뿐이다(제목은 content가 아니라 posts.title에 산다).
- */
+/** 지금 적힌 큐티를 글자 한 덩이로 (A-05) — 조판은 `copyTextOf`가 네 에디터에 같게 정한다 */
 export function toCopyText(values: QtFormValues): string {
-  const content = toPublishContent(values);
-  const title = values.title.trim();
-
-  return [title === "" ? "" : `# ${title}`, postToMarkdown(content)]
-    .filter((part) => part !== "")
-    .join("\n\n");
+  return copyTextOf(values.title, toPublishContent(values));
 }
 
 /**

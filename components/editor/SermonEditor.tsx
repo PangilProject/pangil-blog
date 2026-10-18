@@ -24,10 +24,12 @@ import {
   isEmptyForm,
   type SermonFormValues,
   SermonPublishFormSchema,
+  toCopyText,
   toDraftContent,
 } from "@/lib/editor/sermonForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 import { usePublishFlow } from "@/lib/editor/usePublishFlow";
+import { copyLabel, useCopyText } from "@/lib/ui/useCopyText";
 
 /**
  * A-05 설교 에디터 (02 §5.3 · 프리모템 #2).
@@ -60,7 +62,8 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
   const idRef = useRef(postId);
 
   const form = useForm<SermonFormValues>({ defaultValues: initialValues ?? emptySermonForm() });
-  const { control, register, setValue, watch, handleSubmit } = form;
+  const { control, register, setValue, watch, handleSubmit, getValues } = form;
+  const { state: copyState, copy } = useCopyText();
 
   const save = useCallback(
     async (values: SermonFormValues) => {
@@ -143,6 +146,10 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
           <>
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
+            {/* 한 번에 다 복사한다 — 큐티와 같은 조판(`copyTextOf`). 다른 도구에 붙여넣을 때 쓴다 */}
+            <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
+              {copyLabel(copyState, "전체 복사")}
+            </Button>
             <Button type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>

@@ -26,11 +26,13 @@ import {
   newSection,
   type PraiseFormValues,
   PraisePublishFormSchema,
+  toCopyText,
   toDraftContent,
 } from "@/lib/editor/praiseForm";
 import { useEditorAutosave } from "@/lib/editor/useEditorAutosave";
 import { usePublishFlow } from "@/lib/editor/usePublishFlow";
 import { parseYouTubeId, youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/praise/youtube";
+import { copyLabel, useCopyText } from "@/lib/ui/useCopyText";
 import { cn } from "@/lib/utils";
 
 /** 접근성 이름. 블록이 하나뿐이면 번호를 붙이지 않는다 — 없는 둘째 블록을 암시한다 */
@@ -70,6 +72,7 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
 
   const form = useForm<PraiseFormValues>({ defaultValues: initialValues ?? emptyPraiseForm() });
   const { control, register, setValue, watch, handleSubmit, getValues } = form;
+  const { state: copyState, copy } = useCopyText();
 
   const sections = useFieldArray({ control, name: "sections" });
   const meditation = useFieldArray({ control, name: "meditationBlocks" });
@@ -193,6 +196,10 @@ export function PraiseEditor({ postId, initialValues, isDraft }: PraiseEditorPro
           <>
             {/* 초안이면 지우고 나간다. 발행된 글을 고치는 중이면 이 버튼은 서지 않는다 */}
             <CancelDraftButton draftId={id} isDraft={isDraft} onDiscard={autosave.abandon} />
+            {/* 한 번에 다 복사한다 — 큐티와 같은 조판(`copyTextOf`). 다른 도구에 붙여넣을 때 쓴다 */}
+            <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
+              {copyLabel(copyState, "전체 복사")}
+            </Button>
             <Button type="button" onClick={() => void autosave.flush()}>
               임시저장
             </Button>

@@ -10,6 +10,7 @@ import {
   resolveExcerpt,
   type TechFormValues,
   TechPublishFormSchema,
+  toCopyText,
   toDraftContent,
   toDraftMeta,
   toPublishContent,
@@ -155,5 +156,13 @@ describe("fromDraftContent — 이어쓰기 진입", () => {
     );
 
     expect(form.body).toEqual({ type: "doc", content: [] });
+  });
+});
+
+describe("toCopyText — 에디터 전체 복사 (A-05)", () => {
+  it("제목과 본문이 한 덩이로 들어간다", () => {
+    const text = toCopyText(filled());
+
+    expect(text).toBe("# Next 16 캐시 무효화 정리\n\nNext 16은 무효화를 두 갈래로 나눴다.");
   });
 });

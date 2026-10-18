@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { DraftContent, PostContent } from "@/lib/content/schema";
 import { PRAISE_SECTION_LABELS, praiseMeditationBlocks } from "@/lib/content/schema";
+import { copyTextOf } from "@/lib/editor/copyText";
 import {
   EMPTY_RICH_TEXT,
   isEmptyDoc,
@@ -313,6 +314,11 @@ export function toPublishContent(values: PraiseFormValues): PostContent {
     sections: toContentSections(values),
     meditationAndPrayer: toContentMeditation(values),
   };
+}
+
+/** 지금 적힌 글을 글자 한 덩이로 — 에디터 `전체 복사`. 조판은 네 에디터가 같다(`copyTextOf`) */
+export function toCopyText(values: PraiseFormValues): string {
+  return copyTextOf(values.title, toPublishContent(values));
 }
 
 /** 저장된 content를 폼 값으로 되돌린다 (이어쓰기 진입) */
