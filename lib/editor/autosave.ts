@@ -47,6 +47,13 @@ export type Autosave<T> = {
   isDirty(): boolean;
   /** dispose된 인스턴스는 되살리지 않는다 — 호출자가 새로 만들어야 한다 */
   isDisposed(): boolean;
+  /**
+   * 발행 요청이 도는 동안 자동 저장을 멈춘다. 새 글의 발행은 그 자체가 첫 저장이라, 그 사이
+   * 자동 저장이 돌면 초안이 하나 더 생긴다. 밀린 값은 버리지 않는다
+   */
+  hold(): void;
+  /** 멈춤을 푼다. 밀린 값이 있으면 다시 주기를 건다(발행이 실패했을 때) */
+  release(): void;
   dispose(): void;
 };
 
@@ -71,6 +78,7 @@ export function createAutosave<T>(options: AutosaveOptions<T>): Autosave<T> {
   let firstChangeAt: number | null = null;
   let failureCount = 0;
   let disposed = false;
+  let held = false;
 
   function setState(next: AutosaveState) {
     if (state === next) return;
@@ -101,7 +109,7 @@ export function createAutosave<T>(options: AutosaveOptions<T>): Autosave<T> {
   }
 
   async function run(): Promise<void> {
-    if (disposed) return;
+    if (disposed || held) return;
     clearScheduling();
 
     // 저장 중이면 지금 값은 다음 차례로 넘긴다 (마지막 값만 보낸다)
@@ -157,6 +165,17 @@ export function createAutosave<T>(options: AutosaveOptions<T>): Autosave<T> {
     state: () => state,
     isDirty: () => pending !== null || inFlight !== null,
     isDisposed: () => disposed,
+
+    hold() {
+      held = true;
+      clearScheduling();
+      retryTimer = clearTimer(retryTimer);
+    },
+
+    release() {
+      held = false;
+      if (pending && !disposed) schedule();
+    },
 
     dispose() {
       disposed = true;
