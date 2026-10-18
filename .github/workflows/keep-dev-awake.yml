@@ -1,0 +1,26 @@
+name: keep dev awake
+
+# dev Supabase(Free)는 7일 동안 활동이 없으면 일시정지된다. prod는 Vercel 크론과
+# 크롤러가 매일 건드리지만 dev는 로컬 작업 때만 쓰여서 멈춘다 — 3일마다 한 번 읽어 깨워 둔다.
+#
+# anon 키로 Storage 버킷 목록을 읽는다. Data API는 `api` 스키마만 노출해 테이블을 못 읽고,
+# 버킷 목록은 storage-api가 Postgres(storage.buckets)를 조회한 뒤 RLS로 걸러 늘 []를 돌려준다
+# — 데이터는 안 나가고 DB 활동만 남는다. 러너에 DB·service role 자격증명을 두지 않는다.
+on:
+  schedule:
+    # 3일마다 UTC 00:00 = KST 09:00
+    - cron: "0 0 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # -f: 2xx가 아니면 실패 — 이미 멈췄다면 빨간불로 드러난다
+      - run: |
+          curl -fsS "$URL/storage/v1/bucket" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+        env:
+          URL: ${{ secrets.DEV_SUPABASE_URL }}
+          KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
