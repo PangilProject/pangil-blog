@@ -47,6 +47,15 @@ describe("PostShelf", () => {
     );
   });
 
+  it("줄마다 청구기호 대신 연도까지 적은 발행 날짜를 보여준다", () => {
+    render(<PostShelf shelf={shelf} axisLabel="회고" allHref="/dev" />);
+
+    const list = screen.getByRole("region", { name: /회고/ });
+    // KST 기준이다 — 2026-08-01T00:00Z는 KST로도 8월 1일이다
+    expect(within(list).getAllByText("2026.08.01").length).toBeGreaterThan(0);
+    expect(within(list).queryByText(/^0?10$/)).toBeNull();
+  });
+
   it("떠오르는 카드는 바로 앞뒤 글이고 각자 닫힌다", () => {
     render(<PostShelf shelf={shelf} axisLabel="회고" allHref="/dev" />);
 

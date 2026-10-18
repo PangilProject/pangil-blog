@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import type { PostShelf as Shelf, ShelfPost } from "@/lib/db/publicPosts";
-import { formatCallNumber } from "@/lib/record/callNumber";
+import { kstDateKey } from "@/lib/record/kst";
 import { siteOf } from "@/lib/revalidate/tags";
 import { postHref } from "@/lib/site/publicUrl";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function PostShelf({
 /**
  * 목록 상자. **넓은 화면과 좁은 화면이 모양이 다르다.**
  *
- * - 넓은 화면: 액센트 괘를 위에 그은 상자에 한 줄씩 — 번호 · 제목 · →.
+ * - 넓은 화면: 액센트 괘를 위에 그은 상자에 한 줄씩 — 날짜 · 제목 · →.
  * - 좁은 화면: 티스토리 모바일처럼 덩이 — 굵은 제목 두 줄 · 요약 두 줄 · 날짜. 번호와 →는
  *   손가락 화면에서 읽을 것이 아니라 숨긴다. 썸네일 자리는 없다(썸네일은 걷어냈다).
  *
@@ -113,25 +113,29 @@ function ShelfList({
   );
 }
 
-/** 좁은 화면은 세로 덩이, 넓은 화면은 번호 · 제목 · 끝 표시 세 칸 */
+/** 좁은 화면은 세로 덩이, 넓은 화면은 날짜 · 제목 · 끝 표시 세 칸 */
 const ROW = cn(
   "flex flex-col gap-1.5 py-4",
   "lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-baseline lg:gap-3 lg:px-[18px] lg:py-[9px]",
 );
 
 function RowBody({ item, current = false }: { item: ShelfPost; current?: boolean }) {
-  const number = formatCallNumber({ type: item.type, callNumber: item.callNumber });
   const date = formatDate(item.publishedAt);
 
   return (
     <>
+      {/*
+        넓은 화면의 첫 칸은 **날짜**다. 전에는 청구기호(SR-0116)였는데, 읽는 사람에게 그건 뜻이
+        없는 번호다 — 언제 쓴 글인지가 고를 때 쓰는 정보다. 제목에 날짜가 든 설교도 그대로 적는다
+        (칸이 줄마다 같은 자리에 같은 것을 말해야 눈이 세로로 훑는다).
+      */}
       <span
         className={cn(
-          "hidden font-typewriter text-[11px] lg:inline",
+          "hidden font-typewriter text-[11px] tabular-nums lg:inline",
           current ? "text-(--accent)" : "text-faint",
         )}
       >
-        {number}
+        {date}
       </span>
 
       <span className="flex min-w-0 flex-col gap-1.5">
@@ -153,7 +157,7 @@ function RowBody({ item, current = false }: { item: ShelfPost; current?: boolean
         )}
       </span>
 
-      {/* 날짜는 좁은 화면에서만 — 넓은 화면의 한 줄에는 번호가 그 자리를 맡는다 */}
+      {/* 좁은 화면은 날짜를 덩이 아래에 — 넓은 화면은 첫 칸이 그 자리를 맡는다 */}
       <span className="flex gap-2 font-typewriter text-[11px] text-faint lg:hidden">
         {date && <span>{date}</span>}
         {current && <span className="text-(--accent)">· 지금 읽는 글</span>}
@@ -246,11 +250,8 @@ function FloatingCard({
   );
 }
 
+/** `2026.10.11` — 연도까지 적는다. 오래된 글이 많아 "10월 11일"만으로는 어느 해인지 모른다 */
 function formatDate(date: Date | null): string | null {
   if (!date) return null;
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "long",
-    day: "numeric",
-    timeZone: "Asia/Seoul",
-  }).format(date);
+  return kstDateKey(date).replaceAll("-", ".");
 }
