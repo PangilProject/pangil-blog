@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PraiseEditor } from "@/components/editor/PraiseEditor";
-import { findEditablePost, findPostTagNames } from "@/lib/db/posts";
+import { findEditablePost, findPostTagNames, listDrafts } from "@/lib/db/posts";
 import { fromDraftContent } from "@/lib/editor/praiseForm";
 
 /**
@@ -18,13 +18,14 @@ export default async function EditPraisePage({ params }: PageProps<"/admin/write
 
   if (post?.type !== "PRAISE") notFound();
 
-  const tags = await findPostTagNames(post.id);
+  const [tags, drafts] = await Promise.all([findPostTagNames(post.id), listDrafts(50, "PRAISE")]);
 
   return (
     <PraiseEditor
       postId={post.id}
       isDraft={post.status === "DRAFT"}
       isPublished={post.status === "PUBLISHED"}
+      drafts={drafts}
       initialValues={fromDraftContent(
         post.content.ok ? post.content.content : null,
         post.title,

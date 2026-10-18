@@ -84,10 +84,10 @@ export async function findPostIdBySlug(
   return row ? { id: row.id, type: row.type as RecordType } : null;
 }
 
-/** A-02 초안함 (02 §2.4) — 최근 수정 순 */
-export async function listDrafts(limit = 50) {
+/** A-02 초안함 (02 §2.4) — 최근 수정 순. `type`을 주면 그 에디터의 초안함이다 */
+export async function listDrafts(limit = 50, type?: RecordType) {
   const rows = await prisma.post.findMany({
-    where: { status: PostStatus.DRAFT },
+    where: { status: PostStatus.DRAFT, ...(type ? { type: type as PostType } : {}) },
     orderBy: { updatedAt: "desc" },
     take: limit,
     select: { id: true, type: true, title: true, updatedAt: true },

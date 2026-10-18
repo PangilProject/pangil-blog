@@ -1,4 +1,5 @@
 import { QtEditor } from "@/components/editor/QtEditor";
+import { listDrafts } from "@/lib/db/posts";
 import { emptyQtForm } from "@/lib/editor/qtForm";
 
 /**
@@ -8,6 +9,8 @@ import { emptyQtForm } from "@/lib/editor/qtForm";
  * 이 경로는 크롤러가 실패한 날이나 지난 날짜를 손으로 적을 때 쓴다 — 그때는 4그룹 프리셋이
  * 빈 칸으로 열린다.
  */
-export default function NewQtPage() {
-  return <QtEditor postId={null} initialValues={emptyQtForm()} />;
+export default async function NewQtPage() {
+  const drafts = await listDrafts(50, "QT");
+
+  return <QtEditor postId={null} initialValues={emptyQtForm()} drafts={drafts} />;
 }
