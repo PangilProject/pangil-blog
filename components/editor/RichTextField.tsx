@@ -20,6 +20,7 @@ import { HeadingWithShiftedShortcuts } from "@/lib/editor/headingShortcuts";
 import { ImagePaste, type ImageUploadResult } from "@/lib/editor/imagePaste";
 import { MarkdownPaste } from "@/lib/editor/markdownPaste";
 import type { RichTextValue } from "@/lib/editor/richText";
+import { SpellCheck } from "@/lib/editor/spellCheck";
 import { cellColorClass } from "@/lib/editor/tableCellColors";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +74,7 @@ export function RichTextField({
   className,
   blockEditing,
 }: RichTextFieldProps) {
-  const { setEditor, notifyChange } = useEditorFocus();
+  const { setEditor, notifyChange, registerEditor } = useEditorFocus();
 
   /**
    * 확장은 편집기를 만들 때 한 번만 읽힌다. 콜백을 그대로 넘기면 그 순간의 클로저가 굳어
@@ -102,6 +103,9 @@ export function RichTextField({
             }),
           ]
         : []),
+      // 맞춤법 밑줄. 두 구성 모두에 붙는다 — 검사는 버튼을 눌러야만 돌고, 그 전엔 아무것도
+      // 그리지 않는다. 설교 라이브 속기 중에 밑줄이 생기는 일은 없다(lib/editor/spellCheck)
+      SpellCheck,
       // 빈 칸이 6개 놓이는 QT 답변에서는 자리 안내가 없으면 화면이 고장난 것처럼 보인다
       // (02 §5.2 필드 6의 placeholder 문구). 실제 그리기는 .record-prose가 한다
       ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
@@ -180,6 +184,12 @@ export function RichTextField({
     onSelectionUpdate: () => notifyChange(),
     onTransaction: () => notifyChange(),
   });
+
+  // 맞춤법 검사가 화면의 영역을 전부 찾을 수 있게 이름을 올린다
+  useEffect(() => {
+    if (!editor) return;
+    return registerEditor(editor);
+  }, [editor, registerEditor]);
 
   // 언마운트 시 툴바가 죽은 인스턴스를 가리키지 않게 한다
   useEffect(() => {
