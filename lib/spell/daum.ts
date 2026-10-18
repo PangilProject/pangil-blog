@@ -16,9 +16,6 @@ import type { SpellTypo } from "@/lib/spell/locate";
  * 말이 두 번 나올 때 자리를 가를 수 있다(lib/spell/locate). 실측 334ms · 네이버 736ms.
  */
 
-/** 한 요청이 이보다 오래 걸리면 끊는다. 검사 중에도 쓰기는 계속되지만, 기다리는 사람이 있다 */
-const TIMEOUT_MS = 8000;
-
 /**
  * hanspell의 결과 모양. 남의 HTML을 긁은 값이라 타입 선언을 믿지 않고 경계에서 좁힌다 —
  * 모양이 어긋난 항목은 버리고 나머지는 쓴다.
@@ -43,15 +40,37 @@ export function toSpellTypo(raw: unknown): SpellTypo | null {
   return { type, token, suggestion, context, info: info?.trim() || null };
 }
 
+/**
+ * 검사기 쪽이 바뀌었거나 우리를 막는다. 잠깐 끊긴 것(타임아웃·네트워크)과 달리 **저절로
+ * 낫지 않는다** — 사람이 알아야 한다(lib/notify/spellChecker).
+ *
+ * hanspell이 내는 오류로 가른다: 응답 HTML에 검사 결과 자리가 없으면 `invalid response`,
+ * 200이 아니면 `HTTP 403` 같은 것. Vercel IP가 막히면 뒤쪽으로 온다.
+ */
+export class SpellCheckerBrokenError extends Error {
+  constructor(detail: string) {
+    super(`spell checker broken: ${detail}`);
+    this.name = "SpellCheckerBrokenError";
+  }
+}
+
+function classify(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message === "invalid response" || /^HTTP \d{3}$/.test(message)) {
+    return new SpellCheckerBrokenError(message);
+  }
+  return error instanceof Error ? error : new Error(message);
+}
+
 /** 한 덩어리(1000자 안팎)를 검사한다. 일부라도 실패하면 전체를 실패로 본다 — 반쪽 결과는 "다 맞다"로 읽힌다 */
-export function checkWithDaum(text: string): Promise<SpellTypo[]> {
+export function checkWithDaum(text: string, timeoutMs: number): Promise<SpellTypo[]> {
   return new Promise((resolve, reject) => {
     const typos: SpellTypo[] = [];
-    let failure: unknown = null;
+    let failure: Error | null = null;
 
     spellCheckByDAUM(
       text,
-      TIMEOUT_MS,
+      timeoutMs,
       (found) => {
         for (const raw of found) {
           const typo = toSpellTypo(raw);
@@ -60,7 +79,7 @@ export function checkWithDaum(text: string): Promise<SpellTypo[]> {
       },
       () => (failure ? reject(failure) : resolve(typos)),
       (error) => {
-        failure ??= error ?? new Error("spell check failed");
+        failure ??= classify(error ?? "spell check failed");
       },
     );
   });

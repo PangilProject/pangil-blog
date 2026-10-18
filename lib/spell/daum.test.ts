@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const hanspell = vi.hoisted(() => ({ spellCheckByDAUM: vi.fn() }));
 vi.mock("hanspell", () => hanspell);
 
-const { checkWithDaum, toSpellTypo } = await import("@/lib/spell/daum");
+const { checkWithDaum, SpellCheckerBrokenError, toSpellTypo } = await import("@/lib/spell/daum");
 
 type Callbacks = [
   text: string,
@@ -64,9 +64,41 @@ describe("checkWithDaum", () => {
       end();
     });
 
-    const typos = await checkWithDaum("...");
+    const typos = await checkWithDaum("...", 5000);
 
     expect(typos.map((typo) => typo.token)).toEqual(["되서", "금새"]);
+  });
+
+  it("받은 시간 상한을 hanspell에 그대로 넘긴다", async () => {
+    hanspell.spellCheckByDAUM.mockImplementation((...[, , , end]: Callbacks) => end());
+
+    await checkWithDaum("...", 1234);
+
+    expect(hanspell.spellCheckByDAUM.mock.calls[0][1]).toBe(1234);
+  });
+
+  it.each([["invalid response"], ["HTTP 403"]])(
+    "%s는 저절로 낫지 않는 고장이다",
+    async (message) => {
+      hanspell.spellCheckByDAUM.mockImplementation((...[, , , end, error]: Callbacks) => {
+        error(new Error(message));
+        end();
+      });
+
+      await expect(checkWithDaum("...", 5000)).rejects.toBeInstanceOf(SpellCheckerBrokenError);
+    },
+  );
+
+  it("타임아웃·네트워크 끊김은 고장으로 보지 않는다 — 다시 누르면 된다", async () => {
+    hanspell.spellCheckByDAUM.mockImplementation((...[, , , end, error]: Callbacks) => {
+      error(new DOMException("This operation was aborted", "AbortError"));
+      end();
+    });
+
+    const failure = await checkWithDaum("...", 5000).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).not.toBeInstanceOf(SpellCheckerBrokenError);
   });
 
   it("일부라도 실패하면 전체를 실패로 본다", async () => {
@@ -76,6 +108,6 @@ describe("checkWithDaum", () => {
       end();
     });
 
-    await expect(checkWithDaum("...")).rejects.toThrow("HTTP 503");
+    await expect(checkWithDaum("...", 5000)).rejects.toThrow("HTTP 503");
   });
 });
