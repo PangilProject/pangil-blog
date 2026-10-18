@@ -61,10 +61,35 @@ const CARD_SELECT = {
   callNumber: true,
   publishedAt: true,
   excerpt: true,
-  content: true,
   category: { select: { name: true, slug: true } },
   tags: { select: { tag: { select: { name: true } } } },
 } as const;
+
+/**
+ * faith 카드의 말씀 범위만 따로 읽는다.
+ *
+ * **content를 카드 쿼리에 싣지 않는다.** 부제 한 줄 때문에 글마다 본문 전체(평균 약 11KB)를
+ * 읽으면 목록 한 장이 약 130KB가 된다 — 봇이 태그 1479장을 훑는 동안 그게 그대로 Supabase
+ * Egress였다(2026-10 주기 88%). JSONB에서 키 하나만 꺼내면 Postgres 밖으로 나가는 건 그 한 줄이다.
+ *
+ * dev 카드에는 말씀 범위가 없으니 묻지도 않는다.
+ */
+async function findScriptureRefs(
+  rows: { id: string; type: string }[],
+): Promise<Map<string, string | null>> {
+  const ids = rows
+    .filter((row) => FAITH_TYPES.includes(row.type as RecordType))
+    .map((row) => row.id);
+  if (ids.length === 0) return new Map();
+
+  const refs = await prisma.$queryRaw<{ id: string; scriptureRef: unknown }[]>`
+    select "id", "content"->'scriptureRef' as "scriptureRef"
+    from "Post"
+    where "id" = any(${ids})
+  `;
+
+  return new Map(refs.map((ref) => [ref.id, scriptureRefOf({ scriptureRef: ref.scriptureRef })]));
+}
 
 export async function findPublishedPosts(query: ListQuery): Promise<ListPage> {
   "use cache";
@@ -86,6 +111,8 @@ export async function findPublishedPosts(query: ListQuery): Promise<ListPage> {
     prisma.post.count({ where }),
   ]);
 
+  const scriptureRefs = await findScriptureRefs(rows);
+
   return {
     cards: rows.map((row) => ({
       id: row.id,
@@ -97,7 +124,7 @@ export async function findPublishedPosts(query: ListQuery): Promise<ListPage> {
       excerpt: row.excerpt,
       categoryName: row.category?.name ?? null,
       categorySlug: row.category?.slug ?? null,
-      scriptureRef: scriptureRefOf(row.content),
+      scriptureRef: scriptureRefs.get(row.id) ?? null,
       tags: row.tags.map((entry) => entry.tag.name),
     })),
     total,
