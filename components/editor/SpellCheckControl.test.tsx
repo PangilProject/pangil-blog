@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectedEditorToolbar } from "@/components/editor/ConnectedEditorToolbar";
 import { EditorFocusProvider } from "@/components/editor/EditorFocusContext";
 import { RichTextField } from "@/components/editor/RichTextField";
+import { bubblePosition } from "@/components/editor/SpellCheckControl";
 import type { SpellCheckResult } from "@/lib/actions/spell";
 import type { RichTextValue } from "@/lib/editor/richText";
 
@@ -192,5 +193,56 @@ describe("SpellCheckControl", () => {
 
     expect(screen.queryByRole("dialog", { name: "하나씩 고치기" })).toBeNull();
     expect(document.querySelector(".spell-typo[data-spell-id]")).not.toBeNull();
+  });
+
+  it("검사를 기다리는 동안 앞쪽에 더 써도 밑줄이 제자리에 그어진다", async () => {
+    const text = "몇일 동안";
+    let answer: (result: SpellCheckResult) => void = () => {};
+    checkSpelling.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    renderEditors(doc(text));
+    const field = await screen.findByRole("textbox", { name: "칸 1" });
+
+    fireEvent.click(screen.getByRole("button", { name: "맞춤법 검사" }));
+    // 결과가 오기 전에 문단 맨 앞에 글을 더 쓴다
+    const editor = (field as HTMLElement & { editor?: unknown }).editor as
+      | { commands: { insertContentAt: (pos: number, text: string) => void } }
+      | undefined;
+    expect(editor).toBeDefined();
+    await act(async () => {
+      editor?.commands.insertContentAt(1, "아, ");
+    });
+    await act(async () => {
+      answer({ ok: true, typos: [typo(0, text, "몇일", "며칠")] });
+    });
+
+    await screen.findByRole("dialog", { name: "하나씩 고치기" });
+    expect(document.querySelector(".spell-typo")?.textContent).toBe("몇일");
+  });
+});
+
+describe("bubblePosition", () => {
+  const size = { width: 340, height: 160 };
+  const viewport = { width: 1200, height: 800 };
+
+  it("밑줄 바로 아래에 둔다", () => {
+    expect(bubblePosition({ top: 100, bottom: 120, left: 300 }, size, viewport)).toEqual({
+      top: 128,
+      left: 300,
+    });
+  });
+
+  it("아래에 자리가 없으면 위로 뒤집는다", () => {
+    expect(bubblePosition({ top: 700, bottom: 720, left: 300 }, size, viewport).top).toBe(532);
+  });
+
+  it("위에도 자리가 없으면 아래에 둔다 — 잘리더라도 밑줄을 가리지 않는다", () => {
+    const short = { width: 1200, height: 200 };
+
+    expect(bubblePosition({ top: 60, bottom: 80, left: 300 }, size, short).top).toBe(88);
+  });
+
+  it("좌우는 화면 안에 가둔다", () => {
+    expect(bubblePosition({ top: 100, bottom: 120, left: 1100 }, size, viewport).left).toBe(848);
+    expect(bubblePosition({ top: 100, bottom: 120, left: -40 }, size, viewport).left).toBe(12);
   });
 });

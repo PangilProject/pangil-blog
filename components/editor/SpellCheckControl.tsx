@@ -1,11 +1,13 @@
 "use client";
 
+import { Mapping } from "@tiptap/pm/transform";
 import type { Editor } from "@tiptap/react";
 import {
   type ComponentProps,
   type KeyboardEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -19,6 +21,7 @@ import {
   clearSpellMarks,
   currentSpellMark,
   listSpellMarks,
+  mapPlacement,
   removeSpellMark,
   SPELL_SELECT_EVENT,
   type SpellMark,
@@ -29,6 +32,7 @@ import {
   spellToneOf,
 } from "@/lib/editor/spellCheck";
 import { collectSegments } from "@/lib/editor/spellSegments";
+import { useKeyboardInset } from "@/lib/editor/useKeyboardInset";
 import { cn } from "@/lib/utils";
 
 /**
@@ -47,13 +51,14 @@ import { cn } from "@/lib/utils";
 
 type Item = SpellPlacement & { editor: Editor };
 
-type Status = "idle" | "checking" | "clean" | "failed" | "too-long";
+type Status = "idle" | "checking" | "clean" | "failed" | "too-long" | "timeout";
 
 const STATUS_TEXT: Record<Exclude<Status, "idle">, string> = {
   checking: "검사 중…",
   clean: "고칠 곳이 없어요",
   failed: "검사하지 못했어요",
   "too-long": "글이 길어 검사하지 못했어요",
+  timeout: "오래 걸려 검사를 멈췄어요. 다시 눌러 주세요",
 };
 
 /** "이번엔 무시"는 이 화면에 있는 동안 다시 검사해도 긋지 않는다 */
@@ -62,6 +67,16 @@ const ignoreKey = (mark: Pick<SpellMark, "token" | "suggestion">) =>
 
 const smoothScroll = () =>
   typeof window !== "undefined" && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** 에디터에 일어나는 편집의 자리 변화를 모은다. 다 들었으면 stop을 부른다 */
+function trackEdits(editor: Editor) {
+  const mapping = new Mapping();
+  const listen = ({ transaction }: { transaction: { docChanged: boolean; mapping: Mapping } }) => {
+    if (transaction.docChanged) mapping.appendMapping(transaction.mapping);
+  };
+  editor.on("transaction", listen);
+  return { mapping, stop: () => editor.off("transaction", listen) };
+}
 
 /** id는 우리가 만든 "회차-번호"라 선택자에 그대로 넣어도 된다 */
 function elementOf(item: Item): HTMLElement | null {
@@ -75,7 +90,7 @@ export function SpellCheckControl() {
   const [, setTick] = useState(0);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [bubble, setBubble] = useState<{ id: string; top: number; left: number } | null>(null);
+  const [bubble, setBubble] = useState<{ id: string } | null>(null);
 
   const ignored = useRef(new Set<string>());
   const runCount = useRef(0);
@@ -133,9 +148,13 @@ export function SpellCheckControl() {
     runCount.current += 1;
     const ticket = runCount.current;
 
-    const result = await checkSpelling(flat.map(({ segment }) => segment.text)).catch(
-      () => ({ ok: false, reason: "failed" }) as const,
-    );
+    // 기다리는 동안의 편집을 모은다. 결과가 오면 그만큼 자리를 옮겨 긋는다(mapPlacement)
+    const edits = new Map(editors.map((editor) => [editor, trackEdits(editor)]));
+    const result = await checkSpelling(flat.map(({ segment }) => segment.text))
+      .catch(() => ({ ok: false, reason: "failed" }) as const)
+      .finally(() => {
+        for (const tracker of edits.values()) tracker.stop();
+      });
     // 기다리는 사이에 다시 눌렀으면 이 결과는 버린다
     if (ticket !== runCount.current) return;
     if (!result.ok) {
@@ -147,10 +166,13 @@ export function SpellCheckControl() {
     result.typos.forEach((typo, index) => {
       if (ignored.current.has(ignoreKey(typo))) return;
       const { editor, segment } = flat[typo.segment];
+      const tracker = edits.get(editor);
+      const range =
+        tracker && mapPlacement(tracker.mapping, segment.from + typo.from, segment.from + typo.to);
+      if (!range) return;
       const list = placements.get(editor) ?? [];
       list.push({
-        from: segment.from + typo.from,
-        to: segment.from + typo.to,
+        ...range,
         mark: {
           id: `${ticket}-${index}`,
           type: typo.type,
@@ -220,24 +242,11 @@ export function SpellCheckControl() {
         setCurrentId(id);
         return;
       }
-      const item = getEditors()
-        .flatMap((editor) => listSpellMarks(editor.state).map((p) => ({ ...p, editor })))
-        .find((candidate) => candidate.mark.id === id);
-      const element = item && elementOf(item);
-      if (!element) return;
-      const rect = element.getBoundingClientRect();
-      setBubble({
-        id,
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(
-          12,
-          Math.min(rect.left + window.scrollX, window.scrollX + window.innerWidth - 352),
-        ),
-      });
+      setBubble({ id });
     };
     document.addEventListener(SPELL_SELECT_EVENT, onSelect);
     return () => document.removeEventListener(SPELL_SELECT_EVENT, onSelect);
-  }, [getEditors, reviewOpen]);
+  }, [reviewOpen]);
 
   /* ── 고치기 ── */
   const neighbor = (id: string, wrap: boolean) => {
@@ -329,8 +338,6 @@ export function SpellCheckControl() {
         createPortal(
           <SuggestionBubble
             item={bubbleItem}
-            top={bubble.top}
-            left={bubble.left}
             onFix={(text) => {
               fix(bubbleItem, text);
               setBubble(null);
@@ -376,6 +383,7 @@ function ReviewPanel({
 }) {
   const applyRef = useRef<HTMLButtonElement>(null);
   const [draft, setDraft] = useState<string | null>(null);
+  const keyboardUp = useKeyboardInset() > 0;
   const index = current ? items.findIndex((item) => item.mark.id === current.mark.id) : -1;
   const done = items.length === 0;
 
@@ -446,10 +454,13 @@ function ReviewPanel({
       role="dialog"
       aria-label="하나씩 고치기"
       onKeyDown={onKeyDown}
+      // 키보드가 올라온 모바일에서는 화면 아래를 키보드와 툴바(ToolbarDock)가 차지한다.
+      // 그때는 보이는 영역의 위로 올린다 — 아래에 두면 툴바와 겹쳐 둘 다 못 쓴다
+      style={keyboardUp ? { top: (window.visualViewport?.offsetTop ?? 0) + 12 } : undefined}
       className={cn(
         "fixed left-1/2 z-40 flex w-[min(540px,calc(100%-32px))] -translate-x-1/2 flex-col",
         "border border-edge-strong bg-card text-ink shadow-card",
-        "bottom-[calc(16px+env(safe-area-inset-bottom,0px))]",
+        !keyboardUp && "bottom-[calc(16px+env(safe-area-inset-bottom,0px))]",
       )}
     >
       <div className="flex items-center gap-2.5 border-edge border-b px-4 py-2 font-typewriter text-[11px] text-faint tracking-[0.08em]">
@@ -516,23 +527,74 @@ function ReviewPanel({
 
 /* ── 밑줄 말풍선 (창을 닫은 뒤) ── */
 
+const BUBBLE_GAP = 8;
+const BUBBLE_MARGIN = 12;
+
+/**
+ * 말풍선 자리 (화면 기준, position: fixed).
+ *
+ * 밑줄 아래가 기본이고, 아래에 자리가 없으면 위로 뒤집는다. 좌우는 화면 안에 가둔다.
+ * 문서 기준(scrollY를 더하는) 자리였던 때는 에디터가 스크롤 상자 안에 들어가면 어긋날
+ * 자리였다 — 화면 기준으로 재고 스크롤할 때마다 다시 잰다.
+ */
+export function bubblePosition(
+  anchor: { top: number; bottom: number; left: number },
+  size: { width: number; height: number },
+  viewport: { width: number; height: number },
+): { top: number; left: number } {
+  const below = anchor.bottom + BUBBLE_GAP;
+  const above = anchor.top - BUBBLE_GAP - size.height;
+  const top =
+    below + size.height <= viewport.height - BUBBLE_MARGIN || above < BUBBLE_MARGIN ? below : above;
+  const left = Math.max(
+    BUBBLE_MARGIN,
+    Math.min(anchor.left, viewport.width - size.width - BUBBLE_MARGIN),
+  );
+  return { top, left };
+}
+
 function SuggestionBubble({
   item,
-  top,
-  left,
   onFix,
   onIgnore,
   onClose,
 }: {
   item: Item;
-  top: number;
-  left: number;
   onFix: (text: string) => void;
   onIgnore: () => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<string | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // 밑줄을 따라다닌다. 어느 상자가 스크롤되든 잡히도록 capture로 듣는다.
+  // item은 그릴 때마다 새 객체라 의존성에 넣지 않는다 — 넣으면 재고 그리기를 끝없이 반복한다
+  const itemRef = useRef(item);
+  itemRef.current = item;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 다른 밑줄로 옮겼을 때만 다시 건다
+  useLayoutEffect(() => {
+    const place = () => {
+      const anchor = elementOf(itemRef.current);
+      const self = ref.current;
+      if (!anchor || !self) return;
+      const next = bubblePosition(
+        anchor.getBoundingClientRect(),
+        { width: self.offsetWidth, height: self.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+      setPosition((prev) =>
+        prev && prev.top === next.top && prev.left === next.left ? prev : next,
+      );
+    };
+    place();
+    window.addEventListener("scroll", place, { capture: true, passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, { capture: true });
+      window.removeEventListener("resize", place);
+    };
+  }, [item.mark.id]);
 
   // 바깥을 누르면 닫는다. 다른 밑줄을 누른 것이면 그쪽이 곧 새로 연다
   const closeRef = useRef(onClose);
@@ -572,8 +634,9 @@ function SuggestionBubble({
       role="dialog"
       aria-label="맞춤법 제안"
       onKeyDown={onKeyDown}
-      style={{ top, left }}
-      className="absolute z-40 flex w-[min(340px,calc(100vw-24px))] flex-col gap-2.5 border border-edge-strong bg-card px-3.5 py-3 text-ink shadow-card"
+      // 첫 자리를 재기 전에는 보이지 않게 둔다 — 왼쪽 위에서 한 번 깜빡이지 않게
+      style={position ?? { top: 0, left: 0, visibility: "hidden" }}
+      className="fixed z-40 flex w-[min(340px,calc(100vw-24px))] flex-col gap-2.5 border border-edge-strong bg-card px-3.5 py-3 text-ink shadow-card"
     >
       <Suggestion mark={item.mark} draft={draft} onDraft={setDraft} size="md" />
       <div className="flex flex-wrap items-center gap-1.5">
