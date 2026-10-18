@@ -186,3 +186,21 @@ describe("createAutosave — flush", () => {
     expect(saved).toEqual([]);
   });
 });
+
+describe("hold / release — 발행 중에는 자동 저장을 멈춘다 (ADR-006)", () => {
+  it("멈춘 동안은 저장하지 않고, 풀면 밀린 값을 다시 저장한다", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn().mockResolvedValue(undefined);
+    const autosave = createAutosave<string>({ save, debounceMs: 1000, maxWaitMs: 1000 });
+
+    autosave.change("a");
+    autosave.hold();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(save).not.toHaveBeenCalled();
+
+    autosave.release();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(save).toHaveBeenCalledWith("a");
+    vi.useRealTimers();
+  });
+});
