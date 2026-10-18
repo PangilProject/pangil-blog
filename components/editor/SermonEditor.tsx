@@ -13,7 +13,7 @@ import { FaithFormatTabs } from "@/components/editor/FaithFormatTabs";
 import { RecoveryBanner } from "@/components/editor/RecoveryBanner";
 import { RichTextField } from "@/components/editor/RichTextField";
 import { SaveErrorNote } from "@/components/editor/SaveErrorNote";
-import { SaveIndicator, toSaveState } from "@/components/editor/SaveIndicator";
+import { SaveIndicator } from "@/components/editor/SaveIndicator";
 import { SCRIPTURE_FIELD_ID, ScriptureMarkButtons } from "@/components/editor/ScriptureMarkButtons";
 import { TagInput } from "@/components/editor/TagInput";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,8 @@ import { copyLabel, useCopyText } from "@/lib/ui/useCopyText";
  * 불변식:
  * - 진입 커서는 제목이다. 그 외 자동 포커스 이동은 없다
  * - 팝업·확인 모달·떠다니는 UI 없음. 라이브 속기를 방해하는 것은 전부 금지다
- * - 로컬이 먼저 저장된다. 서버 동기화가 실패해도 "로컬 저장됨 · 동기화 대기"로 계속 쓴다
+ * - 키 입력마다 로컬에 먼저 남는다(무손실). 서버 임시저장은 버튼·3분 주기이고, 실패해도
+ *   계속 쓴다 — 문구는 네 에디터 공통이다(ADR-006)
  * - 발행은 한 번에 끝난다(확인 모달 없음). 실수는 PRIVATE 전환으로 복구한다
  */
 
@@ -49,9 +50,16 @@ export type SermonEditorProps = {
    */
   isDraft?: boolean;
   initialValues: SermonFormValues;
+  /** 발행된 글이면 서버 임시저장 없이 `수정 발행`으로만 반영한다(ADR-006) */
+  isPublished?: boolean;
 };
 
-export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorProps) {
+export function SermonEditor({
+  postId,
+  initialValues,
+  isDraft,
+  isPublished = false,
+}: SermonEditorProps) {
   const router = useRouter();
   const [id, setId] = useState(postId);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -64,6 +72,17 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
   const form = useForm<SermonFormValues>({ defaultValues: initialValues ?? emptySermonForm() });
   const { control, register, setValue, watch, handleSubmit, getValues } = form;
   const { state: copyState, copy } = useCopyText();
+
+  /** 첫 서버 저장(임시저장·3분 자동·발행)에서 받은 id를 붙든다. 새로고침해도 같은 초안으로 돌아오게 URL도 맞춘다 */
+  const adoptId = useCallback(
+    (newId: string) => {
+      if (idRef.current) return;
+      idRef.current = newId;
+      setId(newId);
+      router.replace(`/admin/write/sermon/${newId}`);
+    },
+    [router],
+  );
 
   const save = useCallback(
     async (values: SermonFormValues) => {
@@ -80,22 +99,18 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
         throw new Error(`초안 저장 실패: ${result.reason}`);
       }
 
-      if (!idRef.current) {
-        idRef.current = result.id;
-        setId(result.id);
-        // 새로고침해도 같은 초안으로 돌아오게 URL을 맞춘다
-        router.replace(`/admin/write/sermon/${result.id}`);
-      }
+      adoptId(result.id);
     },
     // id는 ref에서 읽는다 — 상태를 읽으면 첫 저장이 끝나기 전에 큐에 있던 저장이 초안을
     // 하나 더 만든다
-    [router],
+    [adoptId],
   );
 
   const autosave = useEditorAutosave<SermonFormValues>({
     type: "SERMON",
     id: id ?? "new",
     save,
+    serverSave: !isPublished,
   });
 
   // 입력이 있을 때마다 로컬 → 서버 파이프라인에 넘긴다
@@ -112,11 +127,18 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
     publish,
   } = usePublishFlow<SermonFormValues>({
     gate: SermonPublishFormSchema,
-    flush: autosave.flush,
-    isDirty: autosave.isDirty,
-    clearMirror: autosave.clearMirror,
-    // 상태가 아니라 ref다 — 첫 저장이 이 클릭 안에서 끝나는 경우가 있다
+    toInput: (values) => ({
+      type: "SERMON",
+      title: values.title,
+      content: toDraftContent(values),
+      tags: values.tags,
+    }),
+    // 상태가 아니라 ref다 — 발행이 새 글의 첫 저장인 경우가 있다
     currentId: () => idRef.current,
+    onSaved: adoptId,
+    hold: autosave.hold,
+    release: autosave.release,
+    clearMirror: autosave.clearMirror,
   });
 
   /**
@@ -135,9 +157,11 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
         indicator={
           <>
             <SaveIndicator
-              variant="sermon"
-              state={toSaveState(autosave.state)}
-              savedAgo={autosave.savedAt ? "방금" : undefined}
+              state={autosave.state}
+              savedAt={autosave.savedAt}
+              hasDraft={id !== null}
+              published={isPublished}
+              edited={autosave.edited}
             />
             <SaveErrorNote message={autosave.lastError} />
           </>
@@ -150,9 +174,12 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
             <Button type="button" onClick={() => void copy(toCopyText(getValues()))}>
               {copyLabel(copyState, "전체 복사")}
             </Button>
-            <Button type="button" onClick={() => void autosave.flush()}>
-              임시저장
-            </Button>
+            {/* 발행된 글은 임시저장이 없다 — 서버에 올리면 곧 공개 반영이다(ADR-006) */}
+            {!isPublished && (
+              <Button type="button" onClick={() => void autosave.flush()}>
+                임시저장
+              </Button>
+            )}
           </>
         }
         footer={
@@ -162,7 +189,7 @@ export function SermonEditor({ postId, initialValues, isDraft }: SermonEditorPro
             disabled={isPublishing}
             onClick={() => void onPublish()}
           >
-            {isPublishing ? "발행 중…" : "발행"}
+            {isPublishing ? "발행 중…" : isPublished ? "수정 발행" : "발행"}
           </Button>
         }
         toolbar={<ConnectedEditorToolbar variant="slim" />}

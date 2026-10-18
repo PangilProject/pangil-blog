@@ -174,8 +174,9 @@ export default function DesignGalleryPage() {
           <div className="flex flex-wrap items-center gap-4 px-4 py-3">
             <SaveIndicator state="idle" />
             <SaveIndicator state="saving" />
-            <SaveIndicator state="saved" savedAgo="방금" />
-            <SaveIndicator state="offline-pending" variant="sermon" />
+            <SaveIndicator state="saved" savedAt={new Date()} />
+            <SaveIndicator state="retrying" />
+            <SaveIndicator state="idle" published edited />
           </div>
           <div className="px-4 pb-4">
             <EditorToolbar variant="slim" className="static" />

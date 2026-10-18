@@ -24,6 +24,7 @@ export default async function EditPraisePage({ params }: PageProps<"/admin/write
     <PraiseEditor
       postId={post.id}
       isDraft={post.status === "DRAFT"}
+      isPublished={post.status === "PUBLISHED"}
       initialValues={fromDraftContent(
         post.content.ok ? post.content.content : null,
         post.title,

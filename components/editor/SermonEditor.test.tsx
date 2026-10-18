@@ -4,6 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { SermonEditor } from "@/components/editor/SermonEditor";
 import { emptySermonForm } from "@/lib/editor/sermonForm";
+import { AUTOSAVE_INTERVAL_MS } from "@/lib/editor/useEditorAutosave";
 
 const upsertDraft = vi.fn();
 const publishPost = vi.fn();
@@ -21,7 +22,7 @@ beforeAll(() => {
 
 vi.mock("@/lib/actions/posts", () => ({
   upsertDraft: (input: unknown) => upsertDraft(input),
-  publishPost: (id: string) => publishPost(id),
+  publishFromEditor: (input: { id?: string }) => publishPost(input.id ?? null, input),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -32,7 +33,7 @@ vi.mock("next/navigation", () => ({
  * 설교 에디터는 예배 중에 돌아가는 화면이다. 여기서 고정하는 것은 세 가지다.
  * 1. 진입 커서가 제목에 있는가 (02 결정 로그 #10)
  * 2. 입력이 자동 저장 파이프라인에 실제로 들어가는가 (04 §2.2)
- * 3. 서버 저장이 실패해도 화면이 "동기화 대기"로 계속 쓸 수 있는 상태인가 (프리모템 #2)
+ * 3. 서버 저장이 실패해도 계속 쓸 수 있고 로컬에 남는가 (프리모템 #2)
  */
 function renderEditor() {
   return render(
@@ -117,7 +118,7 @@ describe("SermonEditor — 자동 저장 배선", () => {
     expect(upsertDraft).not.toHaveBeenCalled();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft).toHaveBeenCalledTimes(1);
@@ -142,7 +143,7 @@ describe("SermonEditor — 자동 저장 배선", () => {
     expect(upsertDraft).toHaveBeenCalledTimes(1);
   });
 
-  it("서버 저장이 실패하면 동기화 대기로 표시하고 로컬 내용은 남는다", async () => {
+  it("서버 저장이 실패하면 실패로 표시하고 로컬 내용은 남는다 — 문구는 네 에디터 공통이다", async () => {
     upsertDraft.mockRejectedValue(new Error("offline"));
     renderEditor();
 
@@ -151,11 +152,11 @@ describe("SermonEditor — 자동 저장 배선", () => {
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     // 저장 실패 사유(SaveErrorNote)도 같은 자리에 서므로 문구로 집는다
-    expect(screen.getByText("로컬 저장됨 · 서버 저장 대기")).toBeInTheDocument();
+    expect(screen.getByText("저장 실패 · 잠시 후 다시 시도")).toBeInTheDocument();
     // 사유도 함께 남는다 — "동기화 대기"만 보이면 작성자가 할 수 있는 일이 없다
     expect(screen.getByText("offline")).toBeInTheDocument();
     expect(window.localStorage.getItem("draft:SERMON:post-1")).toContain("예배당에서");
@@ -180,7 +181,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft).toHaveBeenCalledTimes(1);
@@ -200,7 +201,7 @@ describe("SermonEditor — StrictMode (개발 모드 실제 환경)", () => {
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1200);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + 200);
     });
 
     expect(upsertDraft.mock.calls[0]?.[0]).toMatchObject({ id: undefined, title: "새 설교" });
@@ -272,7 +273,7 @@ describe("SermonEditor — 발행", () => {
       screen.getByRole("button", { name: "발행" }).click();
     });
 
-    expect(publishPost).toHaveBeenCalledWith("post-1");
+    expect(publishPost.mock.calls.at(-1)?.[0]).toBe("post-1");
     expect(assign).toHaveBeenCalledWith("https://faith.example/sr-1");
   });
 
