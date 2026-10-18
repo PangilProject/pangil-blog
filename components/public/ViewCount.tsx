@@ -18,6 +18,12 @@ import { findViewTotals } from "@/lib/db/statSummary";
  * **본인 방문도 여기 들어간다.** 웹사이트를 열어 글을 읽은 것이면 누가 읽었든 1회다.
  * 밖에서 얼마나 오는지는 관리 화면이 `본인 제외`로 따로 답한다(05 §4.1).
  *
+ * **이번 조회를 더해서 보여준다.** 조회는 이 숫자를 그린 **뒤에** 브라우저가 기록한다
+ * (`StatBeacon` → `/api/stat`). 그래서 DB 값을 그대로 적으면 지금 읽는 사람의 조회는 언제나
+ * 빠진다 — 관리 화면이 987이면 들어가서도 987이 보였다. "전체"와 "오늘"에 1을 더해, 보이는
+ * 숫자가 이 조회를 포함하게 한다. 기록이 막힌 방문(광고 차단·요청 제한)에는 1 많게 보이지만,
+ * 들어갔는데 안 오르는 쪽보다 낫다. 관리 화면은 기록된 값 그대로다.
+ *
  * **요청 시점에 그린다.** 지면 자체는 정적으로 캐시되므로(04 §1.1) 이 숫자를 껍데기에
  * 넣으면 그 지면이 다시 발행될 때까지 굳는다 — 어제 숫자가 오늘도 붙어 있게 된다.
  * 그래서 Suspense 안의 조각으로 떼어낸다. DB 부담은 조회 쪽의 짧은 캐시가 맡는다.
@@ -28,11 +34,12 @@ export async function ViewCount() {
   // 공개 지면은 본인 것도 센다 — 웹사이트를 열어 글을 읽은 것이면 누가 읽었든 1회다.
   // 밖에서 얼마나 오는지는 관리 화면이 따로 답한다(05 §4.1)
   const { today, yesterday, total } = (await findViewTotals()).all;
+  const thisView = 1;
 
   return (
     <section className="flex items-baseline gap-4 border-edge border-y py-2.5">
-      <Figure label="전체" value={total} strong />
-      <Figure label="오늘" value={today} />
+      <Figure label="전체" value={total + thisView} strong />
+      <Figure label="오늘" value={today + thisView} />
       <Figure label="어제" value={yesterday} />
     </section>
   );

@@ -310,7 +310,9 @@ export async function findVisitorTotals(): Promise<VisitorTotals> {
  */
 export async function findViewTotals(): Promise<SplitTotals> {
   "use cache";
-  cacheLife("minutes");
+  // 몇 분이 아니라 몇 초다 — 들어가서 새로고침했는데 숫자가 1분씩 그대로면 안 센 것처럼 보인다.
+  // 결과는 한 줄이라 10초에 한 번 읽어도 DB 부담은 작다
+  cacheLife({ stale: 10, revalidate: 10, expire: 60 });
 
   const rows = await prisma.$queryRaw<OwnerRow[]>`
     WITH anchor AS (
