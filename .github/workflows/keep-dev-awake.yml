@@ -24,3 +24,20 @@ jobs:
         env:
           URL: ${{ secrets.DEV_SUPABASE_URL }}
           KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
+
+      # 성공은 Actions 이력으로 충분하다 — 3일마다 "잘 깨웠음"은 소음이다. 실패만 알린다:
+      # dev가 이미 멈췄거나 키가 바뀐 것이라 손을 대야 한다. 채널은 CI와 같은 #github-ci-result.
+      # 알림 실패가 워크플로 결과를 바꾸지 않는다(ci.yml과 같은 원칙).
+      - name: notify slack on failure
+        if: ${{ failure() }}
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL 미설정 — 알림을 건너뜁니다"
+            exit 0
+          fi
+          jq -n --arg text "🔴 dev Supabase 깨우기 실패 · 일시정지됐거나 키가 바뀌었을 수 있다 · <$RUN_URL|실행 보기>" '{text: $text}' \
+            | curl -sS --max-time 5 -X POST -H 'content-type: application/json' -d @- "$SLACK_WEBHOOK_URL"
