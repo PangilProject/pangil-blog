@@ -1630,12 +1630,28 @@ html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
 
 @supports (animation-timeline: scroll()) {
   @media (min-width: 64rem) {
-    .shelf-float {
-      position: fixed;
+    /*
+      카드 둘을 담는 줄. 본문 지면과 같은 폭으로 가운데 서고, 화면 아래에 붙는다(sticky).
+      fixed로 화면 모서리에 띄우면 넓은 화면에서 본문과 한참 떨어진다. 줄 자체는 클릭을
+      받지 않는다 — 카드 사이 빈 곳 아래의 본문이 눌려야 한다.
+    */
+    .shelf-float-row {
+      position: sticky;
       bottom: 1rem;
       z-index: 40;
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+      max-width: var(--sheet);
+      margin-inline: auto;
+      pointer-events: none;
+    }
+
+    .shelf-float {
+      position: relative;
       display: block;
-      width: min(340px, calc(50vw - 2rem));
+      width: min(340px, calc(50% - 0.5rem));
+      pointer-events: auto;
       border-top: 2px solid var(--accent);
       background: var(--card);
       box-shadow:
