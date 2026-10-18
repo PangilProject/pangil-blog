@@ -10,6 +10,7 @@ import {
   type TableCommand,
   type ToolbarCommand,
 } from "@/components/editor/EditorToolbar";
+import { SpellCheckControl } from "@/components/editor/SpellCheckControl";
 
 /**
  * M1의 표현용 툴바를 포커스된 Tiptap 인스턴스에 연결한다(ADR-001).
@@ -156,6 +157,7 @@ export function ConnectedEditorToolbar({ variant = "full" }: { variant?: EditorT
       }
       onTableCommand={(command) => editor && applyTableCommand(editor, command)}
       canTable={tableAvailability(editor)}
+      trailing={<SpellCheckControl />}
     />
   );
 }
