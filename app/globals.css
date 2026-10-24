@@ -1147,6 +1147,45 @@ html[data-hub-live] [data-hub-top]:not([data-on="1"]) {
   }
 }
 
+/* 불러오는 동안의 자리 표시 (components/record/Skeleton).
+   **200ms를 기다렸다 나타난다** — 그 안에 내용이 오면 덩어리는 한 번도 보이지 않는다. 바로 띄우면
+   0.3초짜리 이동마다 회색이 번쩍인다. 숨쉬기는 투명도가 아니라 바탕색으로 한다: 투명도는
+   나타나기가 이미 쥐고 있어서, 둘을 겹치면 브라우저마다 어느 쪽이 이기는지가 갈린다.
+   움직임을 줄인 환경에서는 숨쉬지 않고, 나타나는 것도 페이드 없이 그 시각에 바로 선다. */
+.skeleton-reveal,
+.skeleton-block {
+  opacity: 0;
+  animation: skeleton-reveal 0s linear 0.2s forwards;
+}
+
+.skeleton-block {
+  background: color-mix(in oklab, var(--edge) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-reveal {
+    animation: skeleton-reveal 0.3s var(--ease-record) 0.2s forwards;
+  }
+
+  .skeleton-block {
+    animation:
+      skeleton-reveal 0.3s var(--ease-record) 0.2s forwards,
+      skeleton-breathe 1.4s ease-in-out 0.5s infinite;
+  }
+}
+
+@keyframes skeleton-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-breathe {
+  50% {
+    background: color-mix(in oklab, var(--edge) 35%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .record-appear {
     animation: record-appear 0.45s var(--ease-record) both;
