@@ -37,16 +37,29 @@ export async function setPostTagsWith(
   const site = siteEnumOf(type);
   const wanted = normalizeTagNames(names);
 
-  const tags = await Promise.all(
-    wanted.map((name) =>
-      tx.tag.upsert({
-        where: { site_name: { site, name } },
-        create: { site, name },
-        update: {},
-        select: { id: true, name: true },
-      }),
-    ),
-  );
+  // 태그 수와 상관없이 쿼리 두 번이다. 전에는 이름마다 upsert를 `Promise.all`로 띄웠는데,
+  // 트랜잭션은 연결 하나라 결국 줄을 서서 태그 10개면 5초 제한을 넘겼고(P2028), 결과 하나가
+  // `undefined`로 돌아와 아래 `notIn`이 깨지기도 했다
+  if (wanted.length > 0) {
+    await tx.tag.createMany({
+      data: wanted.map((name) => ({ site, name })),
+      skipDuplicates: true,
+    });
+  }
+
+  const found = await tx.tag.findMany({
+    where: { site, name: { in: wanted } },
+    select: { id: true, name: true },
+  });
+  const byName = new Map(found.map((tag) => [tag.name, tag]));
+  const tags = wanted.flatMap((name) => byName.get(name) ?? []);
+
+  // 못 찾은 이름이 있으면 조용히 빠뜨리지 않는다 — 태그가 말없이 사라진다
+  if (tags.length !== wanted.length) {
+    throw new Error(
+      `tags not found after insert: ${wanted.filter((n) => !byName.has(n)).join(", ")}`,
+    );
+  }
 
   const keepIds = tags.map((tag) => tag.id);
 
