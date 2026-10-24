@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  *
  * 제목을 아는 지면은 진짜 제목을 넘긴다(`title`). 회색 막대보다 "글 관리"가 먼저 서는 편이
  * 어디에 도착했는지를 빨리 말한다. 날짜처럼 요청 시점 값이 든 제목은 막대로 둔다 — 껍데기는
- * 시계를 볼 수 없다(ADR-003).
+ * 시계를 볼 수 없다(ADR-003). 제목을 내용 쪽이 직접 그리는 지면(글 통계)은 `null`을 넘긴다.
  */
 export function AdminScreenSkeleton({
   width,
@@ -27,7 +27,7 @@ export function AdminScreenSkeleton({
 }: {
   width: "max-w-[720px]" | "max-w-[760px]" | "max-w-[1040px]";
   gap?: "gap-5" | "gap-7" | "gap-8";
-  title?: string;
+  title?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -35,10 +35,10 @@ export function AdminScreenSkeleton({
       <AdminNav />
 
       <LoadingRegion className={cn("mx-auto flex w-full flex-col px-[5%] py-8", width, gap)}>
-        {title ? (
-          <h1 className="font-serif text-lg">{title}</h1>
-        ) : (
+        {title === undefined ? (
           <SkeletonBlock className="h-7 w-56" />
+        ) : (
+          title !== null && <h1 className="font-serif text-lg">{title}</h1>
         )}
         {children}
       </LoadingRegion>
