@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { PostStats } from "@/components/admin/PostStats";
+import { PostStatsSkeleton } from "@/components/admin/PostStatsSkeleton";
 import { StatModal } from "@/components/admin/StatModal";
 import { ADMIN_LOGIN_PATH } from "@/lib/auth/adminPaths";
 import { getAdminUser } from "@/lib/auth/adminSession";
@@ -15,7 +16,7 @@ import { getAdminUser } from "@/lib/auth/adminSession";
 export default function InterceptedPostStats({ params }: PageProps<"/admin/stats/[postId]">) {
   return (
     <StatModal>
-      <Suspense fallback={<ModalSkeleton />}>
+      <Suspense fallback={<PostStatsSkeleton inModal />}>
         <Body params={params} />
       </Suspense>
     </StatModal>
@@ -29,20 +30,4 @@ async function Body({ params }: { params: PageProps<"/admin/stats/[postId]">["pa
 
   const { postId } = await params;
   return <PostStats postId={postId} inModal />;
-}
-
-function ModalSkeleton() {
-  return (
-    <>
-      <h1 id="post-stats-title" className="font-serif text-lg text-faint">
-        불러오는 중…
-      </h1>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((key) => (
-          <div key={key} className="h-[74px] border border-edge bg-card" />
-        ))}
-      </div>
-      <div className="h-[220px] border border-edge bg-card" />
-    </>
-  );
 }
